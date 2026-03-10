@@ -112,7 +112,7 @@ export default function Home() {
   else if (score < -60) marketState = "Strong Bearish";
   else if (score < -20) marketState = "Bearish";
 
-  // ===== Bias Engine Core =====
+  // ===== Bias Engine =====
 
   const biasScore =
     (score * 0.5) +
@@ -147,8 +147,7 @@ export default function Home() {
 
   if (history.length > 1) {
     for (let i = 1; i < history.length; i++) {
-      const historicalBias = history[i].score;
-      const pastRegime = determineRegime(historicalBias);
+      const pastRegime = determineRegime(history[i].score);
       if (pastRegime !== regime) {
         lastFlipTime = new Date(history[i].timestamp + "Z");
         break;
@@ -229,16 +228,19 @@ export default function Home() {
           )}
         </div>
 
-        <div className="mb-16">
-          <h1 className="text-5xl font-semibold">
-            ChainPulse
+        {/* Hero */}
+        <div className="mb-20">
+          <h1 className="text-5xl font-semibold leading-tight">
+            Know the Bias. <br />
+            Catch the Swing.
           </h1>
-          <p className="text-gray-500 mt-3 text-lg">
-            AI‑Powered Swing Bias Engine
+          <p className="text-gray-400 mt-6 text-xl max-w-2xl">
+            ChainPulse detects market regime shifts and momentum alignment
+            before price confirms — built for serious swing traders.
           </p>
         </div>
 
-        {/* Bias Overview */}
+        {/* Current Bias */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 mb-16 shadow-xl">
 
           <div className="flex justify-between mb-8">
@@ -343,18 +345,31 @@ export default function Home() {
 
           {!isPro && (
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl">
+
               <h3 className="text-2xl font-semibold mb-4">
-                Unlock Full Trend Analysis
+                Full Regime History Locked
               </h3>
+
+              <p className="text-gray-400 mb-6 text-center max-w-md">
+                Track complete bias transitions and regime shifts.
+                Professional traders use full context — not snapshots.
+              </p>
+
               <button
                 onClick={handleUpgrade}
-                className="bg-white text-black px-6 py-3 rounded-lg"
+                className="bg-white text-black px-6 py-3 rounded-lg font-medium"
               >
-                Upgrade to Pro
+                Upgrade — \$19/month
               </button>
+
             </div>
           )}
 
+        </div>
+
+        <div className="text-gray-600 text-xs mt-20 text-center">
+          ChainPulse provides market intelligence — not financial advice.
+          Always manage risk appropriately.
         </div>
 
       </div>
