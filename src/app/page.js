@@ -93,7 +93,7 @@ export default function Home() {
       ? (
           history.reduce((sum, h) => sum + h.score, 0) /
           history.length
-        ).toFixed(1)
+        )
       : 0;
 
   const sentimentColor =
@@ -106,39 +106,78 @@ export default function Home() {
     sentimentChange < 0 ? "text-red-400" :
     "text-gray-400";
 
-  let marketState = "Neutral";
-  if (score > 60) marketState = "Strong Bullish";
-  else if (score > 20) marketState = "Bullish";
-  else if (score < -60) marketState = "Strong Bearish";
-  else if (score < -20) marketState = "Bearish";
+  // ===== Stability Calculation =====
 
-  // ===== Bias Engine =====
+  const recentScores = history.slice(0, 5).map(h => h.score);
+  const volatility =
+    recentScores.length > 0
+      ? Math.max(...recentScores) - Math.min(...recentScores)
+      : 0;
 
-  const biasScore =
-    (score * 0.5) +
-    (sentimentChange * 0.3) +
-    (parseFloat(averageScore) * 0.2);
+  let stability = "High";
+  if (volatility > 30) stability = "Low";
+  else if (volatility > 15) stability = "Moderate";
+
+  const stabilityFactor =
+    stability === "High" ? 1 :
+    stability === "Moderate" ? 0.8 :
+    0.6;
+
+  // ===== Conservative Bias Model =====
+
+  const shortMomentum =
+    history.length >= 3
+      ? (
+          history[0].score +
+          history[1].score +
+          history[2].score
+        ) / 3
+      : score;
+
+  const rawBias =
+    score * 0.6 +
+    shortMomentum * 0.4;
+
+  const adjustedBias = rawBias * stabilityFactor;
 
   const determineRegime = (value) => {
-    if (value > 40) return "Strong Risk-On";
-    if (value > 10) return "Risk-On";
-    if (value < -40) return "Strong Risk-Off";
-    if (value < -10) return "Risk-Off";
+    if (value > 35) return "Strong Risk-On";
+    if (value > 15) return "Risk-On";
+    if (value < -35) return "Strong Risk-Off";
+    if (value < -15) return "Risk-Off";
     return "Neutral";
   };
 
-  const regime = determineRegime(biasScore);
+  const regime = determineRegime(adjustedBias);
 
-  let signalStrength = "Weak";
-  if (Math.abs(biasScore) > 40 && confidence > 60) {
-    signalStrength = "Strong";
-  } else if (Math.abs(biasScore) > 20) {
-    signalStrength = "Moderate";
+  const confirmation =
+    Math.abs(adjustedBias) > 25 &&
+    Math.abs(sentimentChange) > 5 &&
+    stability !== "Low";
+
+  let sustained = false;
+
+  if (history.length >= 2) {
+    const prevBias = history[1].score * 0.6 +
+                     history[1].score * 0.4;
+
+    if (
+      (adjustedBias > 25 && prevBias > 25) ||
+      (adjustedBias < -25 && prevBias < -25)
+    ) {
+      sustained = true;
+    }
   }
 
-  const swingTrigger =
-    (biasScore > 25 && sentimentChange > 0) ||
-    (biasScore < -25 && sentimentChange < 0);
+  const swingTrigger = confirmation && sustained;
+
+  let signalStrength = "Weak";
+
+  if (swingTrigger && confidence > 70) {
+    signalStrength = "Strong";
+  } else if (confirmation) {
+    signalStrength = "Moderate";
+  }
 
   // ===== Regime Timeline =====
 
@@ -165,16 +204,6 @@ export default function Home() {
   let acceleration = "Stable";
   if (sentimentChange > 5) acceleration = "Increasing";
   if (sentimentChange < -5) acceleration = "Decreasing";
-
-  const recentScores = history.slice(0, 5).map(h => h.score);
-  const volatility =
-    recentScores.length > 0
-      ? Math.max(...recentScores) - Math.min(...recentScores)
-      : 0;
-
-  let stability = "High";
-  if (volatility > 30) stability = "Low";
-  else if (volatility > 15) stability = "Moderate";
 
   const visibleHistory = isPro
     ? history
@@ -236,64 +265,17 @@ export default function Home() {
           </h1>
           <p className="text-gray-400 mt-6 text-xl max-w-2xl">
             ChainPulse detects market regime shifts and momentum alignment
-            before price confirms — built for serious swing traders.
+            before price confirms — built for disciplined swing traders.
           </p>
-        </div>
-
-        {/* Current Bias */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 mb-16 shadow-xl">
-
-          <div className="flex justify-between mb-8">
-            <h2 className="text-xl text-gray-400">
-              Current Market Bias
-            </h2>
-            <span className="text-sm text-gray-500">
-              {data.timestamp
-                ? new Date(data.timestamp + "Z").toLocaleString()
-                : "—"}
-            </span>
-          </div>
-
-          <div className={`text-7xl font-bold ${sentimentColor}`}>
-            {score}
-          </div>
-
-          <div className={`text-lg mt-2 ${momentumColor}`}>
-            {sentimentChange > 0 && "▲ "}
-            {sentimentChange < 0 && "▼ "}
-            {sentimentChange.toFixed(1)}
-          </div>
-
-          <div className="grid grid-cols-3 gap-6 mt-10 text-center">
-            <div>
-              <div className="text-gray-400 text-sm">24H Average</div>
-              <div className="text-xl font-semibold">{averageScore}</div>
-            </div>
-            <div>
-              <div className="text-gray-400 text-sm">Momentum</div>
-              <div className={`text-xl font-semibold ${momentumColor}`}>
-                {sentimentChange.toFixed(1)}
-              </div>
-            </div>
-            <div>
-              <div className="text-gray-400 text-sm">Confidence</div>
-              <div className="text-xl font-semibold">{confidence}%</div>
-            </div>
-          </div>
-
         </div>
 
         {/* Bias Engine */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 mb-16 shadow-xl">
 
-          <h2 className="text-xl text-gray-400 mb-8">
-            ChainPulse Bias Engine™
-          </h2>
-
-          <div className="grid grid-cols-4 gap-8 text-center">
+          <div className="grid grid-cols-4 gap-8 text-center mb-8">
             <div>
               <div className="text-gray-400 text-sm">Bias Score</div>
-              <div className="text-3xl font-semibold">{biasScore.toFixed(1)}</div>
+              <div className="text-3xl font-semibold">{adjustedBias.toFixed(1)}</div>
             </div>
             <div>
               <div className="text-gray-400 text-sm">Regime</div>
@@ -311,7 +293,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mt-10 border-t border-zinc-800 pt-8 grid grid-cols-4 gap-8 text-center">
+          <div className="grid grid-cols-4 gap-8 text-center border-t border-zinc-800 pt-8">
             <div>
               <div className="text-gray-400 text-sm">Regime Duration</div>
               <div className="text-lg font-semibold">{regimeDuration}</div>
@@ -350,14 +332,9 @@ export default function Home() {
                 Full Regime History Locked
               </h3>
 
-              <p className="text-gray-400 mb-6 text-center max-w-md">
-                Track complete bias transitions and regime shifts.
-                Professional traders use full context — not snapshots.
-              </p>
-
               <button
                 onClick={handleUpgrade}
-                className="bg-white text-black px-6 py-3 rounded-lg font-medium"
+                className="bg-white text-black px-6 py-3 rounded-lg"
               >
                 Upgrade — \$19/month
               </button>
@@ -369,7 +346,6 @@ export default function Home() {
 
         <div className="text-gray-600 text-xs mt-20 text-center">
           ChainPulse provides market intelligence — not financial advice.
-          Always manage risk appropriately.
         </div>
 
       </div>
