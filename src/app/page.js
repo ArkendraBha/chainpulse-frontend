@@ -20,10 +20,19 @@ ChartJS.register(
 );
 
 export default function Home() {
+
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
+  const [email, setEmail] = useState("");
+  const [isPro, setIsPro] = useState(false);
 
   useEffect(() => {
+    const savedEmail = localStorage.getItem("email");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      checkSubscription(savedEmail);
+    }
+
     fetch("https://chainpulse-backend-80xy.onrender.com/latest")
       .then(res => res.json())
       .then(setData);
@@ -31,7 +40,35 @@ export default function Home() {
     fetch("https://chainpulse-backend-80xy.onrender.com/history")
       .then(res => res.json())
       .then(setHistory);
+
   }, []);
+
+  const checkSubscription = async (userEmail) => {
+    const res = await fetch(
+      `https://chainpulse-backend-80xy.onrender.com/check-subscription?email=${userEmail}`
+    );
+    const result = await res.json();
+    setIsPro(result.isPro);
+  };
+
+  const handleUpgrade = async () => {
+    if (!email) {
+      alert("Please enter your email first.");
+      return;
+    }
+
+    const res = await fetch(
+      "https://chainpulse-backend-80xy.onrender.com/create-checkout-session",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      }
+    );
+
+    const data = await res.json();
+    window.location.href = data.url;
+  };
 
   if (!data) {
     return (
@@ -51,17 +88,18 @@ export default function Home() {
     score < -10 ? "text-red-400" :
     "text-gray-300";
 
-  const barWidth = Math.min(Math.abs(score), 100);
+  const visibleHistory = isPro
+    ? history
+    : history.slice(0, 5);
 
   const chartData = {
-    labels: history.map(h =>
+    labels: visibleHistory.map(h =>
       new Date(h.timestamp).toLocaleTimeString()
     ).reverse(),
     datasets: [
       {
-        data: history.map(h => h.score).reverse(),
+        data: visibleHistory.map(h => h.score).reverse(),
         borderColor: "#22c55e",
-        backgroundColor: "rgba(34,197,94,0.1)",
         tension: 0.4
       }
     ]
@@ -82,6 +120,25 @@ export default function Home() {
     <main className="min-h-screen bg-black text-white px-8 py-16">
 
       <div className="max-w-5xl mx-auto">
+
+        {/* Email Input */}
+        <div className="mb-8 flex gap-4">
+          <input
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              localStorage.setItem("email", e.target.value);
+            }}
+            className="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white w-full max-w-md"
+          />
+          {isPro && (
+            <span className="text-green-400 font-medium self-center">
+              Pro Active
+            </span>
+          )}
+        </div>
 
         {/* Header */}
         <div className="mb-20">
@@ -113,15 +170,6 @@ export default function Home() {
             {data.label}
           </div>
 
-          <div className="w-full h-2 bg-zinc-800 rounded-full mb-8 overflow-hidden">
-            <div
-              className={`h-full ${
-                score >= 0 ? "bg-green-500" : "bg-red-500"
-              }`}
-              style={{ width: `${barWidth}%` }}
-            ></div>
-          </div>
-
           <div className="text-sm text-gray-400 mb-8">
             Confidence: <span className="text-gray-200">{confidence}%</span>
           </div>
@@ -133,14 +181,33 @@ export default function Home() {
         </div>
 
         {/* Sentiment Trend */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl relative">
 
           <h2 className="text-xl text-gray-400 tracking-wide mb-8">
             Sentiment Trend (Last 30 Updates)
           </h2>
 
-          {history.length > 0 && (
-            <Line data={chartData} options={chartOptions} />
+          <Line data={chartData} options={chartOptions} />
+
+          {!isPro && (
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl">
+
+              <h3 className="text-2xl font-semibold mb-4">
+                Unlock Full Trend Analysis
+              </h3>
+
+              <p className="text-gray-400 mb-6 text-center max-w-md">
+                Access complete sentiment history and advanced analytics.
+              </p>
+
+              <button
+                onClick={handleUpgrade}
+                className="bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition"
+              >
+                Upgrade to Pro
+              </button>
+
+            </div>
           )}
 
         </div>
