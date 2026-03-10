@@ -23,6 +23,7 @@ export default function Home() {
 
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
+  const [mode, setMode] = useState("basic");
 
   useEffect(() => {
     fetch("https://chainpulse-backend-80xy.onrender.com/latest")
@@ -55,8 +56,6 @@ export default function Home() {
 
   const currentRegime = determineRegime(score);
 
-  // === Regime Change Detection ===
-
   let lastFlipTime = null;
   let regimeDuration = "—";
   let isFreshFlip = false;
@@ -74,12 +73,9 @@ export default function Home() {
       const now = new Date();
       const diffMs = now - lastFlipTime;
       const diffHours = diffMs / (1000 * 60 * 60);
-
       regimeDuration = `${Math.floor(diffHours)}h`;
 
-      if (diffHours <= 6) {
-        isFreshFlip = true;
-      }
+      if (diffHours <= 6) isFreshFlip = true;
     }
   }
 
@@ -119,15 +115,44 @@ export default function Home() {
 
       <div className="max-w-6xl mx-auto">
 
-        <div className="mb-16">
-          <h1 className="text-5xl font-semibold">
-            ChainPulse
-          </h1>
-          <p className="text-gray-400 mt-4 text-xl">
-            Swing Regime Detection Engine
-          </p>
+        <div className="mb-10 flex justify-between items-center">
+
+          <div>
+            <h1 className="text-5xl font-semibold">
+              ChainPulse
+            </h1>
+            <p className="text-gray-400 mt-4 text-xl">
+              Swing Regime Detection Engine
+            </p>
+          </div>
+
+          {/* Mode Toggle */}
+          <div className="flex bg-zinc-800 rounded-lg p-1">
+            <button
+              onClick={() => setMode("basic")}
+              className={`px-4 py-2 rounded-lg ${
+                mode === "basic"
+                  ? "bg-white text-black"
+                  : "text-gray-400"
+              }`}
+            >
+              Basic
+            </button>
+            <button
+              onClick={() => setMode("pro")}
+              className={`px-4 py-2 rounded-lg ${
+                mode === "pro"
+                  ? "bg-white text-black"
+                  : "text-gray-400"
+              }`}
+            >
+              Professional
+            </button>
+          </div>
+
         </div>
 
+        {/* Regime Panel */}
         <div className="rounded-2xl overflow-hidden shadow-xl">
 
           <div className={`h-1 ${regimeColor}`}></div>
@@ -143,13 +168,11 @@ export default function Home() {
 
                 <div className="text-4xl font-semibold mt-3 flex items-center gap-4">
                   {currentRegime}
-
                   {isFreshFlip && (
                     <span className="text-xs bg-yellow-500 text-black px-3 py-1 rounded-full">
                       Fresh Flip
                     </span>
                   )}
-
                 </div>
 
                 <div className="text-gray-400 mt-4">
@@ -174,15 +197,17 @@ export default function Home() {
 
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl mt-16">
+        {mode === "pro" && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl mt-16">
 
-          <h2 className="text-xl text-gray-400 mb-8">
-            Regime Trend
-          </h2>
+            <h2 className="text-xl text-gray-400 mb-8">
+              Regime Trend
+            </h2>
 
-          <Line data={chartData} options={chartOptions} />
+            <Line data={chartData} options={chartOptions} />
 
-        </div>
+          </div>
+        )}
 
       </div>
 
