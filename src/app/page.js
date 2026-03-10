@@ -66,8 +66,8 @@ export default function Home() {
       }
     );
 
-    const data = await res.json();
-    window.location.href = data.url;
+    const checkout = await res.json();
+    window.location.href = checkout.url;
   };
 
   if (!data) {
@@ -83,15 +83,23 @@ export default function Home() {
     ? Math.round(data.confidence * 100)
     : 0;
 
-  const sentimentColor =
-    score > 10 ? "text-green-400" :
-    score < -10 ? "text-red-400" :
-    "text-gray-300";
-
   const previousScore =
     history.length > 1 ? history[1].score : score;
 
   const sentimentChange = score - previousScore;
+
+  const averageScore =
+    history.length > 0
+      ? (
+          history.reduce((sum, h) => sum + h.score, 0) /
+          history.length
+        ).toFixed(1)
+      : 0;
+
+  const sentimentColor =
+    score > 10 ? "text-green-400" :
+    score < -10 ? "text-red-400" :
+    "text-gray-300";
 
   const momentumColor =
     sentimentChange > 0 ? "text-green-400" :
@@ -104,21 +112,37 @@ export default function Home() {
   else if (score < -60) marketState = "Strong Bearish";
   else if (score < -20) marketState = "Bearish";
 
+  // ===== Bias Engine Core =====
+
+  const biasScore =
+    (score * 0.5) +
+    (sentimentChange * 0.3) +
+    (parseFloat(averageScore) * 0.2);
+
+  let regime = "Neutral";
+  if (biasScore > 40) regime = "Strong Risk-On";
+  else if (biasScore > 10) regime = "Risk-On";
+  else if (biasScore < -40) regime = "Strong Risk-Off";
+  else if (biasScore < -10) regime = "Risk-Off";
+
+  let signalStrength = "Weak";
+  if (Math.abs(biasScore) > 40 && confidence > 60) {
+    signalStrength = "Strong";
+  } else if (Math.abs(biasScore) > 20) {
+    signalStrength = "Moderate";
+  }
+
+  const swingTrigger =
+    (biasScore > 25 && sentimentChange > 0) ||
+    (biasScore < -25 && sentimentChange < 0);
+
   const visibleHistory = isPro
     ? history
     : history.slice(0, 5);
 
-  const averageScore =
-    history.length > 0
-      ? (
-          history.reduce((sum, h) => sum + h.score, 0) /
-          history.length
-        ).toFixed(1)
-      : 0;
-
   const chartData = {
     labels: visibleHistory.map(h =>
-      new Date(h.timestamp).toLocaleTimeString()
+      new Date(h.timestamp + "Z").toLocaleTimeString()
     ).reverse(),
     datasets: [
       {
@@ -143,7 +167,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white px-8 py-16">
 
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
 
         {/* Email Input */}
         <div className="mb-8 flex gap-4">
@@ -170,68 +194,96 @@ export default function Home() {
             ChainPulse
           </h1>
           <p className="text-gray-500 mt-3 text-lg">
-            AI‑Driven Crypto Market Intelligence
+            AI‑Powered Swing Bias Engine
           </p>
         </div>
 
-        {/* Current Sentiment */}
+        {/* Sentiment Panel */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 mb-16 shadow-xl">
 
           <div className="flex justify-between mb-8">
             <h2 className="text-xl text-gray-400 tracking-wide">
-              Current Market Sentiment
+              Current Market Bias
             </h2>
             <span className="text-sm text-gray-500">
-              {new Date(data.timestamp).toLocaleString()}
+              {data.timestamp
+                ? new Date(data.timestamp + "Z").toLocaleString()
+                : "—"}
             </span>
           </div>
 
-          <div className={`text-7xl font-bold ${sentimentColor} mb-4`}>
+          <div className={`text-7xl font-bold ${sentimentColor}`}>
             {score}
           </div>
 
-          <div className={`text-lg ${momentumColor}`}>
+          <div className={`text-lg mt-2 ${momentumColor}`}>
             {sentimentChange > 0 && "▲ "}
             {sentimentChange < 0 && "▼ "}
             {sentimentChange.toFixed(1)}
           </div>
 
-          <div className="text-xl text-gray-300 mt-4">
-            {data.label}
-          </div>
-
-          <div className="text-sm text-gray-500 mt-2">
+          <div className="text-sm text-gray-500 mt-4">
             Market State: {marketState}
           </div>
 
-          <div className="grid grid-cols-3 gap-6 mt-12 text-center">
-
+          <div className="grid grid-cols-3 gap-6 mt-10 text-center">
             <div>
               <div className="text-gray-400 text-sm">24H Average</div>
               <div className="text-xl font-semibold">{averageScore}</div>
             </div>
-
             <div>
               <div className="text-gray-400 text-sm">Momentum</div>
               <div className={`text-xl font-semibold ${momentumColor}`}>
                 {sentimentChange.toFixed(1)}
               </div>
             </div>
-
             <div>
               <div className="text-gray-400 text-sm">Confidence</div>
               <div className="text-xl font-semibold">{confidence}%</div>
             </div>
-
-          </div>
-
-          <div className="text-gray-300 leading-relaxed text-lg mt-12">
-            {data.summary}
           </div>
 
         </div>
 
-        {/* Sentiment Trend */}
+        {/* Bias Engine Panel */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 mb-16 shadow-xl">
+
+          <h2 className="text-xl text-gray-400 tracking-wide mb-8">
+            ChainPulse Bias Engine™
+          </h2>
+
+          <div className="grid grid-cols-4 gap-8 text-center">
+            <div>
+              <div className="text-gray-400 text-sm">Bias Score</div>
+              <div className="text-3xl font-semibold mt-2">
+                {biasScore.toFixed(1)}
+              </div>
+            </div>
+            <div>
+              <div className="text-gray-400 text-sm">Regime</div>
+              <div className="text-2xl font-semibold mt-2">
+                {regime}
+              </div>
+            </div>
+            <div>
+              <div className="text-gray-400 text-sm">Signal Strength</div>
+              <div className="text-2xl font-semibold mt-2">
+                {signalStrength}
+              </div>
+            </div>
+            <div>
+              <div className="text-gray-400 text-sm">Swing Setup</div>
+              <div className={`text-2xl font-semibold mt-2 ${
+                swingTrigger ? "text-green-400" : "text-gray-400"
+              }`}>
+                {swingTrigger ? "Active" : "Inactive"}
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Trend Chart */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl relative">
 
           <h2 className="text-xl text-gray-400 tracking-wide mb-8">
@@ -248,7 +300,7 @@ export default function Home() {
               </h3>
 
               <p className="text-gray-400 mb-6 text-center max-w-md">
-                Access complete sentiment history and advanced analytics.
+                Access full bias history and regime detection.
               </p>
 
               <button
