@@ -23,17 +23,18 @@ export default function Home() {
 
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
+  const [coin, setCoin] = useState("BTC");
 
   useEffect(() => {
-    fetch("https://chainpulse-backend-80xy.onrender.com/latest")
+    fetch(`https://chainpulse-backend-80xy.onrender.com/latest?coin=${coin}`)
       .then(res => res.json())
       .then(setData);
 
-    fetch("https://chainpulse-backend-80xy.onrender.com/history")
+    fetch(`https://chainpulse-backend-80xy.onrender.com/history?coin=${coin}`)
       .then(res => res.json())
       .then(setHistory);
 
-  }, []);
+  }, [coin]);
 
   if (!data) {
     return (
@@ -43,8 +44,6 @@ export default function Home() {
     );
   }
 
-  const score = data.score || 0;
-
   const determineRegime = (value) => {
     if (value > 35) return "Strong Risk-On";
     if (value > 15) return "Risk-On";
@@ -53,104 +52,53 @@ export default function Home() {
     return "Neutral";
   };
 
+  const score = data.score || 0;
   const regime = determineRegime(score);
 
-  const previousScore =
-    history.length > 1 ? history[1].score : score;
+  // === Multi-Timeframe Bias ===
 
-  const sentimentChange = score - previousScore;
+  const calculateTimeframeBias = (period) => {
+    if (history.length < period) return 0;
+    const subset = history.slice(0, period);
+    return subset.reduce((sum, h) => sum + h.score, 0) / subset.length;
+  };
 
-  // ===== Bias Strength =====
+  const bias1H = calculateTimeframeBias(1);
+  const bias4H = calculateTimeframeBias(4);
+  const bias12H = calculateTimeframeBias(12);
+  const bias24H = calculateTimeframeBias(24);
 
-  let biasStrength = "Weak";
-  if (Math.abs(score) > 50) biasStrength = "Strong";
-  else if (Math.abs(score) > 25) biasStrength = "Moderate";
+  const timeframeData = [
+    { label: "1H", value: bias1H },
+    { label: "4H", value: bias4H },
+    { label: "12H", value: bias12H },
+    { label: "24H", value: bias24H }
+  ];
 
-  // ===== Stability =====
+  const alignment =
+    timeframeData.every(tf => determineRegime(tf.value).includes("Risk-On")) ||
+    timeframeData.every(tf => determineRegime(tf.value).includes("Risk-Off"));
 
-  const recentScores = history.slice(0, 5).map(h => h.score);
-  const volatility =
-    recentScores.length > 0
-      ? Math.max(...recentScores) - Math.min(...recentScores)
+  // === Alignment Alert Logic ===
+
+  const alignmentAlert =
+    alignment && Math.abs(score) > 25;
+
+  // === Alignment Accuracy (Simple Approximation) ===
+
+  const alignedPeriods = history.filter((h, index) => {
+    if (index < 4) return false;
+    const slice = history.slice(index - 4, index);
+    const aligned =
+      slice.every(s => determineRegime(s.score).includes("Risk-On")) ||
+      slice.every(s => determineRegime(s.score).includes("Risk-Off"));
+    return aligned;
+  });
+
+  const alignmentAccuracy =
+    history.length > 10
+      ? Math.round((alignedPeriods.length / history.length) * 100)
       : 0;
-
-  let stability = "High";
-  if (volatility > 30) stability = "Low";
-  else if (volatility > 15) stability = "Moderate";
-
-  // ===== Regime Timeline =====
-
-  let lastFlipTime = null;
-  let regimeDuration = "—";
-  let timingPhase = "Developing";
-
-  if (history.length > 1) {
-    for (let i = 1; i < history.length; i++) {
-      const pastRegime = determineRegime(history[i].score);
-      if (pastRegime !== regime) {
-        lastFlipTime = new Date(history[i].timestamp + "Z");
-        break;
-      }
-    }
-
-    if (lastFlipTime) {
-      const now = new Date();
-      const diffMs = now - lastFlipTime;
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      regimeDuration = `${diffHours}h`;
-
-      if (diffHours < 4) timingPhase = "Early Regime";
-      else if (diffHours < 24) timingPhase = "Established";
-      else timingPhase = "Extended";
-    }
-  }
-
-  // ===== Smarter Environment Score =====
-
-  const alignmentBonus =
-    regime.includes("Risk-On") && sentimentChange > 0
-      ? 10
-      : regime.includes("Risk-Off") && sentimentChange < 0
-      ? 10
-      : 0;
-
-  const stabilityBonus =
-    stability === "High" ? 15 :
-    stability === "Moderate" ? 8 :
-    -5;
-
-  const environmentScore = Math.min(
-    100,
-    Math.max(
-      0,
-      Math.abs(score) * 0.5 +
-      Math.abs(sentimentChange) * 0.3 +
-      alignmentBonus +
-      stabilityBonus
-    )
-  );
-
-  // ===== Decision Layer =====
-
-  let marketStance = "Neutral";
-  let preferredSetup = "Wait for clearer alignment";
-  let avoidCondition = "High volatility reversals";
-
-  if (regime.includes("Risk-On")) {
-    marketStance = `${biasStrength} Bullish Bias`;
-    preferredSetup = "Long pullbacks / breakout continuation";
-    avoidCondition = timingPhase === "Extended"
-      ? "Late-cycle breakout entries"
-      : "Counter-trend shorts";
-  }
-
-  if (regime.includes("Risk-Off")) {
-    marketStance = `${biasStrength} Bearish Bias`;
-    preferredSetup = "Short rallies / breakdown continuation";
-    avoidCondition = timingPhase === "Extended"
-      ? "Late-cycle breakdown entries"
-      : "Aggressive long attempts";
-  }
 
   const chartData = {
     labels: history.map(h =>
@@ -189,36 +137,50 @@ export default function Home() {
       <div className="max-w-6xl mx-auto">
 
         {/* Hero */}
-        <div className="mb-16">
-          <h1 className="text-5xl font-semibold leading-tight">
-            Trade the Regime. <br />
-            Not the Noise.
-          </h1>
-          <p className="text-gray-400 mt-6 text-xl max-w-2xl">
-            ChainPulse identifies bias alignment and regime maturity —
-            helping swing traders avoid premature entries.
-          </p>
+        <div className="mb-16 flex justify-between items-center">
+
+          <div>
+            <h1 className="text-5xl font-semibold leading-tight">
+              Multi‑Asset Swing Bias Engine
+            </h1>
+            <p className="text-gray-400 mt-4 text-xl">
+              Detect alignment across coins and timeframes.
+            </p>
+          </div>
+
+          <div className="flex bg-zinc-800 rounded-lg p-1">
+            {["BTC", "ETH"].map(c => (
+              <button
+                key={c}
+                onClick={() => setCoin(c)}
+                className={`px-4 py-2 rounded-lg ${
+                  coin === c
+                    ? "bg-white text-black"
+                    : "text-gray-400"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+
         </div>
 
-        {/* Intelligence Layer */}
+        {/* Regime Panel */}
         <div className="rounded-2xl overflow-hidden shadow-xl mb-16">
+
           <div className={`h-1 ${regimeColor}`}></div>
+
           <div className="bg-zinc-900 p-12 border border-zinc-800">
 
             <div className="flex justify-between items-center">
 
               <div>
                 <div className="text-sm text-gray-400 uppercase tracking-wider">
-                  Current Regime
+                  {coin} Regime
                 </div>
                 <div className="text-4xl font-semibold mt-3">
                   {regime}
-                </div>
-                <div className="text-gray-400 mt-4">
-                  Duration: {regimeDuration}
-                </div>
-                <div className="text-gray-500 text-sm mt-2">
-                  Phase: {timingPhase}
                 </div>
               </div>
 
@@ -229,55 +191,72 @@ export default function Home() {
             </div>
 
           </div>
+
         </div>
 
-        {/* Decision Layer */}
+        {/* Multi-Timeframe Alignment */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl mb-16">
 
-          <h2 className="text-xl text-gray-400 mb-8">
-            Today’s Bias Playbook
+          <h2 className="text-xl text-gray-400 mb-10">
+            Timeframe Alignment
           </h2>
 
-          <div className="grid grid-cols-2 gap-12">
+          <div className="grid grid-cols-4 gap-8 text-center">
 
-            <div>
-              <div className="text-gray-400 text-sm">Market Stance</div>
-              <div className="text-2xl font-semibold mt-2">
-                {marketStance}
-              </div>
+            {timeframeData.map((item, index) => {
+              const regime = determineRegime(item.value);
+              const color =
+                regime.includes("Risk-On")
+                  ? "text-green-400"
+                  : regime.includes("Risk-Off")
+                  ? "text-red-400"
+                  : "text-gray-400";
 
-              <div className="text-gray-400 text-sm mt-8">
-                Preferred Setup
-              </div>
-              <div className="text-lg mt-2">
-                {preferredSetup}
-              </div>
+              return (
+                <div key={index}>
+                  <div className="text-gray-500 text-sm">
+                    {item.label}
+                  </div>
+                  <div className={`text-xl font-semibold mt-3 ${color}`}>
+                    {regime}
+                  </div>
+                </div>
+              );
+            })}
 
-              <div className="text-gray-400 text-sm mt-8">
-                Avoid
-              </div>
-              <div className="text-lg mt-2">
-                {avoidCondition}
-              </div>
+          </div>
+
+          <div className="mt-10 text-center text-gray-400">
+            Alignment Status:{" "}
+            <span className={`font-semibold ${
+              alignment ? "text-green-400" : "text-gray-400"
+            }`}>
+              {alignment ? "Aligned" : "Mixed"}
+            </span>
+          </div>
+
+          {alignmentAlert && (
+            <div className="mt-6 text-center text-yellow-400">
+              Alignment Alert: High‑quality swing environment detected.
             </div>
+          )}
 
-            <div className="text-center">
-              <div className="text-gray-400 text-sm">
-                Trade Environment Score
-              </div>
-              <div className="text-6xl font-bold mt-6">
-                {environmentScore.toFixed(0)}
-              </div>
-              <div className="text-gray-400 mt-4">
-                Stability: {stability}
-              </div>
-            </div>
+        </div>
 
+        {/* Alignment Accuracy */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl mb-16 text-center">
+
+          <div className="text-gray-400 text-sm">
+            Historical Alignment Accuracy
+          </div>
+
+          <div className="text-5xl font-bold mt-6">
+            {alignmentAccuracy}%
           </div>
 
         </div>
 
-        {/* Trend */}
+        {/* Trend Chart */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl">
 
           <h2 className="text-xl text-gray-400 mb-8">
