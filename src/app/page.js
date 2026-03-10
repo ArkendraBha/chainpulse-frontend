@@ -55,10 +55,18 @@ export default function Home() {
 
   const regime = determineRegime(score);
 
-  const sentimentChange =
-    history.length > 1
-      ? score - history[1].score
-      : 0;
+  const previousScore =
+    history.length > 1 ? history[1].score : score;
+
+  const sentimentChange = score - previousScore;
+
+  // ===== Bias Strength =====
+
+  let biasStrength = "Weak";
+  if (Math.abs(score) > 50) biasStrength = "Strong";
+  else if (Math.abs(score) > 25) biasStrength = "Moderate";
+
+  // ===== Stability =====
 
   const recentScores = history.slice(0, 5).map(h => h.score);
   const volatility =
@@ -70,32 +78,78 @@ export default function Home() {
   if (volatility > 30) stability = "Low";
   else if (volatility > 15) stability = "Moderate";
 
+  // ===== Regime Timeline =====
+
+  let lastFlipTime = null;
+  let regimeDuration = "—";
+  let timingPhase = "Developing";
+
+  if (history.length > 1) {
+    for (let i = 1; i < history.length; i++) {
+      const pastRegime = determineRegime(history[i].score);
+      if (pastRegime !== regime) {
+        lastFlipTime = new Date(history[i].timestamp + "Z");
+        break;
+      }
+    }
+
+    if (lastFlipTime) {
+      const now = new Date();
+      const diffMs = now - lastFlipTime;
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      regimeDuration = `${diffHours}h`;
+
+      if (diffHours < 4) timingPhase = "Early Regime";
+      else if (diffHours < 24) timingPhase = "Established";
+      else timingPhase = "Extended";
+    }
+  }
+
+  // ===== Smarter Environment Score =====
+
+  const alignmentBonus =
+    regime.includes("Risk-On") && sentimentChange > 0
+      ? 10
+      : regime.includes("Risk-Off") && sentimentChange < 0
+      ? 10
+      : 0;
+
+  const stabilityBonus =
+    stability === "High" ? 15 :
+    stability === "Moderate" ? 8 :
+    -5;
+
   const environmentScore = Math.min(
     100,
     Math.max(
       0,
-      Math.abs(score) * 0.6 +
+      Math.abs(score) * 0.5 +
       Math.abs(sentimentChange) * 0.3 +
-      (stability === "High" ? 10 : 0)
+      alignmentBonus +
+      stabilityBonus
     )
   );
 
-  // === Decision Layer ===
+  // ===== Decision Layer =====
 
   let marketStance = "Neutral";
-  let preferredSetup = "Wait for clarity";
+  let preferredSetup = "Wait for clearer alignment";
   let avoidCondition = "High volatility reversals";
 
   if (regime.includes("Risk-On")) {
-    marketStance = "Bullish Bias";
+    marketStance = `${biasStrength} Bullish Bias`;
     preferredSetup = "Long pullbacks / breakout continuation";
-    avoidCondition = "Counter-trend shorts";
+    avoidCondition = timingPhase === "Extended"
+      ? "Late-cycle breakout entries"
+      : "Counter-trend shorts";
   }
 
   if (regime.includes("Risk-Off")) {
-    marketStance = "Bearish Bias";
+    marketStance = `${biasStrength} Bearish Bias`;
     preferredSetup = "Short rallies / breakdown continuation";
-    avoidCondition = "Aggressive long entries";
+    avoidCondition = timingPhase === "Extended"
+      ? "Late-cycle breakdown entries"
+      : "Aggressive long attempts";
   }
 
   const chartData = {
@@ -134,14 +188,15 @@ export default function Home() {
 
       <div className="max-w-6xl mx-auto">
 
+        {/* Hero */}
         <div className="mb-16">
           <h1 className="text-5xl font-semibold leading-tight">
             Trade the Regime. <br />
             Not the Noise.
           </h1>
           <p className="text-gray-400 mt-6 text-xl max-w-2xl">
-            ChainPulse identifies when bias and momentum align —
-            helping swing traders avoid false entries.
+            ChainPulse identifies bias alignment and regime maturity —
+            helping swing traders avoid premature entries.
           </p>
         </div>
 
@@ -151,6 +206,7 @@ export default function Home() {
           <div className="bg-zinc-900 p-12 border border-zinc-800">
 
             <div className="flex justify-between items-center">
+
               <div>
                 <div className="text-sm text-gray-400 uppercase tracking-wider">
                   Current Regime
@@ -159,12 +215,17 @@ export default function Home() {
                   {regime}
                 </div>
                 <div className="text-gray-400 mt-4">
-                  Stability: {stability}
+                  Duration: {regimeDuration}
+                </div>
+                <div className="text-gray-500 text-sm mt-2">
+                  Phase: {timingPhase}
                 </div>
               </div>
+
               <div className="text-5xl font-bold">
                 {score}
               </div>
+
             </div>
 
           </div>
@@ -208,7 +269,7 @@ export default function Home() {
                 {environmentScore.toFixed(0)}
               </div>
               <div className="text-gray-400 mt-4">
-                Higher score = cleaner swing conditions
+                Stability: {stability}
               </div>
             </div>
 
