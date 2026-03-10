@@ -6,8 +6,17 @@ export default function Home() {
 
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
+  const [email, setEmail] = useState("");
+  const [isPro, setIsPro] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   useEffect(() => {
+    const savedEmail = localStorage.getItem("email");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      checkSubscription(savedEmail);
+    }
+
     fetch("https://chainpulse-backend-80xy.onrender.com/latest")
       .then(res => res.json())
       .then(setData);
@@ -15,9 +24,18 @@ export default function Home() {
     fetch("https://chainpulse-backend-80xy.onrender.com/history")
       .then(res => res.json())
       .then(setHistory);
+
   }, []);
 
-  if (!data || history.length < 10) {
+  const checkSubscription = async (userEmail) => {
+    const res = await fetch(
+      `https://chainpulse-backend-80xy.onrender.com/check-subscription?email=${userEmail}`
+    );
+    const result = await res.json();
+    setIsPro(result.isPro);
+  };
+
+  if (!data || history.length < 20) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-gray-400">
         Building statistical model...
@@ -31,9 +49,29 @@ export default function Home() {
     return "Neutral";
   };
 
-  const currentRegime = determineRegime(data.score);
+  const score = data.score;
+  const regime = determineRegime(score);
 
-  // ===== Regime Persistence Modeling =====
+  // ===== Multi-Timeframe Alignment =====
+
+  const calcTF = (period) => {
+    if (history.length < period) return 0;
+    const subset = history.slice(0, period);
+    return subset.reduce((sum, h) => sum + h.score, 0) / subset.length;
+  };
+
+  const tfData = [
+    { label: "1H", value: calcTF(1) },
+    { label: "4H", value: calcTF(4) },
+    { label: "12H", value: calcTF(12) },
+    { label: "24H", value: calcTF(24) }
+  ];
+
+  const alignment =
+    tfData.every(tf => determineRegime(tf.value) === "Risk-On") ||
+    tfData.every(tf => determineRegime(tf.value) === "Risk-Off");
+
+  // ===== Persistence Modeling =====
 
   let riskOnDurations = [];
   let riskOffDurations = [];
@@ -42,58 +80,77 @@ export default function Home() {
   let currentType = null;
 
   for (let i = history.length - 1; i >= 0; i--) {
-    const regime = determineRegime(history[i].score);
-
-    if (regime === "Neutral") continue;
+    const r = determineRegime(history[i].score);
+    if (r === "Neutral") continue;
 
     if (!currentType) {
-      currentType = regime;
+      currentType = r;
       currentStart = new Date(history[i].timestamp + "Z");
     }
 
-    if (regime !== currentType) {
-      const endTime = new Date(history[i + 1].timestamp + "Z");
-      const duration =
-        (endTime - currentStart) / (1000 * 60 * 60);
+    if (r !== currentType) {
+      const end = new Date(history[i + 1].timestamp + "Z");
+      const dur = (end - currentStart) / (1000 * 60 * 60);
+      if (currentType === "Risk-On") riskOnDurations.push(dur);
+      else riskOffDurations.push(dur);
 
-      if (currentType === "Risk-On")
-        riskOnDurations.push(duration);
-      else
-        riskOffDurations.push(duration);
-
-      currentType = regime;
+      currentType = r;
       currentStart = new Date(history[i].timestamp + "Z");
     }
   }
 
   const avg = (arr) =>
     arr.length > 0
-      ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)
+      ? (arr.reduce((a, b) => a + b, 0) / arr.length)
       : 0;
-
-  const avgRiskOn = avg(riskOnDurations);
-  const avgRiskOff = avg(riskOffDurations);
-
-  const continuationThreshold = 6;
 
   const continuationRate = (arr) =>
     arr.length > 0
       ? Math.round(
-          (arr.filter(d => d > continuationThreshold).length /
-            arr.length) *
-            100
+          (arr.filter(d => d > 6).length / arr.length) * 100
         )
       : 0;
 
-  const riskOnContinuation = continuationRate(riskOnDurations);
-  const riskOffContinuation = continuationRate(riskOffDurations);
+  const earlyFailureRate = (arr) =>
+    arr.length > 0
+      ? Math.round(
+          (arr.filter(d => d < 4).length / arr.length) * 100
+        )
+      : 0;
+
+  const avgOn = avg(riskOnDurations);
+  const avgOff = avg(riskOffDurations);
+
+  const contOn = continuationRate(riskOnDurations);
+  const contOff = continuationRate(riskOffDurations);
+
+  const earlyFailOn = earlyFailureRate(riskOnDurations);
+  const earlyFailOff = earlyFailureRate(riskOffDurations);
 
   const activeContinuation =
-    currentRegime === "Risk-On"
-      ? riskOnContinuation
-      : currentRegime === "Risk-Off"
-      ? riskOffContinuation
-      : 0;
+    regime === "Risk-On" ? contOn :
+    regime === "Risk-Off" ? contOff :
+    0;
+
+  const activeEarlyFail =
+    regime === "Risk-On" ? earlyFailOn :
+    regime === "Risk-Off" ? earlyFailOff :
+    0;
+
+  // ===== Regime Quality Score =====
+
+  const regimeQuality =
+    (alignment ? 30 : 0) +
+    (Math.abs(score) > 40 ? 20 : 10) +
+    (activeContinuation / 2) -
+    (activeEarlyFail / 3);
+
+  const regimeColor =
+    regime === "Risk-On"
+      ? "bg-green-500"
+      : regime === "Risk-Off"
+      ? "bg-red-500"
+      : "bg-gray-500";
 
   return (
     <main className="min-h-screen bg-black text-white px-8 py-16">
@@ -102,64 +159,138 @@ export default function Home() {
 
         <div className="mb-16">
           <h1 className="text-5xl font-semibold leading-tight">
-            Regime Persistence Engine
+            Statistical Regime Edge Engine
           </h1>
-          <p className="text-gray-400 mt-6 text-xl max-w-2xl">
-            Understand how long aligned regimes typically persist.
+          <p className="text-gray-400 mt-6 text-xl">
+            Quantified persistence modeling for swing traders.
           </p>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl mb-16">
+        {/* Regime Overview */}
+        <div className="rounded-2xl overflow-hidden shadow-xl mb-16">
+          <div className={`h-1 ${regimeColor}`}></div>
+          <div className="bg-zinc-900 p-12 border border-zinc-800">
 
-          <div className="text-sm text-gray-400 uppercase">
-            Current Regime
+            <div className="flex justify-between">
+              <div>
+                <div className="text-sm text-gray-400 uppercase">
+                  Current Regime
+                </div>
+                <div className="text-4xl font-semibold mt-4">
+                  {regime}
+                </div>
+              </div>
+
+              <div className="text-5xl font-bold">
+                {score}
+              </div>
+            </div>
+
           </div>
-          <div className="text-4xl font-semibold mt-4">
-            {currentRegime}
+        </div>
+
+        {/* Alignment */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl mb-16 text-center">
+
+          <div className="text-gray-400 text-sm">
+            Multi-Timeframe Alignment
           </div>
 
-          <div className="mt-6 text-gray-400">
-            Historical continuation probability:{" "}
-            <span className="text-white font-semibold">
-              {activeContinuation}%
-            </span>
+          <div className={`text-3xl font-semibold mt-6 ${
+            alignment ? "text-green-400" : "text-gray-400"
+          }`}>
+            {alignment ? "Aligned" : "Mixed"}
           </div>
 
         </div>
 
-        <div className="grid grid-cols-2 gap-10">
+        {/* Persistence Modeling (Pro Locked) */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl">
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl text-center">
-            <div className="text-gray-400 text-sm">
-              Avg Risk-On Duration
-            </div>
-            <div className="text-4xl font-bold mt-4">
-              {avgRiskOn}h
-            </div>
-            <div className="text-gray-500 mt-4">
-              Continuation Rate: {riskOnContinuation}%
-            </div>
-          </div>
+          <h2 className="text-xl text-gray-400 mb-8">
+            Regime Persistence Metrics
+          </h2>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl text-center">
-            <div className="text-gray-400 text-sm">
-              Avg Risk-Off Duration
-            </div>
-            <div className="text-4xl font-bold mt-4">
-              {avgRiskOff}h
-            </div>
-            <div className="text-gray-500 mt-4">
-              Continuation Rate: {riskOffContinuation}%
-            </div>
-          </div>
+          {isPro ? (
+            <div className="grid grid-cols-2 gap-12 text-center">
 
-        </div>
+              <div>
+                <div className="text-gray-400 text-sm">
+                  Avg Risk-On Duration
+                </div>
+                <div className="text-4xl font-bold mt-4">
+                  {avgOn.toFixed(1)}h
+                </div>
+                <div className="text-gray-500 mt-4">
+                  Continuation: {contOn}%
+                </div>
+                <div className="text-gray-500">
+                  Early Fail: {earlyFailOn}%
+                </div>
+              </div>
 
-        <div className="text-gray-600 text-xs mt-20 text-center">
-          Model based on historical regime transitions. Not financial advice.
+              <div>
+                <div className="text-gray-400 text-sm">
+                  Avg Risk-Off Duration
+                </div>
+                <div className="text-4xl font-bold mt-4">
+                  {avgOff.toFixed(1)}h
+                </div>
+                <div className="text-gray-500 mt-4">
+                  Continuation: {contOff}%
+                </div>
+                <div className="text-gray-500">
+                  Early Fail: {earlyFailOff}%
+                </div>
+              </div>
+
+              <div className="col-span-2 mt-12">
+                <div className="text-gray-400 text-sm">
+                  Regime Quality Score
+                </div>
+                <div className="text-5xl font-bold mt-6">
+                  {Math.round(regimeQuality)}
+                </div>
+              </div>
+
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="text-gray-400 mb-6">
+                Unlock statistical persistence modeling.
+              </p>
+              <button
+                onClick={() => setShowUpgrade(true)}
+                className="bg-white text-black px-6 py-3 rounded-lg"
+              >
+                Unlock — \$19/month
+              </button>
+            </div>
+          )}
+
         </div>
 
       </div>
+
+      {/* Upgrade Modal */}
+      {showUpgrade && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center">
+          <div className="bg-zinc-900 p-12 rounded-2xl border border-zinc-800 max-w-lg text-center">
+            <h3 className="text-2xl font-semibold mb-6">
+              Professional Mode
+            </h3>
+            <p className="text-gray-400 mb-6">
+              Access regime persistence modeling and statistical edge.
+            </p>
+            <button
+              onClick={() => setShowUpgrade(false)}
+              className="bg-white text-black px-6 py-3 rounded-lg"
+            >
+              Upgrade
+            </button>
+          </div>
+        </div>
+      )}
 
     </main>
   );
