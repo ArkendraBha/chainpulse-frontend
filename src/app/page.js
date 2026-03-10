@@ -1,144 +1,133 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Tooltip
+} from "chart.js";
+import { Line } from "react-chartjs-2";
+
+ChartJS.register(
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Tooltip
+);
 
 export default function Home() {
 
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
-  const [email, setEmail] = useState("");
-  const [isPro, setIsPro] = useState(false);
-  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [coin, setCoin] = useState("BTC");
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem("email");
-    if (savedEmail) {
-      setEmail(savedEmail);
-      checkSubscription(savedEmail);
-    }
-
-    fetch("https://chainpulse-backend-80xy.onrender.com/latest")
+    fetch(`https://chainpulse-backend-80xy.onrender.com/latest?coin=${coin}`)
       .then(res => res.json())
       .then(setData);
 
-    fetch("https://chainpulse-backend-80xy.onrender.com/history")
+    fetch(`https://chainpulse-backend-80xy.onrender.com/history?coin=${coin}`)
       .then(res => res.json())
       .then(setHistory);
 
-  }, []);
+  }, [coin]);
 
-  const checkSubscription = async (userEmail) => {
-    const res = await fetch(
-      `https://chainpulse-backend-80xy.onrender.com/check-subscription?email=${userEmail}`
-    );
-    const result = await res.json();
-    setIsPro(result.isPro);
-  };
-
-  const handleUpgrade = async () => {
-    if (!email) {
-      alert("Enter email first.");
-      return;
-    }
-
-    const res = await fetch(
-      "https://chainpulse-backend-80xy.onrender.com/create-checkout-session",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
-      }
-    );
-
-    const checkout = await res.json();
-    window.location.href = checkout.url;
-  };
-
-  if (!data || history.length < 10) {
+  if (!data) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-gray-400">
-        Initializing Engine...
+        Initializing ChainPulse...
       </div>
     );
   }
 
   const determineRegime = (value) => {
-    if (value > 35) return "Risk-On";
-    if (value < -35) return "Risk-Off";
+    if (value > 35) return "Strong Risk-On";
+    if (value > 15) return "Risk-On";
+    if (value < -35) return "Strong Risk-Off";
+    if (value < -15) return "Risk-Off";
     return "Neutral";
   };
 
-  const score = data.score;
+  const score = data.score || 0;
   const regime = determineRegime(score);
 
-  // ===== Multi-Timeframe =====
+  // === Multi-Timeframe Bias ===
 
-  const calcTF = (period) => {
+  const calculateTimeframeBias = (period) => {
     if (history.length < period) return 0;
     const subset = history.slice(0, period);
     return subset.reduce((sum, h) => sum + h.score, 0) / subset.length;
   };
 
-  const tfData = [
-    { label: "1H", value: calcTF(1) },
-    { label: "4H", value: calcTF(4) },
-    { label: "12H", value: calcTF(12) },
-    { label: "24H", value: calcTF(24) }
+  const bias1H = calculateTimeframeBias(1);
+  const bias4H = calculateTimeframeBias(4);
+  const bias12H = calculateTimeframeBias(12);
+  const bias24H = calculateTimeframeBias(24);
+
+  const timeframeData = [
+    { label: "1H", value: bias1H },
+    { label: "4H", value: bias4H },
+    { label: "12H", value: bias12H },
+    { label: "24H", value: bias24H }
   ];
 
   const alignment =
-    tfData.every(tf => determineRegime(tf.value) === "Risk-On") ||
-    tfData.every(tf => determineRegime(tf.value) === "Risk-Off");
+    timeframeData.every(tf => determineRegime(tf.value).includes("Risk-On")) ||
+    timeframeData.every(tf => determineRegime(tf.value).includes("Risk-Off"));
 
-  // ===== Persistence Modeling (Pro Only) =====
+  // === Alignment Alert Logic ===
 
-  let riskOnDurations = [];
-  let riskOffDurations = [];
+  const alignmentAlert =
+    alignment && Math.abs(score) > 25;
 
-  let currentStart = null;
-  let currentType = null;
+  // === Alignment Accuracy (Simple Approximation) ===
 
-  for (let i = history.length - 1; i >= 0; i--) {
-    const r = determineRegime(history[i].score);
-    if (r === "Neutral") continue;
+  const alignedPeriods = history.filter((h, index) => {
+    if (index < 4) return false;
+    const slice = history.slice(index - 4, index);
+    const aligned =
+      slice.every(s => determineRegime(s.score).includes("Risk-On")) ||
+      slice.every(s => determineRegime(s.score).includes("Risk-Off"));
+    return aligned;
+  });
 
-    if (!currentType) {
-      currentType = r;
-      currentStart = new Date(history[i].timestamp + "Z");
-    }
-
-    if (r !== currentType) {
-      const end = new Date(history[i + 1].timestamp + "Z");
-      const dur = (end - currentStart) / (1000 * 60 * 60);
-      if (currentType === "Risk-On") riskOnDurations.push(dur);
-      else riskOffDurations.push(dur);
-
-      currentType = r;
-      currentStart = new Date(history[i].timestamp + "Z");
-    }
-  }
-
-  const avg = (arr) =>
-    arr.length > 0
-      ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)
+  const alignmentAccuracy =
+    history.length > 10
+      ? Math.round((alignedPeriods.length / history.length) * 100)
       : 0;
 
-  const continuationRate = (arr) =>
-    arr.length > 0
-      ? Math.round(
-          (arr.filter(d => d > 6).length / arr.length) * 100
-        )
-      : 0;
+  const chartData = {
+    labels: history.map(h =>
+      new Date(h.timestamp + "Z").toLocaleTimeString()
+    ).reverse(),
+    datasets: [
+      {
+        data: history.map(h => h.score).reverse(),
+        borderColor: "#22c55e",
+        tension: 0.4
+      }
+    ]
+  };
 
-  const avgOn = avg(riskOnDurations);
-  const avgOff = avg(riskOffDurations);
-  const contOn = continuationRate(riskOnDurations);
-  const contOff = continuationRate(riskOffDurations);
+  const chartOptions = {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { display: false },
+      y: {
+        grid: { color: "#27272a" },
+        ticks: { color: "#71717a" }
+      }
+    }
+  };
 
   const regimeColor =
-    regime === "Risk-On"
+    regime.includes("Risk-On")
       ? "bg-green-500"
-      : regime === "Risk-Off"
+      : regime.includes("Risk-Off")
       ? "bg-red-500"
       : "bg-gray-500";
 
@@ -147,147 +136,142 @@ export default function Home() {
 
       <div className="max-w-6xl mx-auto">
 
-        <div className="mb-16">
-          <h1 className="text-5xl font-semibold leading-tight">
-            Trade the Regime. Not the Noise.
-          </h1>
-          <p className="text-gray-400 mt-6 text-xl">
-            Institutional swing bias and persistence modeling.
-          </p>
+        {/* Hero */}
+        <div className="mb-16 flex justify-between items-center">
+
+          <div>
+            <h1 className="text-5xl font-semibold leading-tight">
+              Multi‑Asset Swing Bias Engine
+            </h1>
+            <p className="text-gray-400 mt-4 text-xl">
+              Detect alignment across coins and timeframes.
+            </p>
+          </div>
+
+          <div className="flex bg-zinc-800 rounded-lg p-1">
+            {["BTC", "ETH"].map(c => (
+              <button
+                key={c}
+                onClick={() => setCoin(c)}
+                className={`px-4 py-2 rounded-lg ${
+                  coin === c
+                    ? "bg-white text-black"
+                    : "text-gray-400"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+
         </div>
 
-        {/* Regime */}
+        {/* Regime Panel */}
         <div className="rounded-2xl overflow-hidden shadow-xl mb-16">
+
           <div className={`h-1 ${regimeColor}`}></div>
+
           <div className="bg-zinc-900 p-12 border border-zinc-800">
-            <div className="flex justify-between">
+
+            <div className="flex justify-between items-center">
+
               <div>
-                <div className="text-sm text-gray-400 uppercase">
-                  Current Regime
+                <div className="text-sm text-gray-400 uppercase tracking-wider">
+                  {coin} Regime
                 </div>
-                <div className="text-4xl font-semibold mt-4">
+                <div className="text-4xl font-semibold mt-3">
                   {regime}
                 </div>
               </div>
+
               <div className="text-5xl font-bold">
                 {score}
               </div>
+
             </div>
+
           </div>
+
         </div>
 
-        {/* Multi-Timeframe */}
+        {/* Multi-Timeframe Alignment */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl mb-16">
-          <h2 className="text-xl text-gray-400 mb-8">
-            Multi-Timeframe Alignment
+
+          <h2 className="text-xl text-gray-400 mb-10">
+            Timeframe Alignment
           </h2>
+
           <div className="grid grid-cols-4 gap-8 text-center">
-            {tfData.map((item, i) => {
-              const r = determineRegime(item.value);
+
+            {timeframeData.map((item, index) => {
+              const regime = determineRegime(item.value);
               const color =
-                r === "Risk-On"
+                regime.includes("Risk-On")
                   ? "text-green-400"
-                  : r === "Risk-Off"
+                  : regime.includes("Risk-Off")
                   ? "text-red-400"
                   : "text-gray-400";
 
               return (
-                <div key={i}>
+                <div key={index}>
                   <div className="text-gray-500 text-sm">
                     {item.label}
                   </div>
                   <div className={`text-xl font-semibold mt-3 ${color}`}>
-                    {r}
+                    {regime}
                   </div>
                 </div>
               );
             })}
+
           </div>
 
-          <div className="mt-8 text-center text-gray-400">
+          <div className="mt-10 text-center text-gray-400">
             Alignment Status:{" "}
-            <span className={alignment ? "text-green-400" : ""}>
+            <span className={`font-semibold ${
+              alignment ? "text-green-400" : "text-gray-400"
+            }`}>
               {alignment ? "Aligned" : "Mixed"}
             </span>
           </div>
-        </div>
 
-        {/* Persistence (Locked) */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl relative">
-
-          <h2 className="text-xl text-gray-400 mb-8">
-            Regime Persistence Modeling
-          </h2>
-
-          {isPro ? (
-            <div className="grid grid-cols-2 gap-10 text-center">
-              <div>
-                <div className="text-gray-400 text-sm">
-                  Avg Risk-On Duration
-                </div>
-                <div className="text-4xl font-bold mt-4">
-                  {avgOn}h
-                </div>
-                <div className="text-gray-500 mt-4">
-                  Continuation: {contOn}%
-                </div>
-              </div>
-
-              <div>
-                <div className="text-gray-400 text-sm">
-                  Avg Risk-Off Duration
-                </div>
-                <div className="text-4xl font-bold mt-4">
-                  {avgOff}h
-                </div>
-                <div className="text-gray-500 mt-4">
-                  Continuation: {contOff}%
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center">
-              <p className="text-gray-400 mb-6">
-                Persistence statistics are available in Professional Mode.
-              </p>
-              <button
-                onClick={() => setShowUpgrade(true)}
-                className="bg-white text-black px-6 py-3 rounded-lg"
-              >
-                Unlock — \$19/month
-              </button>
+          {alignmentAlert && (
+            <div className="mt-6 text-center text-yellow-400">
+              Alignment Alert: High‑quality swing environment detected.
             </div>
           )}
 
         </div>
 
-      </div>
+        {/* Alignment Accuracy */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl mb-16 text-center">
 
-      {/* Upgrade Modal */}
-      {showUpgrade && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center">
-          <div className="bg-zinc-900 p-12 rounded-2xl border border-zinc-800 max-w-lg text-center">
-            <h3 className="text-2xl font-semibold mb-6">
-              Professional Mode
-            </h3>
-            <p className="text-gray-400 mb-6">
-              Unlock historical regime persistence modeling.
-            </p>
-            <button
-              onClick={handleUpgrade}
-              className="bg-white text-black px-6 py-3 rounded-lg"
-            >
-              Upgrade
-            </button>
-            <div
-              onClick={() => setShowUpgrade(false)}
-              className="text-gray-500 mt-6 cursor-pointer"
-            >
-              Cancel
-            </div>
+          <div className="text-gray-400 text-sm">
+            Historical Alignment Accuracy
           </div>
+
+          <div className="text-5xl font-bold mt-6">
+            {alignmentAccuracy}%
+          </div>
+
         </div>
-      )}
+
+        {/* Trend Chart */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl">
+
+          <h2 className="text-xl text-gray-400 mb-8">
+            Bias Trend
+          </h2>
+
+          <Line data={chartData} options={chartOptions} />
+
+        </div>
+
+        <div className="text-gray-600 text-xs mt-20 text-center">
+          Built for disciplined swing traders. Not financial advice.
+        </div>
+
+      </div>
 
     </main>
   );
