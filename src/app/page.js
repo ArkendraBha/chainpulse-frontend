@@ -88,9 +88,33 @@ export default function Home() {
     score < -10 ? "text-red-400" :
     "text-gray-300";
 
+  const previousScore =
+    history.length > 1 ? history[1].score : score;
+
+  const sentimentChange = score - previousScore;
+
+  const momentumColor =
+    sentimentChange > 0 ? "text-green-400" :
+    sentimentChange < 0 ? "text-red-400" :
+    "text-gray-400";
+
+  let marketState = "Neutral";
+  if (score > 60) marketState = "Strong Bullish";
+  else if (score > 20) marketState = "Bullish";
+  else if (score < -60) marketState = "Strong Bearish";
+  else if (score < -20) marketState = "Bearish";
+
   const visibleHistory = isPro
     ? history
     : history.slice(0, 5);
+
+  const averageScore =
+    history.length > 0
+      ? (
+          history.reduce((sum, h) => sum + h.score, 0) /
+          history.length
+        ).toFixed(1)
+      : 0;
 
   const chartData = {
     labels: visibleHistory.map(h =>
@@ -166,15 +190,42 @@ export default function Home() {
             {score}
           </div>
 
-          <div className="text-xl text-gray-300 mb-6">
+          <div className={`text-lg ${momentumColor}`}>
+            {sentimentChange > 0 && "▲ "}
+            {sentimentChange < 0 && "▼ "}
+            {sentimentChange.toFixed(1)}
+          </div>
+
+          <div className="text-xl text-gray-300 mt-4">
             {data.label}
           </div>
 
-          <div className="text-sm text-gray-400 mb-8">
-            Confidence: <span className="text-gray-200">{confidence}%</span>
+          <div className="text-sm text-gray-500 mt-2">
+            Market State: {marketState}
           </div>
 
-          <div className="text-gray-300 leading-relaxed text-lg">
+          <div className="grid grid-cols-3 gap-6 mt-12 text-center">
+
+            <div>
+              <div className="text-gray-400 text-sm">24H Average</div>
+              <div className="text-xl font-semibold">{averageScore}</div>
+            </div>
+
+            <div>
+              <div className="text-gray-400 text-sm">Momentum</div>
+              <div className={`text-xl font-semibold ${momentumColor}`}>
+                {sentimentChange.toFixed(1)}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-gray-400 text-sm">Confidence</div>
+              <div className="text-xl font-semibold">{confidence}%</div>
+            </div>
+
+          </div>
+
+          <div className="text-gray-300 leading-relaxed text-lg mt-12">
             {data.summary}
           </div>
 
