@@ -1,39 +1,59 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 export default function Home() {
+
+  const API = process.env.NEXT_PUBLIC_API_URL;
 
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
   const [email, setEmail] = useState("");
   const [isPro, setIsPro] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [error, setError] = useState(null);
+
+  // =========================
+  // INITIAL LOAD
+  // =========================
 
   useEffect(() => {
+
     const savedEmail = localStorage.getItem("email");
     if (savedEmail) {
       setEmail(savedEmail);
       checkSubscription(savedEmail);
     }
 
-    fetch("https://chainpulse-backend-80xy.onrender.com/latest")
+    fetch(`${API}/latest`)
       .then(res => res.json())
-      .then(setData);
+      .then(setData)
+      .catch(() => setError("Failed to load latest data"));
 
-    fetch("https://chainpulse-backend-80xy.onrender.com/history")
+    fetch(`${API}/history`)
       .then(res => res.json())
-      .then(setHistory);
+      .then(setHistory)
+      .catch(() => setError("Failed to load history"));
 
   }, []);
 
   const checkSubscription = async (userEmail) => {
-    const res = await fetch(
-      `https://chainpulse-backend-80xy.onrender.com/check-subscription?email=${userEmail}`
-    );
-    const result = await res.json();
-    setIsPro(result.isPro);
+    try {
+      const res = await fetch(`${API}/check-subscription?email=${userEmail}`);
+      const result = await res.json();
+      setIsPro(result.isPro);
+    } catch {
+      setIsPro(false);
+    }
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-red-500">
+        {error}
+      </div>
+    );
+  }
 
   if (!data || history.length < 20) {
     return (
@@ -42,6 +62,10 @@ export default function Home() {
       </div>
     );
   }
+
+  // =========================
+  // REGIME LOGIC
+  // =========================
 
   const determineRegime = (value) => {
     if (value > 35) return "Risk-On";
@@ -52,92 +76,101 @@ export default function Home() {
   const score = data.score;
   const regime = determineRegime(score);
 
-  // ===== Multi-Timeframe Alignment =====
+  // =========================
+  // MULTI-TIMEFRAME
+  // =========================
 
-  const calcTF = (period) => {
-    if (history.length < period) return 0;
-    const subset = history.slice(0, period);
-    return subset.reduce((sum, h) => sum + h.score, 0) / subset.length;
-  };
+  const tfData = useMemo(() => {
 
-  const tfData = [
-    { label: "1H", value: calcTF(1) },
-    { label: "4H", value: calcTF(4) },
-    { label: "12H", value: calcTF(12) },
-    { label: "24H", value: calcTF(24) }
-  ];
+    const calcTF = (period) => {
+      if (history.length < period) return 0;
+      const subset = history.slice(0, period);
+      return subset.reduce((sum, h) => sum + h.score, 0) / subset.length;
+    };
+
+    return [
+      { label: "1H", value: calcTF(1) },
+      { label: "4H", value: calcTF(4) },
+      { label: "12H", value: calcTF(12) },
+      { label: "24H", value: calcTF(24) }
+    ];
+
+  }, [history]);
 
   const alignment =
     tfData.every(tf => determineRegime(tf.value) === "Risk-On") ||
     tfData.every(tf => determineRegime(tf.value) === "Risk-Off");
 
-  // ===== Persistence Modeling =====
+  // =========================
+  // PERSISTENCE MODELING (HEAVY LOGIC MEMOIZED)
+  // =========================
 
-  let riskOnDurations = [];
-  let riskOffDurations = [];
+  const persistence = useMemo(() => {
 
-  let currentStart = null;
-  let currentType = null;
+    let riskOnDurations = [];
+    let riskOffDurations = [];
 
-  for (let i = history.length - 1; i >= 0; i--) {
-    const r = determineRegime(history[i].score);
-    if (r === "Neutral") continue;
+    let currentStart = null;
+    let currentType = null;
 
-    if (!currentType) {
-      currentType = r;
-      currentStart = new Date(history[i].timestamp + "Z");
+    for (let i = history.length - 1; i >= 0; i--) {
+
+      const r = determineRegime(history[i].score);
+      if (r === "Neutral") continue;
+
+      if (!currentType) {
+        currentType = r;
+        currentStart = new Date(history[i].timestamp);
+      }
+
+      if (r !== currentType) {
+
+        const end = new Date(history[i + 1].timestamp);
+        const dur = (end - currentStart) / (1000 * 60 * 60);
+
+        if (currentType === "Risk-On") riskOnDurations.push(dur);
+        else riskOffDurations.push(dur);
+
+        currentType = r;
+        currentStart = new Date(history[i].timestamp);
+      }
     }
 
-    if (r !== currentType) {
-      const end = new Date(history[i + 1].timestamp + "Z");
-      const dur = (end - currentStart) / (1000 * 60 * 60);
-      if (currentType === "Risk-On") riskOnDurations.push(dur);
-      else riskOffDurations.push(dur);
+    const avg = (arr) =>
+      arr.length > 0
+        ? (arr.reduce((a, b) => a + b, 0) / arr.length)
+        : 0;
 
-      currentType = r;
-      currentStart = new Date(history[i].timestamp + "Z");
-    }
-  }
+    const continuationRate = (arr) =>
+      arr.length > 0
+        ? Math.round((arr.filter(d => d > 6).length / arr.length) * 100)
+        : 0;
 
-  const avg = (arr) =>
-    arr.length > 0
-      ? (arr.reduce((a, b) => a + b, 0) / arr.length)
-      : 0;
+    const earlyFailureRate = (arr) =>
+      arr.length > 0
+        ? Math.round((arr.filter(d => d < 4).length / arr.length) * 100)
+        : 0;
 
-  const continuationRate = (arr) =>
-    arr.length > 0
-      ? Math.round(
-          (arr.filter(d => d > 6).length / arr.length) * 100
-        )
-      : 0;
+    return {
+      avgOn: avg(riskOnDurations),
+      avgOff: avg(riskOffDurations),
+      contOn: continuationRate(riskOnDurations),
+      contOff: continuationRate(riskOffDurations),
+      earlyFailOn: earlyFailureRate(riskOnDurations),
+      earlyFailOff: earlyFailureRate(riskOffDurations),
+    };
 
-  const earlyFailureRate = (arr) =>
-    arr.length > 0
-      ? Math.round(
-          (arr.filter(d => d < 4).length / arr.length) * 100
-        )
-      : 0;
-
-  const avgOn = avg(riskOnDurations);
-  const avgOff = avg(riskOffDurations);
-
-  const contOn = continuationRate(riskOnDurations);
-  const contOff = continuationRate(riskOffDurations);
-
-  const earlyFailOn = earlyFailureRate(riskOnDurations);
-  const earlyFailOff = earlyFailureRate(riskOffDurations);
+  }, [history]);
 
   const activeContinuation =
-    regime === "Risk-On" ? contOn :
-    regime === "Risk-Off" ? contOff :
+    regime === "Risk-On" ? persistence.contOn :
+    regime === "Risk-Off" ? persistence.contOff :
     0;
 
   const activeEarlyFail =
-    regime === "Risk-On" ? earlyFailOn :
-    regime === "Risk-Off" ? earlyFailOff :
+    regime === "Risk-On" ? persistence.earlyFailOn :
+    regime === "Risk-Off" ? persistence.earlyFailOff :
     0;
-
-  // ===== Regime Quality Score =====
 
   const regimeQuality =
     (alignment ? 30 : 0) +
@@ -151,6 +184,10 @@ export default function Home() {
       : regime === "Risk-Off"
       ? "bg-red-500"
       : "bg-gray-500";
+
+  // =========================
+  // UI
+  // =========================
 
   return (
     <main className="min-h-screen bg-black text-white px-8 py-16">
@@ -204,7 +241,7 @@ export default function Home() {
 
         </div>
 
-        {/* Persistence Modeling (Pro Locked) */}
+        {/* Persistence (Pro Locked) */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl">
 
           <h2 className="text-xl text-gray-400 mb-8">
@@ -219,13 +256,13 @@ export default function Home() {
                   Avg Risk-On Duration
                 </div>
                 <div className="text-4xl font-bold mt-4">
-                  {avgOn.toFixed(1)}h
+                  {persistence.avgOn.toFixed(1)}h
                 </div>
                 <div className="text-gray-500 mt-4">
-                  Continuation: {contOn}%
+                  Continuation: {persistence.contOn}%
                 </div>
                 <div className="text-gray-500">
-                  Early Fail: {earlyFailOn}%
+                  Early Fail: {persistence.earlyFailOn}%
                 </div>
               </div>
 
@@ -234,13 +271,13 @@ export default function Home() {
                   Avg Risk-Off Duration
                 </div>
                 <div className="text-4xl font-bold mt-4">
-                  {avgOff.toFixed(1)}h
+                  {persistence.avgOff.toFixed(1)}h
                 </div>
                 <div className="text-gray-500 mt-4">
-                  Continuation: {contOff}%
+                  Continuation: {persistence.contOff}%
                 </div>
                 <div className="text-gray-500">
-                  Early Fail: {earlyFailOff}%
+                  Early Fail: {persistence.earlyFailOff}%
                 </div>
               </div>
 
