@@ -119,11 +119,15 @@ export default function Home() {
     (sentimentChange * 0.3) +
     (parseFloat(averageScore) * 0.2);
 
-  let regime = "Neutral";
-  if (biasScore > 40) regime = "Strong Risk-On";
-  else if (biasScore > 10) regime = "Risk-On";
-  else if (biasScore < -40) regime = "Strong Risk-Off";
-  else if (biasScore < -10) regime = "Risk-Off";
+  const determineRegime = (value) => {
+    if (value > 40) return "Strong Risk-On";
+    if (value > 10) return "Risk-On";
+    if (value < -40) return "Strong Risk-Off";
+    if (value < -10) return "Risk-Off";
+    return "Neutral";
+  };
+
+  const regime = determineRegime(biasScore);
 
   let signalStrength = "Weak";
   if (Math.abs(biasScore) > 40 && confidence > 60) {
@@ -135,6 +139,43 @@ export default function Home() {
   const swingTrigger =
     (biasScore > 25 && sentimentChange > 0) ||
     (biasScore < -25 && sentimentChange < 0);
+
+  // ===== Regime Timeline =====
+
+  let lastFlipTime = null;
+  let regimeDuration = "—";
+
+  if (history.length > 1) {
+    for (let i = 1; i < history.length; i++) {
+      const historicalBias = history[i].score;
+      const pastRegime = determineRegime(historicalBias);
+      if (pastRegime !== regime) {
+        lastFlipTime = new Date(history[i].timestamp + "Z");
+        break;
+      }
+    }
+
+    if (lastFlipTime) {
+      const now = new Date();
+      const diffMs = now - lastFlipTime;
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      regimeDuration = `${diffHours}h`;
+    }
+  }
+
+  let acceleration = "Stable";
+  if (sentimentChange > 5) acceleration = "Increasing";
+  if (sentimentChange < -5) acceleration = "Decreasing";
+
+  const recentScores = history.slice(0, 5).map(h => h.score);
+  const volatility =
+    recentScores.length > 0
+      ? Math.max(...recentScores) - Math.min(...recentScores)
+      : 0;
+
+  let stability = "High";
+  if (volatility > 30) stability = "Low";
+  else if (volatility > 15) stability = "Moderate";
 
   const visibleHistory = isPro
     ? history
@@ -169,7 +210,7 @@ export default function Home() {
 
       <div className="max-w-6xl mx-auto">
 
-        {/* Email Input */}
+        {/* Email */}
         <div className="mb-8 flex gap-4">
           <input
             type="email"
@@ -188,9 +229,8 @@ export default function Home() {
           )}
         </div>
 
-        {/* Header */}
-        <div className="mb-20">
-          <h1 className="text-5xl font-semibold tracking-tight">
+        <div className="mb-16">
+          <h1 className="text-5xl font-semibold">
             ChainPulse
           </h1>
           <p className="text-gray-500 mt-3 text-lg">
@@ -198,11 +238,11 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Sentiment Panel */}
+        {/* Bias Overview */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 mb-16 shadow-xl">
 
           <div className="flex justify-between mb-8">
-            <h2 className="text-xl text-gray-400 tracking-wide">
+            <h2 className="text-xl text-gray-400">
               Current Market Bias
             </h2>
             <span className="text-sm text-gray-500">
@@ -220,10 +260,6 @@ export default function Home() {
             {sentimentChange > 0 && "▲ "}
             {sentimentChange < 0 && "▼ "}
             {sentimentChange.toFixed(1)}
-          </div>
-
-          <div className="text-sm text-gray-500 mt-4">
-            Market State: {marketState}
           </div>
 
           <div className="grid grid-cols-3 gap-6 mt-10 text-center">
@@ -245,48 +281,61 @@ export default function Home() {
 
         </div>
 
-        {/* Bias Engine Panel */}
+        {/* Bias Engine */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 mb-16 shadow-xl">
 
-          <h2 className="text-xl text-gray-400 tracking-wide mb-8">
+          <h2 className="text-xl text-gray-400 mb-8">
             ChainPulse Bias Engine™
           </h2>
 
           <div className="grid grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-gray-400 text-sm">Bias Score</div>
-              <div className="text-3xl font-semibold mt-2">
-                {biasScore.toFixed(1)}
-              </div>
+              <div className="text-3xl font-semibold">{biasScore.toFixed(1)}</div>
             </div>
             <div>
               <div className="text-gray-400 text-sm">Regime</div>
-              <div className="text-2xl font-semibold mt-2">
-                {regime}
-              </div>
+              <div className="text-2xl font-semibold">{regime}</div>
             </div>
             <div>
               <div className="text-gray-400 text-sm">Signal Strength</div>
-              <div className="text-2xl font-semibold mt-2">
-                {signalStrength}
-              </div>
+              <div className="text-2xl font-semibold">{signalStrength}</div>
             </div>
             <div>
               <div className="text-gray-400 text-sm">Swing Setup</div>
-              <div className={`text-2xl font-semibold mt-2 ${
-                swingTrigger ? "text-green-400" : "text-gray-400"
-              }`}>
+              <div className={`text-2xl font-semibold ${swingTrigger ? "text-green-400" : "text-gray-400"}`}>
                 {swingTrigger ? "Active" : "Inactive"}
               </div>
             </div>
           </div>
 
+          <div className="mt-10 border-t border-zinc-800 pt-8 grid grid-cols-4 gap-8 text-center">
+            <div>
+              <div className="text-gray-400 text-sm">Regime Duration</div>
+              <div className="text-lg font-semibold">{regimeDuration}</div>
+            </div>
+            <div>
+              <div className="text-gray-400 text-sm">Last Flip</div>
+              <div className="text-lg font-semibold">
+                {lastFlipTime ? lastFlipTime.toLocaleString() : "—"}
+              </div>
+            </div>
+            <div>
+              <div className="text-gray-400 text-sm">Acceleration</div>
+              <div className="text-lg font-semibold">{acceleration}</div>
+            </div>
+            <div>
+              <div className="text-gray-400 text-sm">Regime Stability</div>
+              <div className="text-lg font-semibold">{stability}</div>
+            </div>
+          </div>
+
         </div>
 
-        {/* Trend Chart */}
+        {/* Trend */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl relative">
 
-          <h2 className="text-xl text-gray-400 tracking-wide mb-8">
+          <h2 className="text-xl text-gray-400 mb-8">
             Sentiment Trend (Last 30 Updates)
           </h2>
 
@@ -294,22 +343,15 @@ export default function Home() {
 
           {!isPro && (
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl">
-
               <h3 className="text-2xl font-semibold mb-4">
                 Unlock Full Trend Analysis
               </h3>
-
-              <p className="text-gray-400 mb-6 text-center max-w-md">
-                Access full bias history and regime detection.
-              </p>
-
               <button
                 onClick={handleUpgrade}
-                className="bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition"
+                className="bg-white text-black px-6 py-3 rounded-lg"
               >
                 Upgrade to Pro
               </button>
-
             </div>
           )}
 
