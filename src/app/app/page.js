@@ -43,6 +43,7 @@ export default function Dashboard() {
   }
 
   const exposure = stats.exposure_recommendation_percent || 0;
+const isLocked = stats?.pro_required ?? false;
 const confidenceTier =
   exposure > 60
     ? "Aggressive"
