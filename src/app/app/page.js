@@ -43,6 +43,12 @@ export default function Dashboard() {
   }
 
   const exposure = stats.exposure_recommendation_percent || 0;
+const confidenceTier =
+  exposure > 60
+    ? "Aggressive"
+    : exposure > 30
+    ? "Balanced"
+    : "Defensive";
   const regimeAge = stats.current_regime_age_hours || 0;
 
   return (
