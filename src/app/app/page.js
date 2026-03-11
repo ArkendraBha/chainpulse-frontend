@@ -1,5 +1,14 @@
 "use client";
 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
+
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -259,7 +268,39 @@ export default function Home() {
 
           </div>
         </section>
+{/* SURVIVAL CURVE VISUALIZATION */}
+<div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl mt-16">
+  <h2 className="text-xl text-gray-400 mb-6">
+    Regime Survival Curve (Historical Model)
+  </h2>
 
+  <ResponsiveContainer width="100%" height={300}>
+    <LineChart
+      data={[
+        { hour: 0, prob: 100 },
+        { hour: 4, prob: 88 },
+        { hour: 8, prob: 72 },
+        { hour: 12, prob: 55 },
+        { hour: 16, prob: 38 },
+        { hour: 20, prob: 22 },
+      ]}
+    >
+      <XAxis dataKey="hour" stroke="#71717a" />
+      <YAxis stroke="#71717a" />
+      <Tooltip />
+      <Line
+        type="monotone"
+        dataKey="prob"
+        stroke="#22c55e"
+        strokeWidth={2}
+      />
+    </LineChart>
+  </ResponsiveContainer>
+
+  <div className="text-gray-500 text-sm mt-4">
+    Displays historical regime continuation probability over time.
+  </div>
+</div>
         {/* ALERTS */}
         <div className="mt-16 text-center space-y-4">
           <input
