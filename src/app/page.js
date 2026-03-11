@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const BACKEND = "https://chainpulse-backend-xxxx.onrender.com"; // ✅ REPLACE WITH YOUR REAL BACKEND
+  const BACKEND = "https://chainpulse-backend-2xok.onrender.com"; // ✅ REPLACE WITH YOUR REAL BACKEND
 
   const [latest, setLatest] = useState(null);
   const [stats, setStats] = useState(null);
