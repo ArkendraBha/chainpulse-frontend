@@ -81,6 +81,19 @@ export default function Dashboard() {
           <div className="text-gray-500 mt-6">
             Regime Active: {regimeAge.toFixed(1)} hours
           </div>
+<div className="text-gray-400 text-sm mt-4">
+  You are currently operating in a{" "}
+  <span className="text-white font-semibold">
+    {confidenceTier}
+  </span>{" "}
+  regime.
+</div>
+
+{isLocked && (
+  <div className="text-gray-500 text-sm mt-2">
+    Pro users receive real-time deterioration alerts.
+  </div>
+)}
         </div>
 
         <div className="border border-zinc-900 p-16">

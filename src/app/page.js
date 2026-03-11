@@ -15,7 +15,28 @@ export default function Landing() {
             Statistical survival modeling for traders managing real capital.
             Press size when persistence is strong. Stand down before deterioration.
           </p>
+{/* LIVE REGIME SNAPSHOT */}
+<div className="mt-16 border border-zinc-900 p-10 max-w-3xl mx-auto text-center">
+  <div className="text-sm text-gray-500 uppercase">
+    Live Regime Snapshot
+  </div>
 
+  <div className="text-2xl font-semibold mt-4">
+    BTC Regime: <span className="text-green-400">Risk-On</span>
+  </div>
+
+  <div className="text-gray-400 mt-3">
+    Exposure: 64%
+  </div>
+
+  <div className="text-gray-400">
+    Shift Risk: 18%
+  </div>
+
+  <div className="text-gray-500 text-sm mt-6">
+    This environment is statistically persistent.
+  </div>
+</div>
           <div className="flex justify-center gap-6 pt-6">
             <Link
               href="/app"
