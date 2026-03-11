@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const BACKEND = "https://chainpulse-backend-xxxx.onrender.com"; // ✅ REPLACE WITH YOUR REAL BACKEND
+  const BACKEND = "https://chainpulse-backend-2xok.onrender.com"; 
 
   const [latest, setLatest] = useState(null);
   const [stats, setStats] = useState(null);
   const [coin, setCoin] = useState("BTC");
   const [email, setEmail] = useState("");
   const [alertsEnabled, setAlertsEnabled] = useState(false);
+  const [annual, setAnnual] = useState(false);
 
   // ✅ FETCH DATA
   useEffect(() => {
@@ -21,13 +22,6 @@ export default function Home() {
       .then(res => res.json())
       .then(setStats);
   }, [coin, email]);
-
-  // ✅ SUCCESS FEEDBACK
-  useEffect(() => {
-    if (window.location.search.includes("success=true")) {
-      alert("Subscription activated successfully.");
-    }
-  }, []);
 
   // ✅ STRIPE CHECKOUT
   const handleCheckout = async () => {
@@ -80,6 +74,9 @@ export default function Home() {
       : "High persistence environment. Favorable for size deployment.";
 
   const blurredClass = isLocked ? "blur-md opacity-40 select-none" : "";
+
+  const proPrice = annual ? "\$290 / year" : "\$29 / month";
+  const proPlusPrice = annual ? "\$490 / year" : "\$49 / month";
 
   return (
     <main className="min-h-screen bg-black text-white px-8 py-16">
@@ -139,14 +136,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* RISK FRAMING */}
-        <div className="text-gray-400 mb-8 text-sm">
-          Most traders increase size late in trends and reduce size early.
-          ChainPulse prevents that mistake using regime survival modeling.
-        </div>
-
         {/* PRO SECTION */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl relative">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl mb-20">
           <h2 className="text-xl text-gray-400 mb-8">
             Institutional Regime Analytics
           </h2>
@@ -187,7 +178,7 @@ export default function Home() {
                 onClick={handleCheckout}
                 className="bg-white text-black px-8 py-3 rounded-xl font-semibold text-lg"
               >
-                Unlock Full Regime Intelligence — \$29/month
+                Start Trading With Regime Edge — \$29/month
               </button>
 
               <div className="mt-6 text-gray-400 text-sm space-y-2">
@@ -197,19 +188,95 @@ export default function Home() {
                 <div>✔ Strength Percentile Context</div>
                 <div>✔ Institutional Persistence Analytics</div>
               </div>
-
-              <div className="text-gray-600 text-xs mt-4">
-                Cancel anytime. Designed for disciplined swing traders.
-              </div>
             </div>
           )}
         </div>
 
+        {/* PRICING SECTION */}
+        <section className="mt-10 text-white">
+          <div className="text-center mb-10">
+            <h2 className="text-4xl font-semibold">Pricing</h2>
+            <p className="text-gray-400 mt-3">
+              Less than one bad trade per month.
+            </p>
+
+            <div className="mt-6 flex justify-center items-center gap-4">
+              <span className={!annual ? "font-semibold" : "text-gray-400"}>
+                Monthly
+              </span>
+              <button
+                onClick={() => setAnnual(!annual)}
+                className="bg-zinc-800 w-14 h-7 rounded-full relative"
+              >
+                <div
+                  className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${
+                    annual ? "left-8" : "left-1"
+                  }`}
+                />
+              </button>
+              <span className={annual ? "font-semibold" : "text-gray-400"}>
+                Annual
+              </span>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+
+            {/* FREE */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
+              <h3 className="text-xl font-semibold">Free</h3>
+              <div className="text-4xl font-bold mt-6">\$0</div>
+              <ul className="mt-6 space-y-2 text-gray-400 text-sm">
+                <li>✔ Current Regime</li>
+                <li>✔ Exposure %</li>
+                <li>✔ Basic Coherence</li>
+              </ul>
+            </div>
+
+            {/* PRO */}
+            <div className="bg-zinc-900 border-2 border-white rounded-2xl p-8 relative shadow-2xl">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-white text-black px-4 py-1 text-sm rounded-full font-semibold">
+                ⭐ Most Popular
+              </div>
+
+              <h3 className="text-xl font-semibold">Pro</h3>
+              <div className="text-4xl font-bold mt-6">{proPrice}</div>
+
+              <ul className="mt-6 space-y-2 text-gray-400 text-sm">
+                <li>✔ Survival Modeling</li>
+                <li>✔ Hazard Detection</li>
+                <li>✔ Shift Alerts</li>
+                <li>✔ Exposure Engine</li>
+              </ul>
+
+              <button
+                onClick={handleCheckout}
+                className="mt-8 w-full bg-white text-black py-3 rounded-xl font-semibold"
+              >
+                Upgrade to Pro
+              </button>
+            </div>
+
+            {/* PROFESSIONAL */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
+              <h3 className="text-xl font-semibold">Professional</h3>
+              <div className="text-4xl font-bold mt-6">{proPlusPrice}</div>
+
+              <ul className="mt-6 space-y-2 text-gray-400 text-sm">
+                <li>✔ Conditional Continuation</li>
+                <li>✔ Transition Matrix</li>
+                <li>✔ Historical Export</li>
+              </ul>
+            </div>
+
+          </div>
+        </section>
+
         {/* EMAIL + ALERTS */}
-        <div className="mt-14 text-center space-y-4">
+        <div className="mt-16 text-center space-y-4">
           <input
             type="email"
-            placeholder="Enter email for Pro access"
+            placeholder="Enter email for alerts"
             className="px-4 py-2 rounded bg-zinc-800 text-white border border-zinc-700"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
