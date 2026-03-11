@@ -1,29 +1,30 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
   XAxis,
   YAxis,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend
 } from "recharts";
 
-import { useEffect, useState } from "react";
-
-export default function Home() {
-  const BACKEND = "https://chainpulse-backend-2xok.onrender.com"; // ✅ replace if needed
+export default function Dashboard() {
+  const BACKEND = "https://chainpulse-backend-2xok.onrender.com"; // ✅ Replace if needed
 
   const [latest, setLatest] = useState(null);
   const [stats, setStats] = useState(null);
+  const [curveData, setCurveData] = useState([]);
   const [coin, setCoin] = useState("BTC");
   const [email, setEmail] = useState("");
   const [alertsEnabled, setAlertsEnabled] = useState(false);
-  const [annual, setAnnual] = useState(false);
 
-  // ----------------------------
-  // DATA FETCH
-  // ----------------------------
+  // ----------------------------------
+  // FETCH DATA
+  // ----------------------------------
 
   useEffect(() => {
     fetch(`${BACKEND}/latest?coin=${coin}`)
@@ -33,28 +34,31 @@ export default function Home() {
     fetch(`${BACKEND}/statistics?coin=${coin}&email=${email}`)
       .then(res => res.json())
       .then(setStats);
+
+    fetch(`${BACKEND}/survival-curve?coin=${coin}`)
+      .then(res => res.json())
+      .then(data => setCurveData(data.data || []));
   }, [coin, email]);
 
-  // ----------------------------
-  // STRIPE CHECKOUT HANDLER
-  // ----------------------------
+  // ----------------------------------
+  // STRIPE CHECKOUT
+  // ----------------------------------
 
   const handleCheckout = async () => {
     try {
       const res = await fetch(`${BACKEND}/create-checkout-session`, {
         method: "POST",
       });
-
       const data = await res.json();
       window.location.href = data.url;
-    } catch (err) {
+    } catch {
       alert("Checkout failed. Try again.");
     }
   };
 
-  // ----------------------------
+  // ----------------------------------
   // ENABLE ALERTS
-  // ----------------------------
+  // ----------------------------------
 
   const enableAlerts = async () => {
     if (!email) {
@@ -91,24 +95,18 @@ export default function Home() {
 
   const blurredClass = isLocked ? "blur-md opacity-40 select-none" : "";
 
-  const proPrice = annual ? "\$290 / year" : "\$29 / month";
-  const proPlusPrice = annual ? "\$490 / year" : "\$49 / month";
-
   return (
     <main className="min-h-screen bg-black text-white px-8 py-16">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto space-y-16">
 
-        {/* HERO */}
-        <div className="mb-14 flex justify-between items-center">
+        {/* HEADER */}
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-5xl font-semibold">
-              ChainPulse Quant
+            <h1 className="text-4xl font-semibold">
+              ChainPulse Quant Dashboard
             </h1>
-            <p className="text-gray-400 mt-3">
-              Probabilistic regime modeling for exposure optimization.
-            </p>
-            <p className="text-gray-600 text-sm mt-2">
-              Live market data • Survival modeling • Hazard detection
+            <p className="text-gray-400 mt-2">
+              Probabilistic regime persistence modeling.
             </p>
           </div>
 
@@ -129,15 +127,15 @@ export default function Home() {
           </div>
         </div>
 
-        {/* EXPOSURE */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 mb-12 shadow-xl">
+        {/* EXPOSURE PANEL */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl">
           <div className="text-sm text-gray-400 uppercase">
             Exposure Allocation Recommendation
           </div>
           <div className="text-6xl font-bold mt-4">
             {exposure}%
           </div>
-          <div className="text-gray-400 mt-2">
+          <div className="text-gray-400 mt-3">
             Regime Confidence Tier:{" "}
             <span className="text-white font-semibold">
               {confidenceTier}
@@ -145,16 +143,16 @@ export default function Home() {
           </div>
         </div>
 
-        {/* SHIFT RISK */}
+        {/* SHIFT RISK ALERT */}
         {shiftRisk > 70 && (
-          <div className="bg-red-900 border border-red-700 text-red-300 p-6 rounded-xl mb-12">
+          <div className="bg-red-900 border border-red-700 text-red-300 p-6 rounded-xl">
             Elevated Regime Hazard Detected.
             Survival probability deteriorating.
           </div>
         )}
 
-        {/* ADVANCED QUANT SECTION */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl mb-20">
+        {/* ADVANCED QUANT ANALYTICS */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl">
           <h2 className="text-xl text-gray-400 mb-8">
             Quantitative Regime Persistence Model
           </h2>
@@ -162,7 +160,7 @@ export default function Home() {
           <div className={`grid grid-cols-2 gap-10 ${blurredClass}`}>
             <div>
               <div className="text-gray-400 text-sm">
-                Regime Survival Curve (Conditional)
+                Survival Probability
               </div>
               <div className="text-4xl font-semibold mt-2">
                 {stats.survival_probability_percent || 74}%
@@ -171,7 +169,7 @@ export default function Home() {
 
             <div>
               <div className="text-gray-400 text-sm">
-                Hazard Function (Failure Risk)
+                Hazard Function
               </div>
               <div className="text-4xl font-semibold mt-2">
                 {stats.hazard_percent || 21}%
@@ -180,7 +178,7 @@ export default function Home() {
 
             <div>
               <div className="text-gray-400 text-sm">
-                Historical Strength Percentile
+                Strength Percentile
               </div>
               <div className="text-4xl font-semibold mt-2">
                 {stats.percentile_rank_percent || 82}%
@@ -205,104 +203,52 @@ export default function Home() {
               >
                 Activate Quant Pro — \$29/month
               </button>
-
-              <div className="mt-6 text-gray-400 text-sm space-y-2">
-                <div>✔ Conditional Continuation Modeling</div>
-                <div>✔ Hazard Rate Detection</div>
-                <div>✔ Regime Shift Alerts</div>
-                <div>✔ Percentile Context Analysis</div>
-                <div>✔ Exposure Optimization Engine</div>
-              </div>
             </div>
           )}
         </div>
 
-        {/* PRICING */}
-        <section className="mt-10">
-          <div className="text-center mb-10">
-            <h2 className="text-4xl font-semibold">Pricing</h2>
+        {/* SURVIVAL + HAZARD CURVE */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl">
+          <h2 className="text-xl text-gray-400 mb-6">
+            Regime Survival & Hazard Curve
+          </h2>
 
-            <div className="mt-6 flex justify-center items-center gap-4">
-              <span className={!annual ? "font-semibold" : "text-gray-400"}>
-                Monthly
-              </span>
-              <button
-                onClick={() => setAnnual(!annual)}
-                className="bg-zinc-800 w-14 h-7 rounded-full relative"
-              >
-                <div
-                  className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${
-                    annual ? "left-8" : "left-1"
-                  }`}
-                />
-              </button>
-              <span className={annual ? "font-semibold" : "text-gray-400"}>
-                Annual
-              </span>
-            </div>
+          <ResponsiveContainer width="100%" height={350}>
+            <LineChart data={curveData}>
+              <CartesianGrid stroke="#27272a" />
+              <XAxis dataKey="hour" stroke="#71717a" />
+              <YAxis stroke="#71717a" />
+              <Tooltip />
+              <Legend />
+
+              <Line
+                type="monotone"
+                dataKey="survival"
+                stroke="#22c55e"
+                strokeWidth={3}
+                dot={false}
+                name="Survival Probability (%)"
+              />
+
+              <Line
+                type="monotone"
+                dataKey="hazard"
+                stroke="#ef4444"
+                strokeWidth={2}
+                dot={false}
+                name="Hazard Rate (%)"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+
+          <div className="text-gray-500 text-sm mt-4">
+            Survival curve models probability regime persists over time.
+            Hazard curve models deterioration risk per time interval.
           </div>
+        </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
-              <h3 className="text-xl font-semibold">Free</h3>
-              <div className="text-4xl font-bold mt-6">\$0</div>
-            </div>
-
-            <div className="bg-zinc-900 border-2 border-white rounded-2xl p-8 shadow-2xl">
-              <h3 className="text-xl font-semibold">Pro</h3>
-              <div className="text-4xl font-bold mt-6">{proPrice}</div>
-
-              <button
-                onClick={handleCheckout}
-                className="mt-8 w-full bg-white text-black py-3 rounded-xl font-semibold"
-              >
-                Upgrade to Pro
-              </button>
-            </div>
-
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
-              <h3 className="text-xl font-semibold">Professional</h3>
-              <div className="text-4xl font-bold mt-6">{proPlusPrice}</div>
-            </div>
-
-          </div>
-        </section>
-{/* SURVIVAL CURVE VISUALIZATION */}
-<div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl mt-16">
-  <h2 className="text-xl text-gray-400 mb-6">
-    Regime Survival Curve (Historical Model)
-  </h2>
-
-  <ResponsiveContainer width="100%" height={300}>
-    <LineChart
-      data={[
-        { hour: 0, prob: 100 },
-        { hour: 4, prob: 88 },
-        { hour: 8, prob: 72 },
-        { hour: 12, prob: 55 },
-        { hour: 16, prob: 38 },
-        { hour: 20, prob: 22 },
-      ]}
-    >
-      <XAxis dataKey="hour" stroke="#71717a" />
-      <YAxis stroke="#71717a" />
-      <Tooltip />
-      <Line
-        type="monotone"
-        dataKey="prob"
-        stroke="#22c55e"
-        strokeWidth={2}
-      />
-    </LineChart>
-  </ResponsiveContainer>
-
-  <div className="text-gray-500 text-sm mt-4">
-    Displays historical regime continuation probability over time.
-  </div>
-</div>
         {/* ALERTS */}
-        <div className="mt-16 text-center space-y-4">
+        <div className="text-center space-y-4">
           <input
             type="email"
             placeholder="Enter email for regime alerts"
@@ -320,6 +266,7 @@ export default function Home() {
             </button>
           </div>
         </div>
+
       </div>
     </main>
   );
