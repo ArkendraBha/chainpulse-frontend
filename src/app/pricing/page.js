@@ -14,7 +14,7 @@ export default function Pricing() {
         <div className="border border-white p-16 space-y-8">
 
           <div className="text-5xl font-semibold">
-            \$29<span className="text-lg text-gray-400"> / month</span>
+            $29<span className="text-lg text-gray-400"> / month</span>
           </div>
 <div className="text-gray-500 text-sm mt-2">
   Early Access Pricing — Subject to Increase
