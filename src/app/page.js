@@ -1,150 +1,57 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Chart as ChartJS,
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Tooltip
-} from "chart.js";
-import { Line } from "react-chartjs-2";
-
-ChartJS.register(
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Tooltip
-);
 
 export default function Home() {
-
-  const [data, setData] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [latest, setLatest] = useState(null);
+  const [stats, setStats] = useState(null);
   const [coin, setCoin] = useState("BTC");
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
-    fetch(`https://chainpulse-backend-2xok.onrender.com/latest?coin=${coin}`)
+    fetch(`https://chainpulse-backend-2xok.onrender.com//latest?coin=${coin}`)
       .then(res => res.json())
-      .then(setData);
+      .then(setLatest);
 
-    fetch(`https://chainpulse-backend-2xok.onrender.com/history?coin=${coin}`)
+    fetch(
+      `https://chainpulse-backend-2xok.onrender.com//statistics?coin=${coin}&email=${email}`
+    )
       .then(res => res.json())
-      .then(setHistory);
+      .then(setStats);
+  }, [coin, email]);
 
-  }, [coin]);
-
-  if (!data) {
+  if (!latest) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-gray-400">
-        Initializing ChainPulse...
+        Loading ChainPulse...
       </div>
     );
   }
 
-  const determineRegime = (value) => {
-    if (value > 35) return "Strong Risk-On";
-    if (value > 15) return "Risk-On";
-    if (value < -35) return "Strong Risk-Off";
-    if (value < -15) return "Risk-Off";
-    return "Neutral";
-  };
+  const exposure = stats?.exposure_recommendation_percent || 0;
+  const isProLocked = stats?.pro_required;
 
-  const score = data.score || 0;
-  const regime = determineRegime(score);
+  const confidenceTier =
+    exposure > 60
+      ? "Aggressive"
+      : exposure > 30
+      ? "Balanced"
+      : "Defensive";
 
-  // === Multi-Timeframe Bias ===
-
-  const calculateTimeframeBias = (period) => {
-    if (history.length < period) return 0;
-    const subset = history.slice(0, period);
-    return subset.reduce((sum, h) => sum + h.score, 0) / subset.length;
-  };
-
-  const bias1H = calculateTimeframeBias(1);
-  const bias4H = calculateTimeframeBias(4);
-  const bias12H = calculateTimeframeBias(12);
-  const bias24H = calculateTimeframeBias(24);
-
-  const timeframeData = [
-    { label: "1H", value: bias1H },
-    { label: "4H", value: bias4H },
-    { label: "12H", value: bias12H },
-    { label: "24H", value: bias24H }
-  ];
-
-  const alignment =
-    timeframeData.every(tf => determineRegime(tf.value).includes("Risk-On")) ||
-    timeframeData.every(tf => determineRegime(tf.value).includes("Risk-Off"));
-
-  // === Alignment Alert Logic ===
-
-  const alignmentAlert =
-    alignment && Math.abs(score) > 25;
-
-  // === Alignment Accuracy (Simple Approximation) ===
-
-  const alignedPeriods = history.filter((h, index) => {
-    if (index < 4) return false;
-    const slice = history.slice(index - 4, index);
-    const aligned =
-      slice.every(s => determineRegime(s.score).includes("Risk-On")) ||
-      slice.every(s => determineRegime(s.score).includes("Risk-Off"));
-    return aligned;
-  });
-
-  const alignmentAccuracy =
-    history.length > 10
-      ? Math.round((alignedPeriods.length / history.length) * 100)
-      : 0;
-
-  const chartData = {
-    labels: history.map(h =>
-      new Date(h.timestamp + "Z").toLocaleTimeString()
-    ).reverse(),
-    datasets: [
-      {
-        data: history.map(h => h.score).reverse(),
-        borderColor: "#22c55e",
-        tension: 0.4
-      }
-    ]
-  };
-
-  const chartOptions = {
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { display: false },
-      y: {
-        grid: { color: "#27272a" },
-        ticks: { color: "#71717a" }
-      }
-    }
-  };
-
-  const regimeColor =
-    regime.includes("Risk-On")
-      ? "bg-green-500"
-      : regime.includes("Risk-Off")
-      ? "bg-red-500"
-      : "bg-gray-500";
+  const shiftRisk = stats?.regime_shift_risk_percent || 0;
 
   return (
     <main className="min-h-screen bg-black text-white px-8 py-16">
+      <div className="max-w-5xl mx-auto">
 
-      <div className="max-w-6xl mx-auto">
-
-        {/* Hero */}
-        <div className="mb-16 flex justify-between items-center">
-
+        {/* Header */}
+        <div className="mb-12 flex justify-between items-center">
           <div>
-            <h1 className="text-5xl font-semibold leading-tight">
-              Multi‑Asset Swing Bias Engine
+            <h1 className="text-5xl font-semibold">
+              Regime-Based Exposure Intelligence
             </h1>
-            <p className="text-gray-400 mt-4 text-xl">
-              Detect alignment across coins and timeframes.
+            <p className="text-gray-400 mt-3">
+              Know when to press size. Know when to stand down.
             </p>
           </div>
 
@@ -163,116 +70,127 @@ export default function Home() {
               </button>
             ))}
           </div>
-
         </div>
 
-        {/* Regime Panel */}
-        <div className="rounded-2xl overflow-hidden shadow-xl mb-16">
-
-          <div className={`h-1 ${regimeColor}`}></div>
-
-          <div className="bg-zinc-900 p-12 border border-zinc-800">
-
-            <div className="flex justify-between items-center">
-
-              <div>
-                <div className="text-sm text-gray-400 uppercase tracking-wider">
-                  {coin} Regime
-                </div>
-                <div className="text-4xl font-semibold mt-3">
-                  {regime}
-                </div>
-              </div>
-
-              <div className="text-5xl font-bold">
-                {score}
-              </div>
-
-            </div>
-
+        {/* Exposure Hero Panel */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 mb-12 shadow-xl">
+          <div className="text-sm text-gray-400 uppercase">
+            Recommended Exposure
           </div>
-
-        </div>
-
-        {/* Multi-Timeframe Alignment */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl mb-16">
-
-          <h2 className="text-xl text-gray-400 mb-10">
-            Timeframe Alignment
-          </h2>
-
-          <div className="grid grid-cols-4 gap-8 text-center">
-
-            {timeframeData.map((item, index) => {
-              const regime = determineRegime(item.value);
-              const color =
-                regime.includes("Risk-On")
-                  ? "text-green-400"
-                  : regime.includes("Risk-Off")
-                  ? "text-red-400"
-                  : "text-gray-400";
-
-              return (
-                <div key={index}>
-                  <div className="text-gray-500 text-sm">
-                    {item.label}
-                  </div>
-                  <div className={`text-xl font-semibold mt-3 ${color}`}>
-                    {regime}
-                  </div>
-                </div>
-              );
-            })}
-
+          <div className="text-6xl font-bold mt-4">
+            {exposure}%
           </div>
-
-          <div className="mt-10 text-center text-gray-400">
-            Alignment Status:{" "}
-            <span className={`font-semibold ${
-              alignment ? "text-green-400" : "text-gray-400"
-            }`}>
-              {alignment ? "Aligned" : "Mixed"}
+          <div className="text-gray-400 mt-3">
+            Confidence Tier:{" "}
+            <span className="text-white font-semibold">
+              {confidenceTier}
             </span>
           </div>
+        </div>
 
-          {alignmentAlert && (
-            <div className="mt-6 text-center text-yellow-400">
-              Alignment Alert: High‑quality swing environment detected.
+        {/* Current Regime */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 mb-12">
+          <div className="text-sm text-gray-400 uppercase">
+            Current Regime
+          </div>
+          <div className="text-3xl font-semibold mt-2">
+            {latest.label}
+          </div>
+          <div className="text-gray-400 mt-2">
+            Score: {latest.score}
+          </div>
+          <div className="text-gray-400">
+            Coherence: {latest.coherence}%
+          </div>
+        </div>
+
+        {/* Regime Shift Alert */}
+        {shiftRisk > 70 && (
+          <div className="bg-yellow-900 border border-yellow-700 text-yellow-300 p-6 rounded-xl mb-12">
+            Elevated Regime Shift Risk Detected.
+            Consider reducing exposure.
+          </div>
+        )}
+
+        {/* Pro Section */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl text-gray-400">
+              Advanced Regime Analytics
+            </h2>
+
+            {isProLocked && (
+              <button className="bg-white text-black px-4 py-2 rounded-lg font-semibold">
+                Unlock Pro — \$29/month
+              </button>
+            )}
+          </div>
+
+          <div
+            className={`grid grid-cols-2 gap-8 ${
+              isProLocked ? "blur-sm opacity-50" : ""
+            }`}
+          >
+            <div>
+              <div className="text-gray-400 text-sm">
+                Survival Probability
+              </div>
+              <div className="text-3xl font-semibold mt-2">
+                {stats?.survival_probability_percent}%
+              </div>
+            </div>
+
+            <div>
+              <div className="text-gray-400 text-sm">
+                Hazard Rate
+              </div>
+              <div className="text-3xl font-semibold mt-2">
+                {stats?.hazard_percent}%
+              </div>
+            </div>
+
+            <div>
+              <div className="text-gray-400 text-sm">
+                Strength Percentile
+              </div>
+              <div className="text-3xl font-semibold mt-2">
+                {stats?.percentile_rank_percent}%
+              </div>
+            </div>
+
+            <div>
+              <div className="text-gray-400 text-sm">
+                Regime Shift Risk
+              </div>
+              <div className="text-3xl font-semibold mt-2">
+                {stats?.regime_shift_risk_percent}%
+              </div>
+            </div>
+          </div>
+
+          {isProLocked && (
+            <div className="mt-6 text-center text-gray-400">
+              Unlock full persistence modeling, hazard analysis, 
+              percentile ranking, and shift alerts.
             </div>
           )}
-
         </div>
 
-        {/* Alignment Accuracy */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl mb-16 text-center">
-
-          <div className="text-gray-400 text-sm">
-            Historical Alignment Accuracy
-          </div>
-
-          <div className="text-5xl font-bold mt-6">
-            {alignmentAccuracy}%
-          </div>
-
+        {/* Email Input */}
+        <div className="mt-12 text-center">
+          <input
+            type="email"
+            placeholder="Enter email for Pro access"
+            className="px-4 py-2 rounded bg-zinc-800 text-white border border-zinc-700"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
 
-        {/* Trend Chart */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl">
-
-          <h2 className="text-xl text-gray-400 mb-8">
-            Bias Trend
-          </h2>
-
-          <Line data={chartData} options={chartOptions} />
-
+        <div className="text-gray-600 text-xs mt-16 text-center">
+          ChainPulse is a decision-support tool. Not financial advice.
         </div>
-
-        <div className="text-gray-600 text-xs mt-20 text-center">
-          Built for disciplined swing traders. Not financial advice.
-        </div>
-
       </div>
-
     </main>
   );
 }
