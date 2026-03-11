@@ -26,11 +26,11 @@ export default function Home() {
   const [coin, setCoin] = useState("BTC");
 
   useEffect(() => {
-    fetch(`https://chainpulse-backend-80xy.onrender.com/latest?coin=${coin}`)
+    fetch(`https://chainpulse-backend-2xok.onrender.com/latest?coin=${coin}`)
       .then(res => res.json())
       .then(setData);
 
-    fetch(`https://chainpulse-backend-80xy.onrender.com/history?coin=${coin}`)
+    fetch(`https://chainpulse-backend-2xok.onrender.com/history?coin=${coin}`)
       .then(res => res.json())
       .then(setHistory);
 
