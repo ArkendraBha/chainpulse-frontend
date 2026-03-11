@@ -9,22 +9,24 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-  Legend
+  Legend,
+  ReferenceLine
 } from "recharts";
 
 export default function Dashboard() {
-  const BACKEND = "https://chainpulse-backend-2xok.onrender.com"; // ✅ Replace if needed
+  const BACKEND = "https://chainpulse-backend-2xok.onrender.com";
 
   const [latest, setLatest] = useState(null);
   const [stats, setStats] = useState(null);
-  const [curveData, setCurveData] = useState([]);
+  const [btcCurve, setBtcCurve] = useState([]);
+  const [ethCurve, setEthCurve] = useState([]);
   const [coin, setCoin] = useState("BTC");
   const [email, setEmail] = useState("");
   const [alertsEnabled, setAlertsEnabled] = useState(false);
 
-  // ----------------------------------
+  // --------------------------------------
   // FETCH DATA
-  // ----------------------------------
+  // --------------------------------------
 
   useEffect(() => {
     fetch(`${BACKEND}/latest?coin=${coin}`)
@@ -35,34 +37,34 @@ export default function Dashboard() {
       .then(res => res.json())
       .then(setStats);
 
-    fetch(`${BACKEND}/survival-curve?coin=${coin}`)
+    fetch(`${BACKEND}/survival-curve?coin=BTC`)
       .then(res => res.json())
-      .then(data => setCurveData(data.data || []));
+      .then(data => setBtcCurve(data.data || []));
+
+    fetch(`${BACKEND}/survival-curve?coin=ETH`)
+      .then(res => res.json())
+      .then(data => setEthCurve(data.data || []));
   }, [coin, email]);
 
-  // ----------------------------------
-  // STRIPE CHECKOUT
-  // ----------------------------------
+  // --------------------------------------
+  // CHECKOUT
+  // --------------------------------------
 
   const handleCheckout = async () => {
-    try {
-      const res = await fetch(`${BACKEND}/create-checkout-session`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      window.location.href = data.url;
-    } catch {
-      alert("Checkout failed. Try again.");
-    }
+    const res = await fetch(`${BACKEND}/create-checkout-session`, {
+      method: "POST",
+    });
+    const data = await res.json();
+    window.location.href = data.url;
   };
 
-  // ----------------------------------
+  // --------------------------------------
   // ENABLE ALERTS
-  // ----------------------------------
+  // --------------------------------------
 
   const enableAlerts = async () => {
     if (!email) {
-      alert("Enter your email first.");
+      alert("Enter email first.");
       return;
     }
 
@@ -71,20 +73,29 @@ export default function Dashboard() {
     });
 
     setAlertsEnabled(true);
-    alert("Regime shift alerts enabled.");
+    alert("Alerts enabled.");
+  };
+
+  // --------------------------------------
+  // PDF EXPORT
+  // --------------------------------------
+
+  const downloadPDF = () => {
+    window.open(`${BACKEND}/weekly-report-pdf?coin=${coin}`, "_blank");
   };
 
   if (!latest || !stats) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-gray-400">
-        Loading Quantitative Regime Model...
+        Loading Quantitative Model...
       </div>
     );
   }
 
   const exposure = stats.exposure_recommendation_percent || 0;
-  const isLocked = stats.pro_required;
   const shiftRisk = stats.regime_shift_risk_percent || 0;
+  const regimeAge = stats.current_regime_age_hours || 0;
+  const isLocked = stats.pro_required;
 
   const confidenceTier =
     exposure > 60
@@ -97,7 +108,7 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen bg-black text-white px-8 py-16">
-      <div className="max-w-6xl mx-auto space-y-16">
+      <div className="max-w-7xl mx-auto space-y-16">
 
         {/* HEADER */}
         <div className="flex justify-between items-center">
@@ -106,11 +117,11 @@ export default function Dashboard() {
               ChainPulse Quant Dashboard
             </h1>
             <p className="text-gray-400 mt-2">
-              Probabilistic regime persistence modeling.
+              Probabilistic Regime Survival Modeling
             </p>
           </div>
 
-          <div className="flex bg-zinc-800 rounded-lg p-1">
+          <div className="flex gap-4">
             {["BTC", "ETH"].map(c => (
               <button
                 key={c}
@@ -118,7 +129,7 @@ export default function Dashboard() {
                 className={`px-4 py-2 rounded-lg ${
                   coin === c
                     ? "bg-white text-black"
-                    : "text-gray-400"
+                    : "bg-zinc-800 text-gray-400"
                 }`}
               >
                 {c}
@@ -127,7 +138,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* EXPOSURE PANEL */}
+        {/* EXPOSURE */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-12 shadow-xl">
           <div className="text-sm text-gray-400 uppercase">
             Exposure Allocation Recommendation
@@ -136,25 +147,91 @@ export default function Dashboard() {
             {exposure}%
           </div>
           <div className="text-gray-400 mt-3">
-            Regime Confidence Tier:{" "}
+            Confidence Tier:{" "}
             <span className="text-white font-semibold">
               {confidenceTier}
             </span>
           </div>
+          <div className="text-gray-500 text-sm mt-3">
+            Regime Active: {regimeAge.toFixed(1)} hours
+          </div>
         </div>
 
-        {/* SHIFT RISK ALERT */}
-        {shiftRisk > 70 && (
-          <div className="bg-red-900 border border-red-700 text-red-300 p-6 rounded-xl">
-            Elevated Regime Hazard Detected.
-            Survival probability deteriorating.
-          </div>
-        )}
+        {/* SURVIVAL + HAZARD CURVE */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl">
+          <h2 className="text-xl text-gray-400 mb-6">
+            Survival & Hazard Curve (BTC vs ETH)
+          </h2>
 
-        {/* ADVANCED QUANT ANALYTICS */}
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart>
+
+              <CartesianGrid stroke="#27272a" />
+              <XAxis dataKey="hour" stroke="#71717a" />
+              <YAxis stroke="#71717a" />
+              <Tooltip />
+              <Legend />
+
+              {/* BTC Survival */}
+              <Line
+                data={btcCurve}
+                type="monotone"
+                dataKey="survival"
+                stroke="#22c55e"
+                strokeWidth={3}
+                dot={false}
+                isAnimationActive={true}
+                animationDuration={800}
+                name="BTC Survival"
+              />
+
+              {/* BTC Hazard */}
+              <Line
+                data={btcCurve}
+                type="monotone"
+                dataKey="hazard"
+                stroke="#ef4444"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={true}
+                animationDuration={800}
+                name="BTC Hazard"
+              />
+
+              {/* ETH Survival */}
+              <Line
+                data={ethCurve}
+                type="monotone"
+                dataKey="survival"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={true}
+                animationDuration={800}
+                name="ETH Survival"
+              />
+
+              {/* Current Regime Age Marker */}
+              <ReferenceLine
+                x={Math.round(regimeAge)}
+                stroke="#ffffff"
+                strokeDasharray="4 4"
+                label="Current Age"
+              />
+
+            </LineChart>
+          </ResponsiveContainer>
+
+          <div className="text-gray-500 text-sm mt-4">
+            Survival estimates continuation probability.
+            Hazard estimates deterioration risk.
+          </div>
+        </div>
+
+        {/* PRO ANALYTICS */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl">
           <h2 className="text-xl text-gray-400 mb-8">
-            Quantitative Regime Persistence Model
+            Advanced Regime Analytics
           </h2>
 
           <div className={`grid grid-cols-2 gap-10 ${blurredClass}`}>
@@ -163,16 +240,16 @@ export default function Dashboard() {
                 Survival Probability
               </div>
               <div className="text-4xl font-semibold mt-2">
-                {stats.survival_probability_percent || 74}%
+                {stats.survival_probability_percent || 0}%
               </div>
             </div>
 
             <div>
               <div className="text-gray-400 text-sm">
-                Hazard Function
+                Hazard Rate
               </div>
               <div className="text-4xl font-semibold mt-2">
-                {stats.hazard_percent || 21}%
+                {stats.hazard_percent || 0}%
               </div>
             </div>
 
@@ -181,7 +258,7 @@ export default function Dashboard() {
                 Strength Percentile
               </div>
               <div className="text-4xl font-semibold mt-2">
-                {stats.percentile_rank_percent || 82}%
+                {stats.percentile_rank_percent || 0}%
               </div>
             </div>
 
@@ -190,7 +267,7 @@ export default function Dashboard() {
                 Regime Shift Probability
               </div>
               <div className="text-4xl font-semibold mt-2">
-                {shiftRisk || 19}%
+                {shiftRisk || 0}%
               </div>
             </div>
           </div>
@@ -207,44 +284,14 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* SURVIVAL + HAZARD CURVE */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-10 shadow-xl">
-          <h2 className="text-xl text-gray-400 mb-6">
-            Regime Survival & Hazard Curve
-          </h2>
-
-          <ResponsiveContainer width="100%" height={350}>
-            <LineChart data={curveData}>
-              <CartesianGrid stroke="#27272a" />
-              <XAxis dataKey="hour" stroke="#71717a" />
-              <YAxis stroke="#71717a" />
-              <Tooltip />
-              <Legend />
-
-              <Line
-                type="monotone"
-                dataKey="survival"
-                stroke="#22c55e"
-                strokeWidth={3}
-                dot={false}
-                name="Survival Probability (%)"
-              />
-
-              <Line
-                type="monotone"
-                dataKey="hazard"
-                stroke="#ef4444"
-                strokeWidth={2}
-                dot={false}
-                name="Hazard Rate (%)"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-
-          <div className="text-gray-500 text-sm mt-4">
-            Survival curve models probability regime persists over time.
-            Hazard curve models deterioration risk per time interval.
-          </div>
+        {/* PDF EXPORT */}
+        <div className="text-center">
+          <button
+            onClick={downloadPDF}
+            className="bg-zinc-700 px-6 py-3 rounded-xl"
+          >
+            Download Weekly Report (PDF)
+          </button>
         </div>
 
         {/* ALERTS */}
