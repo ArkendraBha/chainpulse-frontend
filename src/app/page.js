@@ -78,7 +78,7 @@ export default function Landing() {
           </div>
 
         </div>
-</div>
+
 </section>
 
       <section className="px-8 py-28 border-b border-zinc-900">
