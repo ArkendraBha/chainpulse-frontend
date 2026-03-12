@@ -1,4 +1,25 @@
 export default function Pricing() {
+const handleCheckout = async () => {
+  try {
+    const res = await fetch(
+      "https://chainpulse-backend-2xok.onrender.com/create-checkout-session",
+      {
+        method: "POST",
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert("Checkout session failed.");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Checkout error.");
+  }
+};
   return (
     <main className="min-h-screen bg-black text-white px-8 py-32">
       <div className="max-w-5xl mx-auto text-center space-y-16">

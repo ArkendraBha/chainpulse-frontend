@@ -41,7 +41,14 @@ export default function Dashboard() {
       </div>
     );
   }
+const handleCheckout = async () => {
+  const res = await fetch(`${BACKEND}/create-checkout-session`, {
+    method: "POST",
+  });
 
+  const data = await res.json();
+  window.location.href = data.url;
+};
   const exposure = stats.exposure_recommendation_percent || 0;
 const isLocked = stats?.pro_required ?? false;
 const confidenceTier =
