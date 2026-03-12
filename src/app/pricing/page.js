@@ -54,16 +54,16 @@ const handleCheckout = async () => {
   <li>✔ Detect regime deterioration early</li>
   <li>✔ Allocate capital statistically</li>
   <li>✔ Reduce emotional sizing mistakes</li>
-            <li>Exposure optimization</li>
-            <li>Shift alerts</li>
-            <li>Weekly regime reports</li>
+            <li>✔ Exposure optimization</li>
+            <li>✔ Shift alerts</li>
+            <li>✔ Weekly regime reports</li>
           </ul>
 
           <button
   onClick={handleCheckout}
   className="bg-white text-black px-8 py-4 rounded-md font-semibold"
 >
-  Activate Pro — \$29/month
+  Activate Pro — $29/month
 </button>
 <div className="text-gray-500 text-sm mt-4">
   7-Day Risk-Free Access. Cancel anytime.

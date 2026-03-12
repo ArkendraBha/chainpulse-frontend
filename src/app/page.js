@@ -15,6 +15,30 @@ export default function Landing() {
             Statistical survival modeling for traders managing real capital.
             Press size when persistence is strong. Stand down before deterioration.
           </p>
+<div className="flex justify-center gap-6 pt-6">
+            <a
+              href="/app"
+              className="bg-white text-black px-8 py-4 rounded-md font-semibold"
+            >
+              View Live Regime
+            </a>
+
+            <a
+              href="/methodology"
+              className="border border-zinc-700 px-8 py-4 rounded-md text-gray-300"
+            >
+              Read Methodology
+            </a>
+          </div>
+
+        </div>
+      </section>
+{/* TRUST SIGNAL */}
+<section className="px-8 py-12 border-b border-zinc-900 text-center">
+  <div className="max-w-4xl mx-auto text-gray-500 text-sm">
+    Used by 42 disciplined traders managing real capital.
+  </div>
+</section>
 {/* LIVE REGIME SNAPSHOT */}
 <div className="mt-16 border border-zinc-900 p-10 max-w-3xl mx-auto text-center">
   <div className="text-sm text-gray-500 uppercase">
@@ -76,7 +100,31 @@ export default function Landing() {
 
         </div>
       </section>
+{/* EMAIL CAPTURE */}
+<section className="px-8 py-24 border-t border-zinc-900">
+  <div className="max-w-4xl mx-auto text-center space-y-8">
 
+    <h2 className="text-3xl font-semibold">
+      Get Weekly Regime Snapshot
+    </h2>
+
+    <p className="text-gray-400">
+      Receive a concise weekly summary of current regime conditions.
+    </p>
+
+    <div className="flex justify-center gap-4">
+      <input
+        type="email"
+        placeholder="Enter your email"
+        className="px-4 py-3 bg-zinc-800 border border-zinc-700 text-white rounded-md w-72"
+      />
+      <button className="bg-white text-black px-6 py-3 rounded-md font-semibold">
+        Subscribe
+      </button>
+    </div>
+
+  </div>
+</section>
       <section className="px-8 py-28">
         <div className="max-w-6xl mx-auto space-y-12 text-center">
 
