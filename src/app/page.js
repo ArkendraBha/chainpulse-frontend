@@ -15,25 +15,6 @@ export default function Landing() {
             Statistical survival modeling for traders managing real capital.
             Press size when persistence is strong. Stand down before deterioration.
           </p>
-          <div className="flex justify-center gap-6 pt-6">
-            <Link
-              href="/app"
-              className="bg-white text-black px-8 py-4 rounded-md font-semibold"
-            >
-              View Live Regime
-            </Link>
-
-            <Link
-              href="/methodology"
-              className="border border-zinc-700 px-8 py-4 rounded-md text-gray-300"
-            >
-              Read Methodology
-            </Link>
-          </div>
-
-        </div>
-
-</section>
 {/* TRUST SIGNAL */}
 <section className="px-8 py-12 border-b border-zinc-900 text-center">
   <div className="max-w-4xl mx-auto text-gray-500 text-sm">
