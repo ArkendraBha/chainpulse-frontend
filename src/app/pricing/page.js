@@ -58,9 +58,12 @@ const handleCheckout = async () => {
             <li>Weekly regime reports</li>
           </ul>
 
-          <button className="bg-white text-black px-8 py-4 rounded-md font-semibold">
-            Activate Pro
-          </button>
+          <button
+  onClick={handleCheckout}
+  className="bg-white text-black px-8 py-4 rounded-md font-semibold"
+>
+  Activate Pro — \$29/month
+</button>
 <div className="text-gray-500 text-sm mt-4">
   7-Day Risk-Free Access. Cancel anytime.
 </div>
