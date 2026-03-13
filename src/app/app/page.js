@@ -115,13 +115,14 @@ const confidenceTier =
       <div className="text-green-400">
         • Regime persistence remains statistically strong.
       </div>
-{shiftRisk > 70 && (
-  <div className="border border-red-700 bg-red-900 p-8 text-red-300">
-    Regime Deterioration Alert:
-    Hazard elevated beyond historical norm.
-    Consider reducing exposure.
-  </div>
-)}
+    )}
+
+    {shiftRisk > 70 && (
+      <div className="border border-red-700 bg-red-900 p-6 text-red-300 mt-4">
+        Regime Deterioration Alert:
+        Hazard elevated beyond historical norm.
+        Consider reducing exposure.
+      </div>
     )}
 
   </div>
