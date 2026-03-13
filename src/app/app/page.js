@@ -85,6 +85,47 @@ const confidenceTier =
           </div>
         </div>
 
+{/* REGIME INTERPRETATION */}
+<div className="border border-zinc-900 p-12">
+  <h2 className="text-lg font-semibold mb-6">
+    Regime Interpretation
+  </h2>
+
+  <div className="space-y-4 text-gray-400">
+
+    <div>
+      • Survival Probability: {stats.survival_probability_percent}%
+    </div>
+
+    <div>
+      • Hazard Rate: {stats.hazard_percent}%
+    </div>
+
+    <div>
+      • Exposure Allocation: {exposure}%
+    </div>
+
+    {stats.hazard_percent > 60 && (
+      <div className="text-red-400">
+        • Elevated deterioration risk detected.
+      </div>
+    )}
+
+    {stats.survival_probability_percent > 70 && (
+      <div className="text-green-400">
+        • Regime persistence remains statistically strong.
+      </div>
+{shiftRisk > 70 && (
+  <div className="border border-red-700 bg-red-900 p-8 text-red-300">
+    Regime Deterioration Alert:
+    Hazard elevated beyond historical norm.
+    Consider reducing exposure.
+  </div>
+)}
+    )}
+
+  </div>
+</div>
         <div className="border border-zinc-900 p-16 text-center">
           <div className="text-sm text-gray-500 uppercase">
             Exposure Allocation
