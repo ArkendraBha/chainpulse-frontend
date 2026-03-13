@@ -1,4 +1,17 @@
+"use client";
 import Link from "next/link";
+
+const handleSubscribe = async () => {
+  if (!email) return;
+
+  await fetch(`${BACKEND}/subscribe?email=${email}`, {
+    method: "POST"
+  });
+
+  alert("Subscribed successfully.");
+};
+
+onClick={handleSubscribe}
 
 export default function Landing() {
   return (
