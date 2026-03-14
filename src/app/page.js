@@ -151,6 +151,42 @@ const handleSubscribe = async () => {
 
   </div>
 </section>
+{/* EMAIL SUBSCRIBE + SAMPLE REPORT */}
+<section className="px-8 py-24 border-t border-zinc-900">
+  <div className="max-w-4xl mx-auto text-center space-y-8">
+
+    <h2 className="text-3xl font-semibold">
+      Get Weekly Regime Snapshot
+    </h2>
+
+    <p className="text-gray-400">
+      Receive a concise weekly summary of current regime conditions.
+    </p>
+
+    <div className="flex justify-center gap-4">
+      <input
+        type="email"
+        placeholder="Enter your email"
+        className="px-4 py-3 bg-zinc-800 border border-zinc-700 text-white rounded-md w-72"
+      />
+      <button className="bg-white text-black px-6 py-3 rounded-md font-semibold">
+        Subscribe
+      </button>
+    </div>
+
+    <div className="pt-6">
+      <a
+        href="https://chainpulse-backend-2xok.onrender.com/sample-report"
+        target="_blank"
+        className="text-gray-400 underline hover:text-white text-sm"
+      >
+        Download Sample Weekly Report (PDF)
+      </a>
+    </div>
+
+  </div>
+</section>
+{/* Built on Quantitative Persistence Modeling */}
       <section className="px-8 py-28">
         <div className="max-w-6xl mx-auto space-y-12 text-center">
 
