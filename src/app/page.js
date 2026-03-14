@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 
 const handleSubscribe = async () => {
@@ -11,9 +12,26 @@ const handleSubscribe = async () => {
   alert("Subscribed successfully.");
 };
 
-onClick={handleSubscribe}
 
-export default function Landing() {
+export default function Landing() {const BACKEND = "https://chainpulse-backend-2xok.onrender.com";
+
+const [email, setEmail] = useState("");
+const [subscribed, setSubscribed] = useState(false);
+
+const handleSubscribe = async () => {
+  if (!email) return;
+
+  try {
+    await fetch(
+      `${BACKEND}/subscribe?email=${encodeURIComponent(email)}`,
+      { method: "POST" }
+    );
+
+    setSubscribed(true);
+  } catch (err) {
+    console.error("Subscription failed");
+  }
+};
   return (
     <main className="min-h-screen bg-black text-white">
 
@@ -112,12 +130,24 @@ export default function Landing() {
       <input
         type="email"
         placeholder="Enter your email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         className="px-4 py-3 bg-zinc-800 border border-zinc-700 text-white rounded-md w-72"
       />
-      <button className="bg-white text-black px-6 py-3 rounded-md font-semibold">
+
+      <button
+        onClick={handleSubscribe}
+        className="bg-white text-black px-6 py-3 rounded-md font-semibold"
+      >
         Subscribe
       </button>
     </div>
+
+    {subscribed && (
+      <div className="text-green-400 text-sm mt-4">
+        Successfully subscribed to weekly regime updates.
+      </div>
+    )}
 
   </div>
 </section>
