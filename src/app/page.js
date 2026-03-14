@@ -1,40 +1,34 @@
 "use client";
+
 import { useState } from "react";
 import Link from "next/link";
 
-const handleSubscribe = async () => {
-  if (!email) return;
+export default function Landing() {
 
-  await fetch(`${BACKEND}/subscribe?email=${email}`, {
-    method: "POST"
-  });
+  const BACKEND = "https://chainpulse-backend-2xok.onrender.com";
 
-  alert("Subscribed successfully.");
-};
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
 
+  const handleSubscribe = async () => {
+    if (!email) return;
 
-export default function Landing() {const BACKEND = "https://chainpulse-backend-2xok.onrender.com";
+    try {
+      await fetch(
+        `${BACKEND}/subscribe?email=${encodeURIComponent(email)}`,
+        { method: "POST" }
+      );
 
-const [email, setEmail] = useState("");
-const [subscribed, setSubscribed] = useState(false);
+      setSubscribed(true);
+    } catch (err) {
+      console.error("Subscription failed");
+    }
+  };
 
-const handleSubscribe = async () => {
-  if (!email) return;
-
-  try {
-    await fetch(
-      `${BACKEND}/subscribe?email=${encodeURIComponent(email)}`,
-      { method: "POST" }
-    );
-
-    setSubscribed(true);
-  } catch (err) {
-    console.error("Subscription failed");
-  }
-};
   return (
     <main className="min-h-screen bg-black text-white">
 
+      {/* HERO */}
       <section className="px-8 py-32 border-b border-zinc-900">
         <div className="max-w-6xl mx-auto text-center space-y-10">
 
@@ -46,34 +40,7 @@ const handleSubscribe = async () => {
             Statistical survival modeling for traders managing real capital.
             Press size when persistence is strong. Stand down before deterioration.
           </p>
-{/* TRUST SIGNAL */}
-<section className="px-8 py-12 border-b border-zinc-900 text-center">
-  <div className="max-w-4xl mx-auto text-gray-500 text-sm">
-    Used by 42 disciplined traders managing real capital.
-  </div>
-</section>
-{/* LIVE REGIME SNAPSHOT */}
-<div className="mt-16 border border-zinc-900 p-10 max-w-3xl mx-auto text-center">
-  <div className="text-sm text-gray-500 uppercase">
-    Live Regime Snapshot
-  </div>
 
-  <div className="text-2xl font-semibold mt-4">
-    BTC Regime: <span className="text-green-400">Risk-On</span>
-  </div>
-
-  <div className="text-gray-400 mt-3">
-    Exposure: 64%
-  </div>
-
-  <div className="text-gray-400">
-    Shift Risk: 18%
-  </div>
-
-  <div className="text-gray-500 text-sm mt-6">
-    This environment is statistically persistent.
-  </div>
-</div>
           <div className="flex justify-center gap-6 pt-6">
             <Link
               href="/app"
@@ -91,9 +58,45 @@ const handleSubscribe = async () => {
           </div>
 
         </div>
+      </section>
 
-</section>
+      {/* TRUST SIGNAL */}
+      <section className="px-8 py-12 border-b border-zinc-900 text-center">
+        <div className="max-w-4xl mx-auto text-gray-500 text-sm">
+          Used by 42 disciplined traders managing real capital.
+        </div>
+      </section>
 
+      {/* LIVE SNAPSHOT */}
+      <section className="px-8 py-24 border-b border-zinc-900">
+        <div className="max-w-5xl mx-auto text-center space-y-8">
+
+          <h2 className="text-3xl font-semibold">
+            Live Regime Snapshot
+          </h2>
+
+          <div className="border border-zinc-900 p-10">
+            <div className="text-2xl font-semibold">
+              BTC Regime: <span className="text-green-400">Risk-On</span>
+            </div>
+
+            <div className="text-gray-400 mt-4">
+              Exposure: 64%
+            </div>
+
+            <div className="text-gray-400">
+              Shift Risk: 18%
+            </div>
+
+            <div className="text-gray-500 text-sm mt-6">
+              This environment is statistically persistent.
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* PAIN SECTION */}
       <section className="px-8 py-28 border-b border-zinc-900">
         <div className="max-w-6xl mx-auto space-y-16 text-center">
 
@@ -114,79 +117,56 @@ const handleSubscribe = async () => {
 
         </div>
       </section>
-{/* EMAIL CAPTURE */}
-<section className="px-8 py-24 border-t border-zinc-900">
-  <div className="max-w-4xl mx-auto text-center space-y-8">
 
-    <h2 className="text-3xl font-semibold">
-      Get Weekly Regime Snapshot
-    </h2>
+      {/* EMAIL + SAMPLE REPORT */}
+      <section className="px-8 py-24 border-t border-zinc-900">
+        <div className="max-w-4xl mx-auto text-center space-y-8">
 
-    <p className="text-gray-400">
-      Receive a concise weekly summary of current regime conditions.
-    </p>
+          <h2 className="text-3xl font-semibold">
+            Get Weekly Regime Snapshot
+          </h2>
 
-    <div className="flex justify-center gap-4">
-      <input
-        type="email"
-        placeholder="Enter your email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="px-4 py-3 bg-zinc-800 border border-zinc-700 text-white rounded-md w-72"
-      />
+          <p className="text-gray-400">
+            Receive a concise weekly summary of current regime conditions.
+          </p>
 
-      <button
-        onClick={handleSubscribe}
-        className="bg-white text-black px-6 py-3 rounded-md font-semibold"
-      >
-        Subscribe
-      </button>
-    </div>
+          <div className="flex justify-center gap-4">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="px-4 py-3 bg-zinc-800 border border-zinc-700 text-white rounded-md w-72"
+            />
 
-    {subscribed && (
-      <div className="text-green-400 text-sm mt-4">
-        Successfully subscribed to weekly regime updates.
-      </div>
-    )}
+            <button
+              onClick={handleSubscribe}
+              className="bg-white text-black px-6 py-3 rounded-md font-semibold"
+            >
+              Subscribe
+            </button>
+          </div>
 
-  </div>
-</section>
-{/* EMAIL SUBSCRIBE + SAMPLE REPORT */}
-<section className="px-8 py-24 border-t border-zinc-900">
-  <div className="max-w-4xl mx-auto text-center space-y-8">
+          {subscribed && (
+            <div className="text-green-400 text-sm mt-4">
+              Confirmation email sent. Please check your inbox.
+            </div>
+          )}
 
-    <h2 className="text-3xl font-semibold">
-      Get Weekly Regime Snapshot
-    </h2>
+          <div className="pt-6">
+            <a
+              href={`${BACKEND}/sample-report`}
+              target="_blank"
+              className="text-gray-400 underline hover:text-white text-sm"
+            >
+              Download Sample Weekly Report (PDF)
+            </a>
+          </div>
 
-    <p className="text-gray-400">
-      Receive a concise weekly summary of current regime conditions.
-    </p>
+        </div>
+      </section>
 
-    <div className="flex justify-center gap-4">
-      <input
-        type="email"
-        placeholder="Enter your email"
-        className="px-4 py-3 bg-zinc-800 border border-zinc-700 text-white rounded-md w-72"
-      />
-      <button className="bg-white text-black px-6 py-3 rounded-md font-semibold">
-        Subscribe
-      </button>
-    </div>
-
-    <div className="pt-6">
-      <a
-        href="https://chainpulse-backend-2xok.onrender.com/sample-report"
-        target="_blank"
-        className="text-gray-400 underline hover:text-white text-sm"
-      >
-        Download Sample Weekly Report (PDF)
-      </a>
-    </div>
-
-  </div>
-</section>
-{/* Built on Quantitative Persistence Modeling */}
+      {/* AUTHORITY SECTION */}
       <section className="px-8 py-28">
         <div className="max-w-6xl mx-auto space-y-12 text-center">
 
