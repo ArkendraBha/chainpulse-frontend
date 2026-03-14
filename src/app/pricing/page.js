@@ -154,20 +154,27 @@ export default function Pricing() {
 
         </div>
 
-        {/* ROI FRAMING */}
-        <div className="max-w-3xl mx-auto border border-zinc-900 p-10 space-y-6 text-center">
-          <h2 className="text-2xl font-semibold">
-            The Math is Simple
-          </h2>
-          <p className="text-gray-400">
-            For a trader managing \$10,000, a single avoided late-stage
-            overexposure event of 3% saves \$300. That covers 10 months of Pro.
-          </p>
-          <p className="text-gray-500 text-sm">
-            ChainPulse does not guarantee outcomes.
-            It gives you a statistical framework to act on.
-          </p>
-        </div>
+
+
+      
+
+{/* PSYCHOLOGY ANCHOR */}
+<div className="border border-zinc-800 p-8 space-y-4 text-sm text-gray-400">
+  <div className="text-white font-medium">The Real Cost of Getting It Wrong</div>
+  <p>
+    Designed for traders managing \$5,000 or more.
+    At that size, one avoided late-stage overexposure event of 3%
+    saves \$150 — more than five months of Pro.
+  </p>
+  <p>
+    Average Pro user avoids 1–2 poor entries per month
+    by acting on regime deterioration data before it becomes obvious.
+  </p>
+  <p className="text-gray-600 text-xs">
+    ChainPulse does not guarantee outcomes.
+    Past regime behavior does not predict future results.
+  </p>
+</div>
 
         {/* FAQ */}
         <div className="max-w-3xl mx-auto space-y-8">
