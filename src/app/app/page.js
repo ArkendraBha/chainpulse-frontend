@@ -3741,8 +3741,14 @@ export default function Dashboard() {
       setLastUpdated(new Date());
 
       if (stackData?.pro_required && !currentToken) {
-        setTimeout(() => setShowModal(true), 3000);
-      }
+  const hasSeenModal = sessionStorage.getItem("cp_modal_shown");
+  if (!hasSeenModal) {
+    setTimeout(() => {
+      setShowModal(true);
+      sessionStorage.setItem("cp_modal_shown", "true");
+    }, 3000);
+  }
+}
     } catch (err) {
       console.error("Fetch error:", err);
     } finally {
