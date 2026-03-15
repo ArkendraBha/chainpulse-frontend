@@ -3525,7 +3525,19 @@ function ProModal({ onClose }) {
       setLoading(false);
     }
   };
+  const restore = async () => {
+  const email = localStorage.getItem("cp_email") || "";
+  if (!email) return alert("Enter your email first (subscribe box) so we know where to send it.");
 
+  const r = await fetch(`${BACKEND}/restore-access`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!r.ok) return alert("No active Pro found for this email.");
+  alert("Login link sent. Check your inbox.");
+};
   const features = [
     { category: "Core Decision Engine", items: [
       "Exposure recommendation % — regime-adjusted",
@@ -3640,6 +3652,12 @@ function ProModal({ onClose }) {
   ? "Start Using Full Regime Intelligence — $348/year"
   : "Start Using Full Regime Intelligence — $39/month"}
           </button>
+<button
+  onClick={restore}
+  className="w-full border border-zinc-700 text-white py-3 rounded-md text-sm"
+>
+  Restore Pro Access (email link)
+</button>
           <div className="text-center text-gray-600 text-xs">
             7-day risk-free evaluation · Cancel anytime · Instant access
           </div>
