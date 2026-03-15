@@ -2316,7 +2316,7 @@ function DrawdownSimulator({ stack, isPro, onUnlock }) {
   );
 }
 
-─────────────────────────────────────────
+// ─────────────────────────────────────────
 // RISK PROFILE PANEL
 // ─────────────────────────────────────────
 function RiskProfilePanel({ email, isPro, onUnlock, onProfileSaved }) {
