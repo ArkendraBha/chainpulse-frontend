@@ -1,5 +1,4 @@
 import "./globals.css";
-import MarketTicker from "@/components/MarketTicker";
 import NavBar from "@/components/NavBar";
 
 export const metadata = {
@@ -20,7 +19,6 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="bg-black text-white">
-        <MarketTicker />
         <NavBar />
         {children}
       </body>
