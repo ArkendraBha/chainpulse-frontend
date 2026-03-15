@@ -59,7 +59,7 @@ function gradeColor(g) {
 const PLAYBOOKS = {
   "Strong Risk-On": {
     exposure_band: "65–80%", trend_follow_wr: 72, mean_revert_wr: 38,
-    strategy_mode: "Aggressive", strategy_color: "text-emerald-400",
+    strategy_mode: "Aggressive Continuation", strategy_color: "text-emerald-400",
     avg_remaining_days: 14,
     actions: [
       "Favour trend continuation entries",
@@ -73,7 +73,7 @@ const PLAYBOOKS = {
   },
   "Risk-On": {
     exposure_band: "50–65%", trend_follow_wr: 63, mean_revert_wr: 44,
-    strategy_mode: "Balanced", strategy_color: "text-green-400",
+    strategy_mode: "Balanced Exposure", strategy_color: "text-green-400",
     avg_remaining_days: 9,
     actions: [
       "Favour pullback entries in trend direction",
@@ -86,7 +86,7 @@ const PLAYBOOKS = {
   },
   "Neutral": {
     exposure_band: "25–45%", trend_follow_wr: 49, mean_revert_wr: 51,
-    strategy_mode: "Neutral", strategy_color: "text-yellow-400",
+    strategy_mode: "Capital Preservation", strategy_color: "text-yellow-400",
     avg_remaining_days: 6,
     actions: [
       "Reduce overall exposure",
@@ -99,7 +99,7 @@ const PLAYBOOKS = {
   },
   "Risk-Off": {
     exposure_band: "10–25%", trend_follow_wr: 31, mean_revert_wr: 57,
-    strategy_mode: "Defensive", strategy_color: "text-red-400",
+    strategy_mode: "Risk Reduction Protocol", strategy_color: "text-red-400",
     avg_remaining_days: 7,
     actions: [
       "Reduce long exposure significantly",
@@ -112,7 +112,7 @@ const PLAYBOOKS = {
   },
   "Strong Risk-Off": {
     exposure_band: "0–10%", trend_follow_wr: 22, mean_revert_wr: 48,
-    strategy_mode: "Fully Defensive", strategy_color: "text-red-500",
+    strategy_mode: "Capital Preservation Phase", strategy_color: "text-red-500",
     avg_remaining_days: 11,
     actions: [
       "Move to maximum cash allocation",
@@ -156,35 +156,56 @@ function Lock() {
   );
 }
 
-function ProGate({ label, children, onUnlock }) {
+// ─────────────────────────────────────────
+// PRO GATE
+// ─────────────────────────────────────────
+function ProGate({ label, consequence, children, onUnlock }) {
   return (
     <div className="border border-zinc-800 p-8 space-y-4 relative overflow-hidden">
       <Label>{label}</Label>
-      <div className="blur-sm select-none pointer-events-none">{children}</div>
-      <div
-        className="absolute inset-0 flex items-center justify-center cursor-pointer"
-        onClick={onUnlock}
-      >
-        <div className="bg-zinc-950 border border-zinc-700 px-6 py-4 text-center space-y-2">
-          <div className="text-sm font-medium"><Lock />{label} — Pro Only</div>
-          <button className="bg-white text-black px-4 py-2 rounded-md text-xs font-semibold">
-            Unlock Pro
+      <div className="blur-sm select-none pointer-events-none opacity-40">{children}</div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="bg-zinc-950 border border-zinc-700 px-8 py-6 text-center space-y-3 max-w-sm mx-4">
+          <div className="text-sm font-medium text-white"><Lock />{label}</div>
+          {consequence && (
+            <div className="text-xs text-gray-500">{consequence}</div>
+          )}
+          <button
+            onClick={onUnlock}
+            className="w-full bg-white text-black px-4 py-2.5 rounded-md text-xs font-semibold hover:bg-gray-100 transition-colors"
+          >
+            Unlock — \$39/month
           </button>
+          <div className="text-xs text-gray-700">7-day risk-free · Cancel anytime</div>
         </div>
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, suffix = "%", color, barCls, hint, locked }) {
+// ─────────────────────────────────────────
+// STAT CARD
+// ─────────────────────────────────────────
+function StatCard({ label, value, suffix = "%", color, barCls, hint, locked, consequence, onUnlock }) {
   if (locked)
     return (
-      <div className="border border-zinc-800 p-5 space-y-2 relative overflow-hidden">
+      <div
+        className="border border-zinc-800 p-5 space-y-2 relative overflow-hidden cursor-pointer group"
+        onClick={onUnlock}
+      >
         <Label>{label}</Label>
         <div className="text-3xl font-semibold text-zinc-700 blur-sm select-none">00.0</div>
         <Bar value={50} cls="bg-zinc-700" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xs text-gray-600 flex items-center gap-1"><Lock />Pro</span>
+        {hint && <div className="text-xs text-zinc-800 blur-sm select-none">{hint}</div>}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="text-center space-y-1 px-3">
+            <span className="text-xs text-gray-400 flex items-center gap-1 justify-center">
+              <Lock />Pro
+            </span>
+            {consequence && (
+              <div className="text-xs text-gray-600">{consequence}</div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -194,6 +215,137 @@ function StatCard({ label, value, suffix = "%", color, barCls, hint, locked }) {
       <div className={`text-3xl font-semibold ${color}`}>{value}{suffix}</div>
       {barCls && <Bar value={parseFloat(value) || 0} cls={barCls} />}
       {hint && <div className="text-xs text-gray-600 pt-1">{hint}</div>}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// TODAY'S VERDICT
+// ─────────────────────────────────────────
+function TodaysVerdict({ stack, decision, isPro, onUnlock }) {
+  const execLabel = stack?.execution?.label ?? "Neutral";
+  const shiftRisk = stack?.shift_risk ?? 0;
+  const alignment = stack?.alignment ?? 0;
+  const exposure  = stack?.exposure ?? 0;
+
+  const verdictStyle = () => {
+    if (!isPro) return { border: "border-zinc-700", bg: "bg-zinc-900/50", text: "text-gray-300", dot: "bg-gray-500" };
+    if (decision?.action === "aggressive") return { border: "border-emerald-800", bg: "bg-emerald-950/60", text: "text-emerald-300", dot: "bg-emerald-400" };
+    if (decision?.action === "hold")       return { border: "border-green-800",   bg: "bg-green-950/60",   text: "text-green-300",   dot: "bg-green-400"   };
+    if (decision?.action === "trim")       return { border: "border-yellow-800",  bg: "bg-yellow-950/60",  text: "text-yellow-300",  dot: "bg-yellow-400"  };
+    if (decision?.action === "defensive")  return { border: "border-orange-800",  bg: "bg-orange-950/60",  text: "text-orange-300",  dot: "bg-orange-400"  };
+    return { border: "border-red-800", bg: "bg-red-950/60", text: "text-red-300", dot: "bg-red-400" };
+  };
+
+  const s = verdictStyle();
+
+  return (
+    <div className={`border ${s.border} ${s.bg} px-6 py-5`}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className={`w-2 h-2 rounded-full ${s.dot} animate-pulse shrink-0`} />
+          <div>
+            <div className="text-xs text-gray-500 uppercase tracking-widest mb-0.5">
+              Today's Regime Verdict — {stack?.coin ?? "BTC"}
+            </div>
+            {isPro && decision ? (
+              <div className={`text-lg font-semibold ${s.text}`}>
+                {decision.directive}
+              </div>
+            ) : (
+              <div className="text-lg font-semibold text-gray-400 flex items-center gap-2">
+                <Lock />
+                <span>Unlock to see today's directive</span>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-4 items-center">
+          {isPro && decision ? (
+            <>
+              <div className="text-center">
+                <div className="text-xs text-gray-600">Decision Score</div>
+                <div className={`text-xl font-bold ${s.text}`}>{decision.score}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-600">Exposure</div>
+                <div className={`text-xl font-bold ${exposureColor(exposure)}`}>{exposure}%</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-600">Shift Risk</div>
+                <div className={`text-xl font-bold ${riskColor(shiftRisk)}`}>{shiftRisk}%</div>
+              </div>
+            </>
+          ) : (
+            <button
+              onClick={onUnlock}
+              className="bg-white text-black px-5 py-2 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap"
+            >
+              Unlock Pro — \$39/mo
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// FREE TIER BANNER
+// ─────────────────────────────────────────
+function FreeTierBanner({ onUnlock }) {
+  return (
+    <div className="border border-zinc-700 bg-zinc-900/80 px-6 py-5">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="space-y-1">
+          <div className="text-sm text-white font-medium">
+            You are viewing regime context only
+          </div>
+          <div className="text-xs text-gray-500">
+            Without exposure modeling and survival analysis, you are trading without a risk framework.
+          </div>
+        </div>
+        <button
+          onClick={onUnlock}
+          className="bg-white text-black px-6 py-2.5 rounded-md text-sm font-semibold whitespace-nowrap hover:bg-gray-100 transition-colors shrink-0"
+        >
+          Unlock Full System — \$39/mo
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// SHIFT RISK ALERT
+// ─────────────────────────────────────────
+function ShiftRiskAlert({ shiftRisk, coin, isPro, onUnlock }) {
+  if (!isPro) return null;
+  if (shiftRisk <= 60) return null;
+
+  const severity = shiftRisk > 80 ? "critical" : shiftRisk > 70 ? "elevated" : "moderate";
+  const style = severity === "critical"
+    ? "border-red-600 bg-red-950 text-red-200"
+    : severity === "elevated"
+    ? "border-red-800 bg-red-950 text-red-300"
+    : "border-orange-800 bg-orange-950 text-orange-300";
+
+  return (
+    <div className={`border ${style} px-6 py-5 space-y-1`}>
+      <div className="font-semibold text-sm flex items-center gap-2">
+        <span>⚠</span>
+        <span>
+          {severity === "critical" ? "Critical" : severity === "elevated" ? "Elevated" : "Moderate"} Regime Deterioration — {coin}
+        </span>
+        <span className="ml-auto text-lg font-bold">{shiftRisk}%</span>
+      </div>
+      <div className="text-xs opacity-70">
+        {severity === "critical"
+          ? "Multiple deterioration signals active. Immediate exposure reduction recommended."
+          : severity === "elevated"
+          ? "Shift risk elevated. Consider reducing exposure and tightening stops."
+          : "Early deterioration detected. Monitor closely before adding new positions."}
+      </div>
     </div>
   );
 }
@@ -253,7 +405,7 @@ function RegimeQualityCard({ stack, isPro, onUnlock }) {
           }`}>{quality.structural}</div>
         </div>
         <div>
-          <div className="text-xs text-gray-500">Risk of Breakdown</div>
+          <div className="text-xs text-gray-500">Breakdown Risk</div>
           <div className={`text-xl font-semibold mt-1 ${
             quality.breakdown === "Low"          ? "text-emerald-400" :
             quality.breakdown === "Low-Moderate" ? "text-green-400"   :
@@ -287,7 +439,13 @@ function RegimeQualityCard({ stack, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return <ProGate label="Regime Quality Rating" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Regime Quality Rating"
+      consequence="Without quality scoring, you cannot distinguish a strong regime from a fragile one."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-8 space-y-5">
       <Label>Regime Quality Rating</Label>
@@ -325,7 +483,6 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
           ))}
         </div>
       </div>
-
       <div className="grid grid-cols-2 gap-4">
         {[
           { l: "Trend-Following Win Rate", v: pb.trend_follow_wr },
@@ -341,10 +498,9 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
           </div>
         ))}
       </div>
-
       <div className="grid md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <div className="text-xs text-gray-500 uppercase tracking-widest">Regime Playbook</div>
+          <div className="text-xs text-gray-500 uppercase tracking-widest">Regime Protocol</div>
           <ul className="space-y-2">
             {pb.actions.map((a, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
@@ -370,12 +526,18 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return <ProGate label="Regime Playbook Engine" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Regime Playbook Engine"
+      consequence="Without a playbook, you are applying the same strategy regardless of regime conditions."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-8 space-y-2">
       <Label>Regime Playbook Engine</Label>
       <p className="text-xs text-gray-500 mb-4">
-        Actionable guidance based on current regime and historical edge
+        Actionable protocol based on current regime and historical edge
       </p>
       {inner}
     </div>
@@ -432,15 +594,13 @@ function ExposureTracker({ stack, isPro, onUnlock }) {
           <div key={l} className="space-y-2">
             <div className="text-xs text-gray-500">{l}</div>
             <input value={val} onChange={(e) => set(Number(e.target.value))} {...rest}
-              className="w-full bg-zinc-900 border border-zinc-700 text-white
-                         px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500" />
+              className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500" />
           </div>
         ))}
         <div className="space-y-2">
           <div className="text-xs text-gray-500">Strategy Type</div>
           <select value={strategyType} onChange={(e) => setStrategyType(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-700 text-white
-                       px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500">
+            className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500">
             <option value="swing">Swing</option>
             <option value="trend">Trend Following</option>
             <option value="scalp">Scalp</option>
@@ -461,27 +621,25 @@ function ExposureTracker({ stack, isPro, onUnlock }) {
           }`}>
             <div className="font-semibold text-sm">
               {result.overBand
-                ? `⚠ You are ${result.delta}% over regime tolerance`
+                ? `⚠ Exposure ${result.delta}% above regime tolerance`
                 : result.isOver
-                ? `⚡ You are ${result.delta}% above optimal mid-point`
-                : `✓ You are ${result.delta}% below optimal — room to add`}
+                ? `⚡ ${result.delta}% above optimal mid-point`
+                : `✓ ${result.delta}% below optimal — capacity to add`}
             </div>
             <div className="text-xs opacity-70">
-              Effective exposure: {result.effectiveExp}% ·
-              Optimal band: {result.minBand}–{result.maxBand}% ·
-              Regime: {result.regimeLabel}
+              Effective exposure: {result.effectiveExp}% · Optimal band: {result.minBand}–{result.maxBand}% · Regime: {result.regimeLabel}
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { l: "Deployed Capital", v: `
+              { l: "Deployed Capital",  v: `
 $$
 {result.deployedCapital}`, c: exposureColor(currentExposure) },
-              { l: "Optimal Capital",  v: `
+              { l: "Optimal Capital",   v: `
 $$
 {result.optimalCapital}`,  c: "text-blue-400" },
-              { l: "R Expectancy",     v: `${result.expectancy}R`,      c: Number(result.expectancy) >= 0.5 ? "text-emerald-400" : Number(result.expectancy) >= 0 ? "text-yellow-400" : "text-red-400" },
-              { l: "Regime Tolerance", v: `${result.minBand}–${result.maxBand}%`, c: "text-gray-300" },
+              { l: "R Expectancy",      v: `${result.expectancy}R`,      c: Number(result.expectancy) >= 0.5 ? "text-emerald-400" : Number(result.expectancy) >= 0 ? "text-yellow-400" : "text-red-400" },
+              { l: "Regime Tolerance",  v: `${result.minBand}–${result.maxBand}%`, c: "text-gray-300" },
             ].map(({ l, v, c }) => (
               <div key={l} className="border border-zinc-800 p-4 space-y-1">
                 <div className="text-xs text-gray-500">{l}</div>
@@ -509,12 +667,18 @@ $$
     </div>
   );
 
-  if (!isPro) return <ProGate label="Personalized Exposure Tracker" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Exposure Calibration Engine"
+      consequence="Without exposure calibration, you cannot know if your position size is regime-appropriate."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-8 space-y-2">
-      <Label>Personalized Exposure Tracker</Label>
+      <Label>Exposure Calibration Engine</Label>
       <p className="text-xs text-gray-500 mb-4">
-        Input your current position to see how it compares against regime-optimal allocation
+        Compare your current position size against regime-optimal allocation
       </p>
       {inner}
     </div>
@@ -598,7 +762,13 @@ function StressMeter({ stack, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return <ProGate label="Regime Stress Meter" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Regime Stress Meter"
+      consequence="Stress meter identifies regime breakdown before it appears in price."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-8 space-y-5">
       <Label>Regime Stress Meter</Label>
@@ -667,10 +837,16 @@ function RegimeCountdown({ stack, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return <ProGate label="Regime Countdown" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Regime Countdown Timer"
+      consequence="Without regime duration modeling, you cannot anticipate transition windows."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-8 space-y-5">
-      <Label>Regime Countdown</Label>
+      <Label>Regime Countdown Timer</Label>
       <p className="text-xs text-gray-500">Statistical estimate based on historical regime durations</p>
       {inner}
     </div>
@@ -678,7 +854,7 @@ function RegimeCountdown({ stack, isPro, onUnlock }) {
 }
 
 // ─────────────────────────────────────────
-// CONFIDENCE TREND MINI CHART
+// CONFIDENCE TREND
 // ─────────────────────────────────────────
 function ConfidenceTrend({ history, confidence, isPro, onUnlock }) {
   const baseConf  = confidence?.score ?? 60;
@@ -731,7 +907,13 @@ function ConfidenceTrend({ history, confidence, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return <ProGate label="Confidence Trend (24H)" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Confidence Trend (24H)"
+      consequence="Confidence trend shows whether regime conviction is building or deteriorating."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-6 space-y-2">
       <Label>Confidence Trend (24H)</Label>
@@ -760,7 +942,7 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
       <div className="flex justify-between items-start">
         <div>
           <Label>Regime Stack</Label>
-          <h2 className="text-xl font-semibold">{stack.coin} Multi-Timeframe</h2>
+          <h2 className="text-xl font-semibold">{stack.coin} Multi-Timeframe Analysis</h2>
         </div>
         {stack.direction && (
           <span className={`text-xs px-3 py-1 rounded-full border ${dirBadge(stack.direction)}`}>
@@ -784,8 +966,8 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
             </div>
             <div className="text-xs text-right w-28 hidden sm:block">
               {isPro && data
-                ? <span className="text-gray-500">Coh. {data.coherence?.toFixed(1)}%</span>
-                : <span className="text-gray-700 flex items-center justify-end"><Lock />coh.</span>
+                ? <span className="text-gray-500">Coherence {data.coherence?.toFixed(1)}%</span>
+                : <span className="text-gray-700 flex items-center justify-end cursor-pointer" onClick={onUnlock}><Lock />Pro</span>
               }
             </div>
           </div>
@@ -803,19 +985,23 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
         </div>
         <div className="border border-zinc-800 p-5 space-y-2">
           <Label>Recommended Exposure</Label>
-          <div className={`text-3xl font-semibold ${exposureColor(stack.exposure || 0)}`}>
-            {stack.exposure ?? "—"}%
-          </div>
-          <Bar value={stack.exposure||0}
-            cls={(stack.exposure||0)>60?"bg-emerald-500":(stack.exposure||0)>35?"bg-yellow-500":"bg-red-500"} />
-          <div className="text-xs text-gray-600">Alignment-adjusted</div>
+          {isPro ? (
+            <>
+              <div className={`text-3xl font-semibold ${exposureColor(stack.exposure || 0)}`}>
+                {stack.exposure ?? "—"}%
+              </div>
+              <Bar value={stack.exposure||0}
+                cls={(stack.exposure||0)>60?"bg-emerald-500":(stack.exposure||0)>35?"bg-yellow-500":"bg-red-500"} />
+              <div className="text-xs text-gray-600">Alignment-adjusted recommendation</div>
+            </>
+          ) : (
+            <div className="space-y-2 cursor-pointer" onClick={onUnlock}>
+              <div className="text-3xl font-semibold text-zinc-700 blur-sm select-none">00%</div>
+              <div className="text-xs text-gray-700 flex items-center gap-1"><Lock />Pro only</div>
+            </div>
+          )}
         </div>
       </div>
-      {(stack.alignment || 0) < 40 && (
-        <div className="border border-yellow-900 bg-yellow-900/10 px-5 py-4 text-yellow-400 text-sm">
-          ⚡ Low alignment — timeframes conflict. Reduce position size.
-        </div>
-      )}
       {isPro && (
         <div className="grid grid-cols-3 gap-3">
           {[
@@ -832,9 +1018,8 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
       )}
       {!isPro && (
         <button onClick={onUnlock}
-          className="w-full border border-zinc-700 py-3 text-sm text-gray-500
-                     hover:border-zinc-500 hover:text-white transition-colors rounded-sm">
-          <Lock />Unlock coherence, survival & hazard — Pro
+          className="w-full border border-zinc-700 py-3 text-sm text-gray-500 hover:border-zinc-500 hover:text-white transition-colors rounded-sm">
+          <Lock />Unlock coherence, survival, hazard & exposure — Pro
         </button>
       )}
     </div>
@@ -870,7 +1055,13 @@ function ConfidencePanel({ confidence, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return <ProGate label="Regime Confidence Score" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Regime Confidence Score"
+      consequence="Confidence score determines appropriate position sizing for this regime."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   if (!confidence) return null;
   return (
     <div className="border border-zinc-800 p-8 space-y-2">
@@ -914,7 +1105,13 @@ function VolEnvironment({ env, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return <ProGate label="Volatility & Liquidity Environment" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Volatility & Liquidity Environment"
+      consequence="Volatility environment determines stop placement and position sizing precision."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   if (!env) return null;
   return (
     <div className="border border-zinc-800 p-8 space-y-5">
@@ -952,14 +1149,20 @@ function TransitionMatrix({ transitions, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return <ProGate label="Regime Transition Probability" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Regime Transition Probability"
+      consequence="Transition probabilities show where the regime is statistically likely to move next."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   if (!transitions?.transitions) return null;
   return (
     <div className="border border-zinc-800 p-8 space-y-5">
       <div>
-        <Label>Regime Transition Probability</Label>
+        <Label>Regime Transition        Probability</Label>
         <h2 className="text-base font-semibold">
-          Next 24H — Current:{" "}
+          Next Transition — Current:{" "}
           <span className={regimeText(transitions.current_state)}>{transitions.current_state}</span>
         </h2>
         {!transitions.data_sufficient && (
@@ -994,7 +1197,7 @@ function PortfolioAllocator({ stack, isPro, onUnlock }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setAllocation(await res.json());
     } catch {
-      setError("Failed to calculate. Please try again.");
+      setError("Calculation failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -1009,10 +1212,12 @@ function PortfolioAllocator({ stack, isPro, onUnlock }) {
       <div className="grid md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <div className="text-xs text-gray-500">Account Size (USD)</div>
-          <input type="number" value={accountSize}
+          <input
+            type="number"
+            value={accountSize}
             onChange={(e) => setAccountSize(Number(e.target.value))}
-            className="w-full bg-zinc-900 border border-zinc-700 text-white
-                       px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500" />
+            className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+          />
         </div>
         <div className="space-y-2">
           <div className="text-xs text-gray-500">Strategy Mode</div>
@@ -1028,10 +1233,12 @@ function PortfolioAllocator({ stack, isPro, onUnlock }) {
           </div>
         </div>
         <div className="flex items-end">
-          <button onClick={calculate} disabled={loading}
-            className="w-full bg-white text-black py-3 rounded-md text-sm font-semibold
-                       hover:bg-gray-100 transition-colors disabled:opacity-50">
-            {loading ? "Calculating..." : isPro ? "Calculate" : <><Lock />Pro</>}
+          <button
+            onClick={calculate}
+            disabled={loading}
+            className="w-full bg-white text-black py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
+          >
+            {loading ? "Calculating..." : isPro ? "Calculate Allocation" : <><Lock />Pro Only</>}
           </button>
         </div>
       </div>
@@ -1069,12 +1276,13 @@ $$
         </div>
       )}
       {!isPro && (
-        <div className="border border-dashed border-zinc-700 p-6 text-center space-y-2
-                        cursor-pointer hover:border-zinc-500 transition-colors rounded-sm"
-          onClick={onUnlock}>
-          <div className="text-sm text-gray-400"><Lock />Portfolio allocator is a Pro feature</div>
+        <div
+          className="border border-dashed border-zinc-700 p-6 text-center space-y-2 cursor-pointer hover:border-zinc-500 transition-colors rounded-sm"
+          onClick={onUnlock}
+        >
+          <div className="text-sm text-gray-400"><Lock />Portfolio allocator requires Pro</div>
           <div className="text-xs text-gray-600">
-            Unlock dollar amounts per regime · spot vs swing split · cash reserve
+            Unlock deployed capital · spot vs swing split · cash reserve calculation
           </div>
         </div>
       )}
@@ -1112,12 +1320,18 @@ function CorrelationPanel({ correlation, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return <ProGate label="Cross-Asset Correlation" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Cross-Asset Correlation Monitor"
+      consequence="Correlation breakdown between assets is an early warning of regime stress."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   if (!correlation?.pairs?.length) return null;
   return (
     <div className="border border-zinc-800 p-8 space-y-5">
       <div>
-        <Label>Cross-Asset Correlation</Label>
+        <Label>Cross-Asset Correlation Monitor</Label>
         <h2 className="text-base font-semibold">Pairwise Return Correlation (24H)</h2>
       </div>
       {inner}
@@ -1152,25 +1366,18 @@ function RegimeHeatmap({ overview, isPro, onUnlock }) {
         <table className="w-full text-xs">
           <thead>
             <tr>
-              <th className="text-left text-gray-500 pb-3 pr-6 font-normal uppercase tracking-widest">
-                Asset
-              </th>
+              <th className="text-left text-gray-500 pb-3 pr-6 font-normal uppercase tracking-widest">Asset</th>
               {[
                 { label: "Execution", tf: "1H" },
                 { label: "Trend",     tf: "4H" },
                 { label: "Macro",     tf: "1D" },
               ].map(({ label, tf }) => (
-                <th key={tf}
-                  className="text-gray-500 pb-3 px-3 font-normal uppercase tracking-widest text-center">
+                <th key={tf} className="text-gray-500 pb-3 px-3 font-normal uppercase tracking-widest text-center">
                   {label} <span className="text-gray-700">({tf})</span>
                 </th>
               ))}
-              <th className="text-gray-500 pb-3 px-3 font-normal uppercase tracking-widest text-center">
-                Align
-              </th>
-              <th className="text-gray-500 pb-3 px-3 font-normal uppercase tracking-widest text-center">
-                Dir
-              </th>
+              <th className="text-gray-500 pb-3 px-3 font-normal uppercase tracking-widest text-center">Align</th>
+              <th className="text-gray-500 pb-3 px-3 font-normal uppercase tracking-widest text-center">Dir</th>
             </tr>
           </thead>
           <tbody>
@@ -1191,8 +1398,7 @@ function RegimeHeatmap({ overview, isPro, onUnlock }) {
                 </td>
                 <td className="px-3 py-2.5 text-center">
                   <span className={`text-xs px-2 py-0.5 rounded-full border ${dirBadge(item.direction || "mixed")}`}>
-                    {item.direction === "bullish" ? "↑" :
-                     item.direction === "bearish" ? "↓" : "→"}
+                    {item.direction === "bullish" ? "↑" : item.direction === "bearish" ? "↓" : "→"}
                   </span>
                 </td>
               </tr>
@@ -1208,9 +1414,7 @@ function RegimeHeatmap({ overview, isPro, onUnlock }) {
           { label: "R-",   cls: "bg-red-900/20    text-red-400    border-red-900/30"      },
           { label: "S.R-", cls: "bg-red-900/40    text-red-400    border-red-900/50"      },
         ].map(({ label, cls }) => (
-          <span key={label} className={`text-xs px-2 py-0.5 rounded-sm border ${cls}`}>
-            {label}
-          </span>
+          <span key={label} className={`text-xs px-2 py-0.5 rounded-sm border ${cls}`}>{label}</span>
         ))}
         <span className="text-xs text-gray-600 ml-2 self-center">
           S = Strong · R+ = Risk-On · R- = Risk-Off · NEU = Neutral
@@ -1219,16 +1423,20 @@ function RegimeHeatmap({ overview, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return <ProGate label="Regime Heatmap" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Regime Heatmap"
+      consequence="Heatmap shows regime alignment across all assets simultaneously."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   if (!overview?.length) return null;
   return (
     <div className="border border-zinc-800 p-8 space-y-5">
       <div>
         <Label>Regime Heatmap</Label>
         <h2 className="text-base font-semibold">Asset × Timeframe Regime Grid</h2>
-        <p className="text-xs text-gray-500 mt-1">
-          Snapshot of all regimes across every asset and timeframe
-        </p>
+        <p className="text-xs text-gray-500 mt-1">Full regime snapshot across every asset and timeframe</p>
       </div>
       {inner}
     </div>
@@ -1257,18 +1465,14 @@ function RiskEvents({ events }) {
       <div>
         <Label>Risk Event Monitor</Label>
         <h2 className="text-base font-semibold">Active Macro Risk Flags</h2>
-        <p className="text-xs text-gray-500 mt-1">
-          Conditions that may cause regime transitions
-        </p>
+        <p className="text-xs text-gray-500 mt-1">Conditions that may trigger regime transitions</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {sorted.map((e) => (
-          <div key={e.name}
-            className={`border px-4 py-3 rounded-sm space-y-1.5 ${impactStyle(e.impact)}`}>
+          <div key={e.name} className={`border px-4 py-3 rounded-sm space-y-1.5 ${impactStyle(e.impact)}`}>
             <div className="font-medium text-sm">{e.name}</div>
             <div className="text-xs opacity-70">{e.type}</div>
-            <div className={`text-xs font-medium px-2 py-0.5 rounded-full border
-                             inline-block ${impactStyle(e.impact)}`}>
+            <div className={`text-xs font-medium px-2 py-0.5 rounded-full border inline-block ${impactStyle(e.impact)}`}>
               {e.impact} Impact
             </div>
           </div>
@@ -1282,9 +1486,7 @@ function RiskEvents({ events }) {
 // REGIME MATURITY
 // ─────────────────────────────────────────
 function RegimeMaturity({ regimeAge, avgDuration, maturityLabel, isPro, onUnlock }) {
-  const maturityPct = avgDuration > 0
-    ? Math.min(100, (regimeAge / avgDuration) * 100)
-    : 0;
+  const maturityPct = avgDuration > 0 ? Math.min(100, (regimeAge / avgDuration) * 100) : 0;
   const phaseColor =
     maturityLabel === "Overextended" ? "text-red-400"    :
     maturityLabel === "Late Phase"   ? "text-orange-400" :
@@ -1305,23 +1507,26 @@ function RegimeMaturity({ regimeAge, avgDuration, maturityLabel, isPro, onUnlock
       <Bar value={maturityPct} cls={phaseCls} />
       <div className="grid grid-cols-4 gap-1 text-xs text-center">
         {["Early Phase","Mid Phase","Late Phase","Overextended"].map((ph) => (
-          <div key={ph}
-            className={`py-1.5 rounded-sm ${
-              maturityLabel === ph
-                ? "bg-white text-black font-semibold"
-                : "text-gray-600 border border-zinc-800"
-            }`}>
-            {ph}
-          </div>
+          <div key={ph} className={`py-1.5 rounded-sm ${
+            maturityLabel === ph
+              ? "bg-white text-black font-semibold"
+              : "text-gray-600 border border-zinc-800"
+          }`}>{ph}</div>
         ))}
       </div>
       <div className="text-xs text-gray-600">
-        0% = regime just started · 100% = statistically overdue for shift
+        0% = regime just started · 100% = statistically overdue for transition
       </div>
     </div>
   );
 
-  if (!isPro) return <ProGate label="Regime Maturity" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Regime Maturity"
+      consequence="Regime maturity tells you how much statistical life remains in the current trend."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-8 space-y-2">
       <Label>Regime Maturity</Label>
@@ -1338,11 +1543,9 @@ function RegimeTimeline({ history, coin }) {
   return (
     <div className="border border-zinc-800 p-8 space-y-5">
       <div>
-        <Label>Regime History</Label>
-        <h2 className="text-base font-semibold">
-          Regime Score History — {coin} (1H)
-        </h2>
-        <p className="text-xs text-gray-500 mt-1">48-hour composite momentum signal</p>
+        <Label>Regime Score History</Label>
+        <h2 className="text-base font-semibold">{coin} 48H Momentum Signal</h2>
+        <p className="text-xs text-gray-500 mt-1">Composite regime score over time</p>
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={history}>
@@ -1353,10 +1556,8 @@ function RegimeTimeline({ history, coin }) {
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#18181b" strokeDasharray="3 3" />
-          <XAxis dataKey="hour" stroke="#3f3f46"
-            tick={{ fill: "#52525b", fontSize: 10 }} />
-          <YAxis stroke="#3f3f46"
-            tick={{ fill: "#52525b", fontSize: 10 }} domain={[-100, 100]} />
+          <XAxis dataKey="hour" stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
+          <YAxis stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} domain={[-100, 100]} />
           <Tooltip
             contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }}
             labelStyle={{ color: "#71717a" }}
@@ -1366,8 +1567,7 @@ function RegimeTimeline({ history, coin }) {
           <ReferenceLine y={35}  stroke="#16a34a" strokeDasharray="3 3" strokeOpacity={0.4} />
           <ReferenceLine y={-35} stroke="#dc2626" strokeDasharray="3 3" strokeOpacity={0.4} />
           <Area type="monotone" dataKey="score"
-            stroke="#22c55e" strokeWidth={2}
-            fill="url(#hGrad)" dot={false} />
+            stroke="#22c55e" strokeWidth={2} fill="url(#hGrad)" dot={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -1383,7 +1583,6 @@ function BreadthPanel({ breadth }) {
   const scoreColor =
     breadth_score > 30  ? "text-green-400"  :
     breadth_score < -30 ? "text-red-400"    : "text-yellow-400";
-  const participation = Math.round(((bullish + bearish) / total) * 100);
   const trendLabel =
     breadth_score > 60  ? "Strong Participation" :
     breadth_score > 20  ? "Healthy"              :
@@ -1395,9 +1594,7 @@ function BreadthPanel({ breadth }) {
       <div className="flex justify-between items-start">
         <div>
           <Label>Market Breadth</Label>
-          <h2 className="text-base font-semibold">
-            Trend Participation ({total} assets)
-          </h2>
+          <h2 className="text-base font-semibold">Trend Participation ({total} assets)</h2>
         </div>
         <div className="text-right">
           <div className={`text-3xl font-semibold ${scoreColor}`}>
@@ -1408,23 +1605,20 @@ function BreadthPanel({ breadth }) {
       </div>
       <div className="flex h-2 rounded-full overflow-hidden gap-px">
         {bullish > 0 && (
-          <div className="bg-green-500 transition-all"
-            style={{ width: `${(bullish / total) * 100}%` }} />
+          <div className="bg-green-500 transition-all" style={{ width: `${(bullish / total) * 100}%` }} />
         )}
         {neutral > 0 && (
-          <div className="bg-yellow-500 transition-all"
-            style={{ width: `${(neutral / total) * 100}%` }} />
+          <div className="bg-yellow-500 transition-all" style={{ width: `${(neutral / total) * 100}%` }} />
         )}
         {bearish > 0 && (
-          <div className="bg-red-500 transition-all"
-            style={{ width: `${(bearish / total) * 100}%` }} />
+          <div className="bg-red-500 transition-all" style={{ width: `${(bearish / total) * 100}%` }} />
         )}
       </div>
       <div className="flex gap-6 text-xs">
         <span className="text-green-400">{bullish} bullish</span>
         <span className="text-yellow-400">{neutral} neutral</span>
         <span className="text-red-400">{bearish} bearish</span>
-        <span className="text-gray-600 ml-auto">{participation}% trending</span>
+        <span className="text-gray-600 ml-auto">{Math.round(((bullish + bearish) / total) * 100)}% trending</span>
       </div>
     </div>
   );
@@ -1442,9 +1636,7 @@ function RegimeMap({ overview, activeCoin, onSelect }) {
         {overview.map((item) => (
           <button key={item.coin} onClick={() => onSelect(item.coin)}
             className={`border p-3 text-left space-y-1.5 transition-colors rounded-sm ${
-              item.coin === activeCoin
-                ? "border-white"
-                : "border-zinc-800 hover:border-zinc-600"
+              item.coin === activeCoin ? "border-white" : "border-zinc-800 hover:border-zinc-600"
             }`}>
             <div className="font-semibold text-sm">{item.coin}</div>
             {[
@@ -1455,9 +1647,7 @@ function RegimeMap({ overview, activeCoin, onSelect }) {
               <div key={l} className="flex items-center gap-1">
                 <span className="text-gray-600 text-xs w-3">{l}</span>
                 <span className={`text-xs ${regimeText(v)}`}>
-                  {v
-                    ? v.replace("Strong ","S.").replace("Risk-On","R+").replace("Risk-Off","R-")
-                    : "—"}
+                  {v ? v.replace("Strong ","S.").replace("Risk-On","R+").replace("Risk-Off","R-") : "—"}
                 </span>
               </div>
             ))}
@@ -1490,10 +1680,8 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
         <ResponsiveContainer width="100%" height={260}>
           <LineChart data={curve}>
             <CartesianGrid stroke="#18181b" strokeDasharray="3 3" />
-            <XAxis dataKey="hour" stroke="#3f3f46"
-              tick={{ fill: "#52525b", fontSize: 10 }} />
-            <YAxis stroke="#3f3f46"
-              tick={{ fill: "#52525b", fontSize: 10 }} domain={[0, 100]} />
+            <XAxis dataKey="hour" stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
+            <YAxis stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} domain={[0, 100]} />
             <Tooltip
               contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }}
               labelStyle={{ color: "#71717a" }}
@@ -1502,8 +1690,7 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
             <Line type="monotone" dataKey="survival"
               stroke="#22c55e" strokeWidth={2} dot={false} name="Survival %" />
             <Line type="monotone" dataKey="hazard"
-              stroke="#f87171" strokeWidth={1.5}
-              strokeDasharray="4 4" dot={false} name="Hazard %" />
+              stroke="#f87171" strokeWidth={1.5} strokeDasharray="4 4" dot={false} name="Hazard %" />
             <ReferenceLine
               x={Math.round(regimeAge)}
               stroke="#ffffff" strokeDasharray="3 3"
@@ -1513,17 +1700,14 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
         </ResponsiveContainer>
       </div>
       {!isPro && (
-        <div
-          className="absolute inset-0 flex items-center justify-center cursor-pointer"
-          onClick={onUnlock}
-        >
-          <div className="bg-zinc-950 border border-zinc-700 px-6 py-5 text-center space-y-2">
-            <div className="text-sm font-medium">Survival Curve — Pro Only</div>
-            <div className="text-xs text-gray-500">
-              See where your regime sits on the survival curve
+        <div className="absolute inset-0 flex items-center justify-center cursor-pointer" onClick={onUnlock}>
+          <div className="bg-zinc-950 border border-zinc-700 px-6 py-5 text-center space-y-3">
+            <div className="text-sm font-medium">Survival Curve</div>
+            <div className="text-xs text-gray-500 max-w-xs">
+              Without survival modeling, you cannot quantify regime decay probability.
             </div>
-            <button className="bg-white text-black px-4 py-2 rounded-md text-xs font-semibold mt-1">
-              Unlock Pro
+            <button className="bg-white text-black px-4 py-2.5 rounded-md text-xs font-semibold">
+              Unlock Pro — \$39/month
             </button>
           </div>
         </div>
@@ -1531,7 +1715,6 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
     </div>
   );
 }
-
 
 // ─────────────────────────────────────────
 // INTERPRETATION PANEL
@@ -1545,7 +1728,7 @@ function InterpretationPanel({ stack, latest, isPro }) {
 
   return (
     <div className="border border-zinc-800 p-8 space-y-4">
-      <Label>Regime Interpretation</Label>
+      <Label>Signal Interpretation</Label>
       <div className="grid md:grid-cols-2 gap-3 text-sm text-gray-400">
         <div>Regime Age: <span className="text-white">{regimeAge.toFixed(1)}h</span></div>
         {latest && (
@@ -1563,39 +1746,34 @@ function InterpretationPanel({ stack, latest, isPro }) {
               </span>
             </div>
             <div>
-              Volatility:{" "}
-              <span className="text-white">{latest.volatility?.toFixed(2) ?? "—"}</span>
+              Volatility: <span className="text-white">{latest.volatility?.toFixed(2) ?? "—"}</span>
             </div>
           </>
         )}
       </div>
       {isPro && hazard > 60 && (
         <div className="text-red-400 text-sm pt-1">
-          ⚠ Elevated deterioration risk — hazard above 60%.
+          ⚠ Elevated hazard above 60% — deterioration risk is statistically significant.
         </div>
       )}
       {isPro && survival > 70 && (
         <div className="text-green-400 text-sm pt-1">
-          ✓ Regime persistence statistically strong.
+          ✓ Regime persistence statistically strong at current age.
         </div>
       )}
       {alignment < 40 && (
         <div className="text-yellow-400 text-sm pt-1">
-          ⚡ Low alignment — timeframes conflict. Trade smaller.
+          ⚡ Low alignment — timeframes in conflict. Reduce position size.
         </div>
       )}
-      {stack.macro?.label?.includes("Risk-Off") &&
-       stack.execution?.label?.includes("Risk-On") && (
+      {stack.macro?.label?.includes("Risk-Off") && stack.execution?.label?.includes("Risk-On") && (
         <div className="border border-yellow-900 bg-yellow-900/10 px-4 py-3 text-yellow-400 text-sm">
-          Counter-trend detected: short-term bullish inside bearish macro.
-          Exposure automatically reduced.
+          Counter-trend detected: short-term bullish inside bearish macro. Exposure automatically reduced.
         </div>
       )}
-      {stack.macro?.label?.includes("Risk-On") &&
-       stack.execution?.label?.includes("Risk-Off") && (
+      {stack.macro?.label?.includes("Risk-On") && stack.execution?.label?.includes("Risk-Off") && (
         <div className="border border-blue-900 bg-blue-900/10 px-4 py-3 text-blue-400 text-sm">
-          Pullback within bullish macro — potential re-entry zone.
-          Await execution alignment before adding size.
+          Pullback within bullish macro — potential re-entry zone. Await execution alignment before adding size.
         </div>
       )}
     </div>
@@ -1605,7 +1783,7 @@ function InterpretationPanel({ stack, latest, isPro }) {
 // ─────────────────────────────────────────
 // DECISION ENGINE PANEL
 // ─────────────────────────────────────────
-function DecisionEnginePanel({ stack, isPro, onUnlock }) {
+function DecisionEnginePanel({ stack, isPro, onUnlock, onDecisionLoaded }) {
   const [decision, setDecision] = useState(null);
   const [loading,  setLoading]  = useState(false);
 
@@ -1614,32 +1792,22 @@ function DecisionEnginePanel({ stack, isPro, onUnlock }) {
     setLoading(true);
     fetch(`${BACKEND}/decision-engine?coin=${stack.coin}`)
       .then((r) => r.json())
-      .then((d) => setDecision(d.error ? null : d))
+      .then((d) => {
+        if (!d.error) {
+          setDecision(d);
+          if (onDecisionLoaded) onDecisionLoaded(d);
+        }
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [stack?.coin, isPro]);
 
   const directiveStyle = (action) => {
-    if (action === "aggressive") return {
-      border: "border-emerald-700", bg: "bg-emerald-950",
-      text: "text-emerald-300", bar: "bg-emerald-500",
-    };
-    if (action === "hold") return {
-      border: "border-green-800", bg: "bg-green-950",
-      text: "text-green-300", bar: "bg-green-500",
-    };
-    if (action === "trim") return {
-      border: "border-yellow-800", bg: "bg-yellow-950",
-      text: "text-yellow-300", bar: "bg-yellow-500",
-    };
-    if (action === "defensive") return {
-      border: "border-orange-800", bg: "bg-orange-950",
-      text: "text-orange-300", bar: "bg-orange-500",
-    };
-    return {
-      border: "border-red-800", bg: "bg-red-950",
-      text: "text-red-300", bar: "bg-red-500",
-    };
+    if (action === "aggressive") return { border: "border-emerald-700", bg: "bg-emerald-950", text: "text-emerald-300", bar: "bg-emerald-500" };
+    if (action === "hold")       return { border: "border-green-800",   bg: "bg-green-950",   text: "text-green-300",   bar: "bg-green-500"   };
+    if (action === "trim")       return { border: "border-yellow-800",  bg: "bg-yellow-950",  text: "text-yellow-300",  bar: "bg-yellow-500"  };
+    if (action === "defensive")  return { border: "border-orange-800",  bg: "bg-orange-950",  text: "text-orange-300",  bar: "bg-orange-500"  };
+    return { border: "border-red-800", bg: "bg-red-950", text: "text-red-300", bar: "bg-red-500" };
   };
 
   const inner = decision ? (
@@ -1650,66 +1818,43 @@ function DecisionEnginePanel({ stack, isPro, onUnlock }) {
           <div className={`border ${s.border} ${s.bg} p-6 space-y-3`}>
             <div className="flex justify-between items-start">
               <div>
-                <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">
-                  ChainPulse Directive
-                </div>
-                <div className={`text-3xl font-bold ${s.text}`}>
-                  {decision.directive}
-                </div>
+                <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">ChainPulse Directive</div>
+                <div className={`text-3xl font-bold ${s.text}`}>{decision.directive}</div>
               </div>
               <div className="text-right">
-                <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">
-                  Decision Score
-                </div>
-                <div className={`text-3xl font-bold ${s.text}`}>
-                  {decision.score}
-                </div>
+                <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Decision Score</div>
+                <div className={`text-3xl font-bold ${s.text}`}>{decision.score}</div>
               </div>
             </div>
-            <div className={`text-sm ${s.text} opacity-80`}>
-              {decision.description}
-            </div>
+            <div className={`text-sm ${s.text} opacity-80`}>{decision.description}</div>
             <div className="w-full bg-zinc-800 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all duration-700 ${s.bar}`}
-                style={{ width: `${decision.score}%` }}
-              />
+              <div className={`h-2 rounded-full transition-all duration-700 ${s.bar}`}
+                style={{ width: `${decision.score}%` }} />
             </div>
           </div>
         );
       })()}
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-3">
-          <div className="text-xs text-gray-500 uppercase tracking-widest">
-            What to do today
-          </div>
+          <div className="text-xs text-gray-500 uppercase tracking-widest">Recommended Actions</div>
           <ul className="space-y-2">
             {decision.actions.map((a, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                <span className="text-white mt-0.5 shrink-0 font-bold">→</span>
-                {a}
+                <span className="text-white mt-0.5 shrink-0 font-bold">→</span>{a}
               </li>
             ))}
           </ul>
         </div>
         <div className="space-y-3">
-          <div className="text-xs text-gray-500 uppercase tracking-widest">
-            Signal breakdown
-          </div>
+          <div className="text-xs text-gray-500 uppercase tracking-widest">Signal Breakdown</div>
           <div className="space-y-2">
             {Object.entries(decision.components).map(([key, val]) => (
               <div key={key} className="flex items-center gap-3">
-                <div className="text-xs text-gray-600 w-20 capitalize shrink-0">
-                  {key}
-                </div>
+                <div className="text-xs text-gray-600 w-20 capitalize shrink-0">{key}</div>
                 <div className="flex-1 bg-zinc-800 rounded-full h-1.5">
-                  <div
-                    className={`h-1.5 rounded-full transition-all ${
-                      val >= 70 ? "bg-emerald-500" :
-                      val >= 50 ? "bg-yellow-500"  : "bg-red-500"
-                    }`}
-                    style={{ width: `${val}%` }}
-                  />
+                  <div className={`h-1.5 rounded-full transition-all ${
+                    val >= 70 ? "bg-emerald-500" : val >= 50 ? "bg-yellow-500" : "bg-red-500"
+                  }`} style={{ width: `${val}%` }} />
                 </div>
                 <div className="text-xs text-gray-400 w-8 text-right">{val}%</div>
               </div>
@@ -1718,9 +1863,7 @@ function DecisionEnginePanel({ stack, isPro, onUnlock }) {
         </div>
       </div>
       <div className="border border-zinc-800 p-4">
-        <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">
-          Decision score map
-        </div>
+        <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">Decision Score Map</div>
         <div className="grid grid-cols-5 gap-1 text-xs text-center">
           {[
             { range: "80–100", label: "Increase",  cls: "bg-emerald-900/40 text-emerald-400 border-emerald-900" },
@@ -1745,15 +1888,21 @@ function DecisionEnginePanel({ stack, isPro, onUnlock }) {
   ) : loading ? (
     <div className="text-sm text-gray-500">Computing directive...</div>
   ) : (
-    <div className="text-sm text-gray-500">No data available</div>
+    <div className="text-sm text-gray-500">Insufficient data</div>
   );
 
-  if (!isPro) return <ProGate label="ChainPulse Directive" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Decision Engine"
+      consequence="Without the decision engine, you have no systematic directive for today's session."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-8 space-y-2">
       <Label>Decision Engine</Label>
       <p className="text-xs text-gray-500 mb-4">
-        What ChainPulse recommends you physically do today
+        Systematic directive based on all regime signals — updated every hour
       </p>
       {inner}
     </div>
@@ -1797,21 +1946,14 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
         <div className="space-y-2 flex-1">
           <div className="text-xs text-gray-500">Your current exposure %</div>
           <input
-            type="number"
-            value={userExposure}
+            type="number" value={userExposure}
             onChange={(e) => setUserExposure(Number(e.target.value))}
             min={0} max={200}
-            className="w-full bg-zinc-900 border border-zinc-700 text-white
-                       px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+            className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
           />
         </div>
-        <button
-          onClick={analyse}
-          disabled={loading}
-          className="bg-white text-black px-6 py-3 rounded-md text-sm
-                     font-semibold hover:bg-gray-100 transition-colors
-                     disabled:opacity-50 whitespace-nowrap"
-        >
+        <button onClick={analyse} disabled={loading}
+          className="bg-white text-black px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap">
           {loading ? "Analysing..." : "Show Consequences"}
         </button>
       </div>
@@ -1823,30 +1965,12 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              {
-                label: "Your Exposure",
-                value: `${result.user_exposure}%`,
-                color: exposureColor(result.user_exposure),
-              },
-              {
-                label: "Model Recommendation",
-                value: `${result.model_exposure}%`,
-                color: exposureColor(result.model_exposure),
-              },
-              {
-                label: "Drawdown Probability",
-                value: `${result.drawdown_prob}%`,
-                color: riskColor(result.drawdown_prob),
-                sub: result.dd_prob_increase > 0
-                  ? `+${result.dd_prob_increase}% vs model`
-                  : "Within model range",
-              },
-              {
-                label: "Expected Loss Risk",
-                value: `${result.expected_loss_pct}%`,
-                color: riskColor(result.expected_loss_pct),
-                sub: `Model: ${result.model_loss_pct}%`,
-              },
+              { label: "Your Exposure",          value: `${result.user_exposure}%`,   color: exposureColor(result.user_exposure)  },
+              { label: "Model Recommendation",   value: `${result.model_exposure}%`,  color: exposureColor(result.model_exposure) },
+              { label: "Drawdown Probability",   value: `${result.drawdown_prob}%`,   color: riskColor(result.drawdown_prob),
+                sub: result.dd_prob_increase > 0 ? `+${result.dd_prob_increase}% vs model` : "Within model range" },
+              { label: "Expected Loss Risk",     value: `${result.expected_loss_pct}%`, color: riskColor(result.expected_loss_pct),
+                sub: `Model: ${result.model_loss_pct}%` },
             ].map(({ label, value, color, sub }) => (
               <div key={label} className="border border-zinc-800 p-4 space-y-1">
                 <div className="text-xs text-gray-500">{label}</div>
@@ -1856,43 +1980,28 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
             ))}
           </div>
           <div className="border border-zinc-800 p-4 space-y-3">
-            <div className="text-xs text-gray-500">
-              Your exposure vs model recommendation
-            </div>
+            <div className="text-xs text-gray-500">Your exposure vs model recommendation</div>
             <div className="relative h-4 bg-zinc-800 rounded-full overflow-hidden">
-              <div
-                className="absolute h-full bg-zinc-700/60"
-                style={{
-                  left:  `${Math.max(0, result.model_exposure - 10)}%`,
-                  width: "20%",
-                }}
-              />
-              <div
-                className="absolute h-full w-0.5 bg-white opacity-60"
-                style={{ left: `${Math.min(99, result.model_exposure)}%` }}
-              />
-              <div
-                className={`absolute h-full w-1 rounded-full ${
-                  result.severity === "high"   ? "bg-red-400"    :
-                  result.severity === "medium" ? "bg-yellow-400" : "bg-emerald-400"
-                }`}
-                style={{ left: `${Math.min(99, result.user_exposure)}%` }}
-              />
+              <div className="absolute h-full bg-zinc-700/60"
+                style={{ left: `${Math.max(0, result.model_exposure - 10)}%`, width: "20%" }} />
+              <div className="absolute h-full w-0.5 bg-white opacity-60"
+                style={{ left: `${Math.min(99, result.model_exposure)}%` }} />
+              <div className={`absolute h-full w-1 rounded-full ${
+                result.severity === "high" ? "bg-red-400" : result.severity === "medium" ? "bg-yellow-400" : "bg-emerald-400"
+              }`} style={{ left: `${Math.min(99, result.user_exposure)}%` }} />
             </div>
             <div className="flex justify-between text-xs text-gray-600">
               <span>0%</span>
               <span className="text-gray-400">
-                ← Model: {result.model_exposure}% &nbsp;|&nbsp;
-                You: {result.user_exposure}% →
+                ← Model: {result.model_exposure}% &nbsp;|&nbsp; You: {result.user_exposure}% →
               </span>
               <span>100%</span>
             </div>
           </div>
           {result.over_exposed && result.delta_abs > 15 && (
             <div className="border border-red-900 bg-red-950 px-4 py-3 text-red-300 text-sm">
-              ⚠ If this regime shifts while you are over-exposed, estimated drawdown
-              impact is {result.expected_loss_pct}% of portfolio vs
-              {" "}{result.model_loss_pct}% if following the model.
+              ⚠ If this regime shifts while you are over-exposed, estimated drawdown impact is{" "}
+              {result.expected_loss_pct}% of portfolio vs {result.model_loss_pct}% if following the model.
             </div>
           )}
         </div>
@@ -1900,12 +2009,18 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return <ProGate label="If You Do Nothing" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Consequence Simulator"
+      consequence="See exactly what happens to your portfolio if you ignore regime signals."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-8 space-y-2">
-      <Label>If You Do Nothing</Label>
+      <Label>Consequence Simulator</Label>
       <p className="text-xs text-gray-500 mb-4">
-        See the consequence of maintaining your current exposure in this regime
+        The cost of maintaining your current exposure in this regime
       </p>
       {inner}
     </div>
@@ -1913,6 +2028,295 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
 }
 
 // ─────────────────────────────────────────
+// PNL IMPACT ESTIMATOR
+// ─────────────────────────────────────────
+function PnLImpactEstimator({ stack, isPro, onUnlock }) {
+  const [portfolioSize, setPortfolioSize] = useState(10000);
+  const [userExposure,  setUserExposure]  = useState(50);
+  const [result,        setResult]        = useState(null);
+
+  const estimate = () => {
+    if (!stack) return;
+    const modelExposure = stack.exposure   ?? 50;
+    const hazard        = stack.hazard     ?? 30;
+    const shiftRisk     = stack.shift_risk ?? 30;
+    const survival      = stack.survival   ?? 70;
+    const execLabel     = stack.execution?.label ?? "Neutral";
+
+    const expectedMoveUp   = execLabel.includes("Risk-On")  ? 0.08 :
+                             execLabel === "Neutral"         ? 0.03 : 0.01;
+    const expectedMoveDown = execLabel.includes("Risk-Off") ? 0.12 :
+                             execLabel === "Neutral"         ? 0.05 : 0.03;
+
+    const upProb   = survival / 100;
+    const downProb = (hazard + shiftRisk) / 200;
+
+    const userUpPnL    = portfolioSize * (userExposure  / 100) * expectedMoveUp;
+    const modelUpPnL   = portfolioSize * (modelExposure / 100) * expectedMoveUp;
+    const userDownPnL  = portfolioSize * (userExposure  / 100) * expectedMoveDown * -1;
+    const modelDownPnL = portfolioSize * (modelExposure / 100) * expectedMoveDown * -1;
+
+    const userEV  = upProb * userUpPnL  + downProb * userDownPnL;
+    const modelEV = upProb * modelUpPnL + downProb * modelDownPnL;
+
+    setResult({
+      userEV:       Math.round(userEV),
+      modelEV:      Math.round(modelEV),
+      evDelta:      Math.round(userEV - modelEV),
+      userUpPnL:    Math.round(userUpPnL),
+      modelUpPnL:   Math.round(modelUpPnL),
+      userDownPnL:  Math.round(userDownPnL),
+      modelDownPnL: Math.round(modelDownPnL),
+      upProb:       Math.round(upProb   * 100),
+      downProb:     Math.round(downProb * 100),
+      modelExposure,
+      execLabel,
+    });
+  };
+
+  const inner = (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <div className="text-xs text-gray-500">Portfolio Size (USD)</div>
+          <input
+            type="number"
+            value={portfolioSize}
+            onChange={(e) => setPortfolioSize(Number(e.target.value))}
+            className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+          />
+        </div>
+        <div className="space-y-2">
+          <div className="text-xs text-gray-500">Your Current Exposure %</div>
+          <input
+            type="number"
+            value={userExposure}
+            onChange={(e) => setUserExposure(Number(e.target.value))}
+            min={0} max={200}
+            className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+          />
+        </div>
+      </div>
+      <button
+        onClick={estimate}
+        className="bg-white text-black px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
+      >
+        Estimate PnL Impact
+      </button>
+      {result && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className={`border p-5 space-y-2 ${
+              result.userEV >= 0 ? "border-emerald-900 bg-emerald-950" : "border-red-900 bg-red-950"
+            }`}>
+              <div className="text-xs text-gray-500">Your Expected Value</div>
+              <div className={`text-3xl font-bold ${result.userEV >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                {result.userEV >= 0 ? "+" : ""}${result.userEV.toLocaleString()}
+              </div>
+              <div className="text-xs text-gray-500">At {userExposure}% exposure</div>
+            </div>
+            <div className={`border p-5 space-y-2 ${
+              result.modelEV >= 0 ? "border-blue-900 bg-blue-950" : "border-zinc-800 bg-zinc-900"
+            }`}>
+              <div className="text-xs text-gray-500">Model Expected Value</div>
+              <div className={`text-3xl font-bold ${result.modelEV >= 0 ? "text-blue-300" : "text-gray-300"}`}>
+                {result.modelEV >= 0 ? "+" : ""}${result.modelEV.toLocaleString()}
+              </div>
+              <div className="text-xs text-gray-500">At {result.modelExposure}% exposure</div>
+            </div>
+          </div>
+          {result.evDelta !== 0 && (
+            <div className={`border px-4 py-3 text-sm ${
+              result.evDelta < 0
+                ? "border-red-900 bg-red-950 text-red-300"
+                : "border-emerald-900 bg-emerald-950 text-emerald-300"
+            }`}>
+              {result.evDelta < 0
+                ? `⚠ Your exposure reduces expected value by 
+$$
+{Math.abs(result.evDelta).toLocaleString()} vs model.`
+                : `✓ Your exposure increases expected value by
+$$
+{result.evDelta.toLocaleString()} vs model.`}
+            </div>
+          )}
+          <div className="border border-zinc-800 p-4 space-y-3">
+            <div className="text-xs text-gray-500 uppercase tracking-widest">Scenario Breakdown</div>
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="space-y-1.5">
+                <div className="text-gray-500">Upside ({result.upProb}% probability)</div>
+                <div className="flex gap-3">
+                  <span className="text-emerald-400">You: +${result.userUpPnL.toLocaleString()}</span>
+                  <span className="text-blue-400">Model: +${result.modelUpPnL.toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="text-gray-500">Downside ({result.downProb}% probability)</div>
+                <div className="flex gap-3">
+                  <span className="text-red-400">You: -${Math.abs(result.userDownPnL).toLocaleString()}</span>
+                  <span className="text-orange-400">Model: -${Math.abs(result.modelDownPnL).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+            <div className="text-xs text-gray-700 border-t border-zinc-800 pt-2">
+              Based on {result.execLabel} regime · probabilities derived from survival and hazard modeling
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  if (!isPro) return (
+    <ProGate
+      label="PnL Impact Estimator"
+      consequence="Without PnL modeling you cannot quantify the expected value of your exposure decision."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
+  return (
+    <div className="border border-zinc-800 p-8 space-y-2">
+      <Label>PnL Impact Estimator</Label>
+      <p className="text-xs text-gray-500 mb-4">
+        Expected value of your current exposure vs model recommendation
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// DRAWDOWN SIMULATOR
+// ─────────────────────────────────────────
+function DrawdownSimulator({ stack, isPro, onUnlock }) {
+  const [portfolioSize, setPortfolioSize] = useState(10000);
+  const [userExposure,  setUserExposure]  = useState(50);
+  const [result,        setResult]        = useState(null);
+
+  const simulate = () => {
+    if (!stack) return;
+    const modelExposure = stack.exposure ?? 50;
+    const scenarios = [
+      { label: "Moderate", pct: 10, color: "text-yellow-400", barCls: "bg-yellow-500" },
+      { label: "Severe",   pct: 20, color: "text-orange-400", barCls: "bg-orange-500" },
+      { label: "Extreme",  pct: 30, color: "text-red-400",    barCls: "bg-red-500"    },
+    ];
+    const results = scenarios.map(({ label, pct, color, barCls }) => {
+      const userLoss  = (userExposure  / 100) * (pct / 100) * portfolioSize;
+      const modelLoss = (modelExposure / 100) * (pct / 100) * portfolioSize;
+      const saving    = userLoss - modelLoss;
+      return {
+        label, pct, color, barCls,
+        userLoss:   Math.round(userLoss),
+        modelLoss:  Math.round(modelLoss),
+        saving:     Math.round(saving),
+        userPct:    ((userLoss  / portfolioSize) * 100).toFixed(1),
+        modelPct:   ((modelLoss / portfolioSize) * 100).toFixed(1),
+        savingPct:  ((saving    / portfolioSize) * 100).toFixed(1),
+      };
+    });
+    setResult({ scenarios: results, modelExposure });
+  };
+
+  const inner = (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <div className="text-xs text-gray-500">Portfolio Size (USD)</div>
+          <input
+            type="number"
+            value={portfolioSize}
+            onChange={(e) => setPortfolioSize(Number(e.target.value))}
+            className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+          />
+        </div>
+        <div className="space-y-2">
+          <div className="text-xs text-gray-500">Your Current Exposure %</div>
+          <input
+            type="number"
+            value={userExposure}
+            onChange={(e) => setUserExposure(Number(e.target.value))}
+            min={0} max={200}
+            className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+          />
+        </div>
+      </div>
+      <button
+        onClick={simulate}
+        className="bg-white text-black px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
+      >
+        Run Drawdown Scenarios
+      </button>
+      {result && (
+        <div className="space-y-4">
+          <div className="border border-zinc-800 px-4 py-3 text-xs text-gray-500">
+            <span>Model recommendation: <span className="text-gray-300">{result.modelExposure}%</span></span>
+            <span className="mx-3">·</span>
+            <span>Your exposure: <span className="text-gray-300">{userExposure}%</span></span>
+            <span className="mx-3">·</span>
+            <span>Portfolio: <span className="text-gray-300">${portfolioSize.toLocaleString()}</span></span>
+          </div>
+          {result.scenarios.map(({ label, pct, color, barCls, userLoss, modelLoss, saving, userPct, modelPct, savingPct }) => (
+            <div key={label} className="border border-zinc-800 p-5 space-y-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className={`text-lg font-semibold ${color}`}>
+                    {label} Drawdown — {pct}% price decline
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5">Simulated portfolio impact</div>
+                </div>
+                {saving > 0 && (
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500">Model saves you</div>
+                    <div className="text-lg font-semibold text-emerald-400">${saving.toLocaleString()}</div>
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <div className="text-xs text-gray-500">Your loss</div>
+                  <div className={`text-2xl font-semibold ${color}`}>-${userLoss.toLocaleString()}</div>
+                  <div className="text-xs text-gray-600">-{userPct}% of portfolio</div>
+                  <Bar value={Number(userPct)} cls={barCls} />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="text-xs text-gray-500">Model loss</div>
+                  <div className="text-2xl font-semibold text-gray-300">-${modelLoss.toLocaleString()}</div>
+                  <div className="text-xs text-gray-600">-{modelPct}% of portfolio</div>
+                  <Bar value={Number(modelPct)} cls="bg-zinc-500" />
+                </div>
+              </div>
+              {saving > 0 && (
+                <div className="border border-emerald-900 bg-emerald-950 px-3 py-2 text-emerald-300 text-xs">
+                  Following the model saves ${saving.toLocaleString()} ({savingPct}%) in this scenario.
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  if (!isPro) return (
+    <ProGate
+      label="Drawdown Simulator"
+      consequence="Without drawdown simulation you cannot quantify the real cost of your current exposure."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
+  return (
+    <div className="border border-zinc-800 p-8 space-y-2">
+      <Label>Drawdown Simulator</Label>
+      <p className="text-xs text-gray-500 mb-4">
+        Three drawdown scenarios at your exposure vs model recommendation
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+─────────────────────────────────────────
 // RISK PROFILE PANEL
 // ─────────────────────────────────────────
 function RiskProfilePanel({ email, isPro, onUnlock, onProfileSaved }) {
@@ -1941,7 +2345,7 @@ function RiskProfilePanel({ email, isPro, onUnlock, onProfileSaved }) {
       const data = await res.json();
       if (data.status === "saved") {
         setSaved(true);
-        onProfileSaved(data);
+        if (onProfileSaved) onProfileSaved(data);
       }
     } catch (e) {
       console.error(e);
@@ -1960,73 +2364,38 @@ function RiskProfilePanel({ email, isPro, onUnlock, onProfileSaved }) {
     <div className="space-y-6">
       {saved && (
         <div className="border border-emerald-800 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm">
-          ✓ Risk profile saved. Your exposure recommendations are now personalised.
+          ✓ Risk profile saved. Exposure recommendations are now personalised.
         </div>
       )}
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-5">
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <div className="text-xs text-gray-500">Max Tolerable Drawdown</div>
-              <div className="text-xs text-white font-medium">{drawdown}%</div>
+          {[
+            { l: "Max Tolerable Drawdown", val: drawdown, set: setDrawdown, min: 5,  max: 50, step: 5,   fmt: (v) => `${v}%`,     left: "5% (conservative)", right: "50% (aggressive)" },
+            { l: "Typical Leverage",       val: leverage, set: setLeverage, min: 1,  max: 10, step: 0.5, fmt: (v) => `${v}x`,     left: "1x (spot)",         right: "10x"              },
+            { l: "Typical Holding Period", val: holding,  set: setHolding,  min: 1,  max: 30, step: 1,   fmt: (v) => `${v} days`, left: "1 day (scalp)",     right: "30 days (swing)"  },
+          ].map(({ l, val, set, min, max, step, fmt, left, right }) => (
+            <div key={l} className="space-y-2">
+              <div className="flex justify-between">
+                <div className="text-xs text-gray-500">{l}</div>
+                <div className="text-xs text-white font-medium">{fmt(val)}</div>
+              </div>
+              <input type="range" min={min} max={max} step={step} value={val}
+                onChange={(e) => set(Number(e.target.value))}
+                className="w-full accent-white" />
+              <div className="flex justify-between text-xs text-gray-700">
+                <span>{left}</span><span>{right}</span>
+              </div>
             </div>
-            <input
-              type="range" min={5} max={50} step={5}
-              value={drawdown}
-              onChange={(e) => setDrawdown(Number(e.target.value))}
-              className="w-full accent-white"
-            />
-            <div className="flex justify-between text-xs text-gray-700">
-              <span>5% (very conservative)</span>
-              <span>50% (very aggressive)</span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <div className="text-xs text-gray-500">Typical Leverage</div>
-              <div className="text-xs text-white font-medium">{leverage}x</div>
-            </div>
-            <input
-              type="range" min={1} max={10} step={0.5}
-              value={leverage}
-              onChange={(e) => setLeverage(Number(e.target.value))}
-              className="w-full accent-white"
-            />
-            <div className="flex justify-between text-xs text-gray-700">
-              <span>1x (spot only)</span>
-              <span>10x</span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <div className="text-xs text-gray-500">Typical Holding Period</div>
-              <div className="text-xs text-white font-medium">{holding} days</div>
-            </div>
-            <input
-              type="range" min={1} max={30} step={1}
-              value={holding}
-              onChange={(e) => setHolding(Number(e.target.value))}
-              className="w-full accent-white"
-            />
-            <div className="flex justify-between text-xs text-gray-700">
-              <span>1 day (scalp)</span>
-              <span>30 days (swing)</span>
-            </div>
-          </div>
+          ))}
         </div>
         <div className="space-y-3">
           <div className="text-xs text-gray-500">Trader Identity</div>
           <div className="space-y-2">
             {["conservative","balanced","aggressive"].map((id) => (
-              <button
-                key={id}
-                onClick={() => setIdentity(id)}
+              <button key={id} onClick={() => setIdentity(id)}
                 className={`w-full text-left p-4 rounded-md border transition-colors space-y-1 ${
-                  identity === id
-                    ? "border-white bg-zinc-800"
-                    : "border-zinc-800 hover:border-zinc-600"
-                }`}
-              >
+                  identity === id ? "border-white bg-zinc-800" : "border-zinc-800 hover:border-zinc-600"
+                }`}>
                 <div className="text-sm font-medium capitalize">{id}</div>
                 <div className="text-xs text-gray-600">{identityDesc[id]}</div>
               </button>
@@ -2034,26 +2403,26 @@ function RiskProfilePanel({ email, isPro, onUnlock, onProfileSaved }) {
           </div>
         </div>
       </div>
-      <button
-        onClick={save}
-        disabled={loading || !email}
-        className="bg-white text-black px-6 py-3 rounded-md text-sm
-                   font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
-      >
+      <button onClick={save} disabled={loading || !email}
+        className="bg-white text-black px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50">
         {loading ? "Saving..." : "Save Risk Profile"}
       </button>
-      {!email && (
-        <div className="text-xs text-gray-600">Sign in to save your profile.</div>
-      )}
+      {!email && <div className="text-xs text-gray-600">Sign in to save your profile.</div>}
     </div>
   );
 
-  if (!isPro) return <ProGate label="Risk Profile Calibration" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Risk Profile Calibration"
+      consequence="Without a risk profile, exposure recommendations cannot be personalised to your capital."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-8 space-y-2">
       <Label>Risk Profile Calibration</Label>
       <p className="text-xs text-gray-500 mb-4">
-        Personalise your exposure recommendations based on your trading style
+        Personalise exposure recommendations to your trading style and capital
       </p>
       {inner}
     </div>
@@ -2092,22 +2461,15 @@ function ExposureLogger({ stack, email, isPro, onUnlock }) {
   const inner = (
     <div className="space-y-5">
       <p className="text-xs text-gray-500">
-        Log your actual exposure to build your discipline score and
-        performance comparison over time.
+        Log your actual exposure to build your discipline score and performance tracking over time.
       </p>
       <div className="flex gap-4 items-end">
         <div className="space-y-2 flex-1">
-          <div className="text-xs text-gray-500">
-            My current exposure in {stack?.coin ?? "BTC"} (%)
-          </div>
-          <input
-            type="number"
-            value={userExposure}
+          <div className="text-xs text-gray-500">My current exposure in {stack?.coin ?? "BTC"} (%)</div>
+          <input type="number" value={userExposure}
             onChange={(e) => setUserExposure(Number(e.target.value))}
             min={0} max={200}
-            className="w-full bg-zinc-900 border border-zinc-700 text-white
-                       px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
-          />
+            className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500" />
         </div>
         <div className="space-y-1">
           <div className="text-xs text-gray-600">Model says</div>
@@ -2115,42 +2477,135 @@ function ExposureLogger({ stack, email, isPro, onUnlock }) {
             {stack?.exposure ?? "—"}%
           </div>
         </div>
-        <button
-          onClick={logIt}
-          disabled={loading || !email}
-          className="bg-white text-black px-6 py-3 rounded-md text-sm
-                     font-semibold hover:bg-gray-100 transition-colors
-                     disabled:opacity-50 whitespace-nowrap"
-        >
+        <button onClick={logIt} disabled={loading || !email}
+          className="bg-white text-black px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap">
           {loading ? "Logging..." : "Log Exposure"}
         </button>
       </div>
       {result && (
         <div className={`border px-4 py-3 space-y-1 text-sm ${
-          result.severity === "warning" ? "border-red-900 bg-red-950 text-red-300"    :
+          result.severity === "warning" ? "border-red-900 bg-red-950 text-red-300"         :
           result.severity === "caution" ? "border-yellow-900 bg-yellow-950 text-yellow-300" :
                                           "border-emerald-900 bg-emerald-950 text-emerald-300"
         }`}>
           <div className="font-semibold">{result.feedback}</div>
           <div className="text-xs opacity-70">
-            Delta vs model: {result.delta > 0 ? "+" : ""}{result.delta}% ·
-            Regime: {result.regime}
+            Delta vs model: {result.delta > 0 ? "+" : ""}{result.delta}% · Regime: {result.regime}
           </div>
         </div>
       )}
       {!email && (
-        <div className="text-xs text-gray-600">
-          Sign in to log exposure and track discipline over time.
-        </div>
+        <div className="text-xs text-gray-600">Sign in to log exposure and track discipline over time.</div>
       )}
     </div>
   );
 
-  if (!isPro) return <ProGate label="Exposure Logger" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Exposure Logger"
+      consequence="Without logging, you cannot build a discipline score or track your performance vs the model."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-8 space-y-2">
       <Label>Exposure Logger</Label>
       {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// STREAK TRACKER
+// ─────────────────────────────────────────
+function StreakTracker({ email, isPro, onUnlock }) {
+  const [data,    setData]    = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!email || !isPro) return;
+    setLoading(true);
+    fetch(`${BACKEND}/discipline-score?email=${encodeURIComponent(email)}`)
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [email, isPro]);
+
+  const streak = data?.followed ?? 0;
+  const total  = data?.total    ?? 0;
+
+  const streakColor =
+    streak >= 7 ? "text-emerald-400" :
+    streak >= 3 ? "text-yellow-400"  : "text-red-400";
+
+  const streakLabel =
+    streak >= 10 ? "Elite Discipline"  :
+    streak >= 7  ? "Strong Streak"     :
+    streak >= 3  ? "Building Momentum" :
+    streak >= 1  ? "Getting Started"   : "No streak yet";
+
+  const inner = (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+      <div className="space-y-2 shrink-0">
+        <div className={`text-6xl font-bold ${streakColor}`}>{streak}</div>
+        <div className={`text-sm font-medium ${streakColor}`}>{streakLabel}</div>
+        <div className="text-xs text-gray-600">consecutive aligned sessions</div>
+      </div>
+      <div className="flex-1 space-y-3 w-full">
+        <div className="flex gap-1 flex-wrap">
+          {Array.from({ length: Math.min(total, 20) }).map((_, i) => (
+            <div
+              key={i}
+              className={`w-6 h-6 rounded-sm border transition-all ${
+                i < streak
+                  ? "bg-emerald-500 border-emerald-400"
+                  : "bg-zinc-800 border-zinc-700"
+              }`}
+            />
+          ))}
+          {total === 0 && (
+            <div className="text-xs text-gray-600">
+              Log your exposure to start building a streak.
+            </div>
+          )}
+        </div>
+        {total > 0 && (
+          <div className="text-xs text-gray-600">
+            {streak}/{total} sessions · Last 20 shown
+          </div>
+        )}
+        {streak >= 7 && (
+          <div className="border border-emerald-800 bg-emerald-950 px-3 py-2 text-emerald-300 text-xs">
+            ✓ Consistent discipline — regime-aligned trader
+          </div>
+        )}
+        {streak === 0 && total > 0 && (
+          <div className="border border-red-900 bg-red-950 px-3 py-2 text-red-300 text-xs">
+            ⚠ Last session deviated from model — refocus on protocol
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (!isPro) return (
+    <ProGate
+      label="Discipline Streak"
+      consequence="Streak tracking creates daily accountability and reduces impulsive deviation."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
+  return (
+    <div className="border border-zinc-800 p-8 space-y-2">
+      <Label>Discipline Streak</Label>
+      <p className="text-xs text-gray-500 mb-4">
+        Consecutive sessions where your exposure aligned with regime recommendation
+      </p>
+      {loading
+        ? <div className="text-sm text-gray-500">Loading streak...</div>
+        : inner
+      }
     </div>
   );
 }
@@ -2188,26 +2643,21 @@ function DisciplinePanel({ email, isPro, onUnlock }) {
           <div className={`text-6xl font-bold ${scoreColor(data.score)}`}>
             {data.score !== null ? `${data.score}` : "—"}
           </div>
-          <div className={`text-lg font-medium ${scoreColor(data.score)}`}>
-            {data.label}
-          </div>
-          <Bar
-            value={data.score ?? 0}
-            cls={
-              (data.score ?? 0) >= 85 ? "bg-emerald-500" :
-              (data.score ?? 0) >= 70 ? "bg-green-500"   :
-              (data.score ?? 0) >= 50 ? "bg-yellow-500"  :
-              (data.score ?? 0) >= 30 ? "bg-orange-500"  : "bg-red-500"
-            }
-          />
+          <div className={`text-lg font-medium ${scoreColor(data.score)}`}>{data.label}</div>
+          <Bar value={data.score ?? 0} cls={
+            (data.score ?? 0) >= 85 ? "bg-emerald-500" :
+            (data.score ?? 0) >= 70 ? "bg-green-500"   :
+            (data.score ?? 0) >= 50 ? "bg-yellow-500"  :
+            (data.score ?? 0) >= 30 ? "bg-orange-500"  : "bg-red-500"
+          } />
           <div className="text-xs text-gray-600">{data.summary}</div>
         </div>
         <div className="grid grid-cols-2 gap-3 shrink-0">
           {[
-            { l: "Followed",  v: data.followed,           c: "text-emerald-400" },
-            { l: "Total",     v: data.total,               c: "text-white"       },
-            { l: "Bonuses",   v: `+${data.bonuses ?? 0}`,  c: "text-emerald-400" },
-            { l: "Penalties", v: `-${data.penalties ?? 0}`, c: "text-red-400"    },
+            { l: "Followed",  v: data.followed,            c: "text-emerald-400" },
+            { l: "Total",     v: data.total,                c: "text-white"       },
+            { l: "Bonuses",   v: `+${data.bonuses ?? 0}`,   c: "text-emerald-400" },
+            { l: "Penalties", v: `-${data.penalties ?? 0}`,  c: "text-red-400"    },
           ].map(({ l, v, c }) => (
             <div key={l} className="border border-zinc-800 p-3 text-center space-y-1">
               <div className="text-xs text-gray-600">{l}</div>
@@ -2222,9 +2672,9 @@ function DisciplinePanel({ email, isPro, onUnlock }) {
           <div className="space-y-2">
             {data.flags.map((flag, i) => (
               <div key={i} className={`border px-4 py-3 text-sm flex justify-between items-center ${
-                flag.type === "over_exposed"  ? "border-red-900 bg-red-950 text-red-300"       :
-                flag.type === "under_exposed" ? "border-yellow-900 bg-yellow-950 text-yellow-300" :
-                                                "border-emerald-900 bg-emerald-950 text-emerald-300"
+                flag.type === "penalty"
+                  ? "border-red-900 bg-red-950 text-red-300"
+                  : "border-emerald-900 bg-emerald-950 text-emerald-300"
               }`}>
                 <span>{flag.label}</span>
                 <span className="text-xs opacity-60">{flag.date} · {flag.regime}</span>
@@ -2238,16 +2688,131 @@ function DisciplinePanel({ email, isPro, onUnlock }) {
     <div className="text-sm text-gray-500">Loading discipline score...</div>
   ) : (
     <div className="text-sm text-gray-500">
-      No data yet. Log your exposure to start building your score.
+      No data yet. Log your exposure to start building your discipline score.
     </div>
   );
 
-  if (!isPro) return <ProGate label="Discipline Score" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Discipline Score"
+      consequence="Without discipline tracking, you cannot identify the patterns that are costing you money."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-8 space-y-2">
       <Label>Discipline Score</Label>
       <p className="text-xs text-gray-500 mb-4">
-        How well you follow regime-based recommendations over time
+        How consistently you follow regime-based risk protocols
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// MISTAKE REPLAY PANEL
+// ─────────────────────────────────────────
+function MistakeReplayPanel({ email, coin, isPro, onUnlock }) {
+  const [data,    setData]    = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!email || !isPro) return;
+    setLoading(true);
+    fetch(`${BACKEND}/mistake-replay?email=${encodeURIComponent(email)}&coin=${coin}`)
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [email, coin, isPro]);
+
+  const severityStyle = (s) => {
+    if (s === "high")   return "border-red-800    bg-red-950    text-red-300";
+    if (s === "medium") return "border-orange-800 bg-orange-950 text-orange-300";
+    return                     "border-yellow-800 bg-yellow-950 text-yellow-300";
+  };
+
+  const inner = data?.replays?.length > 0 ? (
+    <div className="space-y-3">
+      {data.replays.map((replay, i) => (
+        <div key={i} className={`border p-5 space-y-3 ${severityStyle(replay.severity)}`}>
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <div className="text-sm font-semibold">{replay.message}</div>
+              <div className="text-xs opacity-70 mt-0.5">
+                {replay.date} · {replay.regime}
+              </div>
+            </div>
+            <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 capitalize ${
+              replay.severity === "high"   ? "border-red-700    text-red-300"    :
+              replay.severity === "medium" ? "border-orange-700 text-orange-300" :
+                                             "border-yellow-700 text-yellow-300"
+            }`}>
+              {replay.severity}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-3 text-xs">
+            <div className="space-y-0.5">
+              <div className="text-gray-500">Your Exposure</div>
+              <div className={`font-semibold ${exposureColor(replay.user_exp)}`}>
+                {replay.user_exp}%
+              </div>
+            </div>
+            <div className="space-y-0.5">
+              <div className="text-gray-500">Model Said</div>
+              <div className={`font-semibold ${exposureColor(replay.model_exp)}`}>
+                {replay.model_exp}%
+              </div>
+            </div>
+            <div className="space-y-0.5">
+              <div className="text-gray-500">Delta</div>
+              <div className={`font-semibold ${
+                replay.delta > 0 ? "text-red-400" : "text-emerald-400"
+              }`}>
+                {replay.delta > 0 ? "+" : ""}{replay.delta}%
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-xs border-t border-white/10 pt-3">
+            <div>
+              <span className="text-gray-500">Hazard at time: </span>
+              <span className={riskColor(replay.signals_at_time?.hazard ?? 0)}>
+                {replay.signals_at_time?.hazard ?? "—"}%
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500">Shift risk: </span>
+              <span className={riskColor(replay.signals_at_time?.shift_risk ?? 0)}>
+                {replay.signals_at_time?.shift_risk ?? "—"}%
+              </span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : loading ? (
+    <div className="text-sm text-gray-500">Analysing deviation history...</div>
+  ) : (
+    <div className="text-sm text-gray-500">
+      {data?.count === 0
+        ? "No significant deviations detected. Discipline is strong."
+        : "Log exposure over time to generate mistake replay analysis."}
+    </div>
+  );
+
+  if (!isPro) return (
+    <ProGate
+      label="Mistake Replay Engine"
+      consequence="Mistake replay identifies the exact conditions where your decisions cost you money."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
+  return (
+    <div className="border border-zinc-800 p-8 space-y-2">
+      <Label>Mistake Replay Engine</Label>
+      <p className="text-xs text-gray-500 mb-4">
+        Sessions where you deviated from the model during elevated risk conditions
       </p>
       {inner}
     </div>
@@ -2257,19 +2822,19 @@ function DisciplinePanel({ email, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // PERFORMANCE PANEL
 // ─────────────────────────────────────────
-function PerformancePanel({ email, isPro, onUnlock }) {
+function PerformancePanel({ email, coin, isPro, onUnlock }) {
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!email || !isPro) return;
     setLoading(true);
-    fetch(`${BACKEND}/performance-comparison?email=${encodeURIComponent(email)}`)
+    fetch(`${BACKEND}/performance-comparison?email=${encodeURIComponent(email)}&coin=${coin}`)
       .then((r) => r.json())
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [email, isPro]);
+  }, [email, coin, isPro]);
 
   const inner = data ? (
     <div className="space-y-6">
@@ -2280,17 +2845,17 @@ function PerformancePanel({ email, isPro, onUnlock }) {
             value: data.user_total_return !== null
               ? `${data.user_total_return > 0 ? "+" : ""}${data.user_total_return?.toFixed(1)}%`
               : "—",
-            color: data.user_total_return >= 0 ? "text-emerald-400" : "text-red-400",
+            color: (data.user_total_return ?? 0) >= 0 ? "text-emerald-400" : "text-red-400",
           },
           {
             label: "Model Return",
             value: data.model_total_return !== null
               ? `${data.model_total_return > 0 ? "+" : ""}${data.model_total_return?.toFixed(1)}%`
               : "—",
-            color: data.model_total_return >= 0 ? "text-blue-400" : "text-red-400",
+            color: (data.model_total_return ?? 0) >= 0 ? "text-blue-400" : "text-red-400",
           },
           {
-            label: "Alpha",
+            label: "Alpha vs Model",
             value: data.alpha !== null
               ? `${data.alpha > 0 ? "+" : ""}${data.alpha?.toFixed(1)}%`
               : "—",
@@ -2300,22 +2865,19 @@ function PerformancePanel({ email, isPro, onUnlock }) {
             label: "Periods Tracked",
             value: data.periods ?? "—",
             color: "text-gray-300",
-            suffix: "",
           },
-        ].map(({ label, value, color, suffix }) => (
+        ].map(({ label, value, color }) => (
           <div key={label} className="border border-zinc-800 p-4 space-y-1">
             <div className="text-xs text-gray-500">{label}</div>
-            <div className={`text-2xl font-semibold ${color}`}>{value}{suffix}</div>
+            <div className={`text-2xl font-semibold ${color}`}>{value}</div>
           </div>
         ))}
       </div>
-
       {data.message && (
         <div className="text-xs text-gray-600 border border-zinc-800 px-4 py-3">
           {data.message}
         </div>
       )}
-
       {data.curve?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-gray-500 uppercase tracking-widest">
@@ -2324,10 +2886,8 @@ function PerformancePanel({ email, isPro, onUnlock }) {
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={data.curve}>
               <CartesianGrid stroke="#18181b" strokeDasharray="3 3" />
-              <XAxis dataKey="period" stroke="#3f3f46"
-                tick={{ fill: "#52525b", fontSize: 10 }} />
-              <YAxis stroke="#3f3f46"
-                tick={{ fill: "#52525b", fontSize: 10 }} />
+              <XAxis dataKey="period" stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
+              <YAxis stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
               <Tooltip
                 contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }}
                 labelStyle={{ color: "#71717a" }}
@@ -2343,7 +2903,6 @@ function PerformancePanel({ email, isPro, onUnlock }) {
           </ResponsiveContainer>
         </div>
       )}
-
       {data.regime_breakdown && Object.keys(data.regime_breakdown).length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-gray-500 uppercase tracking-widest">
@@ -2376,7 +2935,6 @@ function PerformancePanel({ email, isPro, onUnlock }) {
           </div>
         </div>
       )}
-
       {(data.best_regime || data.worst_regime) && (
         <div className="grid grid-cols-2 gap-4">
           {data.best_regime && (
@@ -2402,18 +2960,525 @@ function PerformancePanel({ email, isPro, onUnlock }) {
     <div className="text-sm text-gray-500">Loading performance data...</div>
   ) : (
     <div className="text-sm text-gray-500">
-      No performance data yet. Log your exposure over multiple periods to track results.
+      No performance data yet. Log your exposure over multiple periods to begin tracking.
     </div>
   );
 
-  if (!isPro) return <ProGate label="Performance Comparison" onUnlock={onUnlock}>{inner}</ProGate>;
+  if (!isPro) return (
+    <ProGate
+      label="Performance Comparison"
+      consequence="Without performance tracking, you cannot measure whether your decisions are adding or destroying alpha."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
   return (
     <div className="border border-zinc-800 p-8 space-y-2">
       <Label>Performance Comparison</Label>
       <p className="text-xs text-gray-500 mb-4">
-        Your actual returns vs following the model
+        Your actual returns vs following the model — compounded over time
       </p>
       {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// EDGE PROFILE PANEL
+// ─────────────────────────────────────────
+function EdgeProfilePanel({ email, isPro, onUnlock }) {
+  const [data,    setData]    = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!email || !isPro) return;
+    setLoading(true);
+    fetch(`${BACKEND}/edge-profile?email=${encodeURIComponent(email)}`)
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [email, isPro]);
+
+  const perfColor = (perf) => {
+    if (perf === "Strong") return "text-emerald-400";
+    if (perf === "Good")   return "text-green-400";
+    if (perf === "Weak")   return "text-yellow-400";
+    return                        "text-red-400";
+  };
+
+  const inner = !data ? (
+    loading
+      ? <div className="text-sm text-gray-500">Building your edge profile...</div>
+      : <div className="text-sm text-gray-500">Log exposure across multiple sessions to unlock your edge profile.</div>
+  ) : !data.ready ? (
+    <div className="space-y-3">
+      <div className="border border-zinc-800 px-4 py-3 text-sm text-gray-500">
+        {data.message}
+      </div>
+      <div className="w-full bg-zinc-800 rounded-full h-1">
+        <div
+          className="h-1 bg-blue-500 rounded-full transition-all"
+          style={{ width: `${((data.entry_count ?? 0) / 5) * 100}%` }}
+        />
+      </div>
+      <div className="text-xs text-gray-600">
+        {data.entry_count ?? 0} / 5 entries to unlock
+      </div>
+    </div>
+  ) : (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-4">
+        {data.best_regime && (
+          <div className="border border-emerald-900 bg-emerald-950 p-4 space-y-1">
+            <div className="text-xs text-gray-500">Your Best Regime</div>
+            <div className={`text-base font-semibold ${regimeText(data.best_regime)}`}>
+              {data.best_regime}
+            </div>
+            <div className="text-xs text-gray-500">Strongest historical edge</div>
+          </div>
+        )}
+        {data.worst_regime && (
+          <div className="border border-red-900 bg-red-950 p-4 space-y-1">
+            <div className="text-xs text-gray-500">Your Worst Regime</div>
+            <div className={`text-base font-semibold ${regimeText(data.worst_regime)}`}>
+              {data.worst_regime}
+            </div>
+            <div className="text-xs text-gray-500">Underperforms here historically</div>
+          </div>
+        )}
+      </div>
+      {data.profile && Object.keys(data.profile).length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-gray-500 uppercase tracking-widest">
+            Performance by Regime
+          </div>
+          <div className="space-y-2">
+            {Object.entries(data.profile).map(([regime, stats]) => (
+              <div key={regime}
+                className="border border-zinc-800 px-4 py-3 flex items-center justify-between gap-4">
+                <div className={`text-sm font-medium w-36 shrink-0 ${regimeText(regime)}`}>
+                  {regime}
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>{stats.count} sessions</span>
+                    <span>WR: {stats.win_rate}%</span>
+                  </div>
+                  <div className="w-full bg-zinc-800 rounded-full h-1">
+                    <div
+                      className={`h-1 rounded-full transition-all ${
+                        stats.avg_return >= 2   ? "bg-emerald-500" :
+                        stats.avg_return >= 0.5 ? "bg-green-500"   :
+                        stats.avg_return >= -1  ? "bg-yellow-500"  : "bg-red-500"
+                      }`}
+                      style={{
+                        width: `${Math.min(100, Math.max(0, 50 + stats.avg_return * 10))}%`
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="text-right shrink-0 space-y-0.5">
+                  <div className={`text-sm font-semibold ${
+                    stats.avg_return >= 0 ? "text-emerald-400" : "text-red-400"
+                  }`}>
+                    {stats.avg_return > 0 ? "+" : ""}{stats.avg_return}%
+                  </div>
+                  <div className={`text-xs ${perfColor(stats.performance)}`}>
+                    {stats.performance}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {data.recommendations?.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-gray-500 uppercase tracking-widest">
+            Personalised Recommendations
+          </div>
+          {data.recommendations.map((rec, i) => (
+            <div key={i}
+              className="border border-zinc-800 px-4 py-3 text-sm text-gray-300 flex items-start gap-2">
+              <span className="text-blue-400 shrink-0 mt-0.5">→</span>
+              {rec}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  if (!isPro) return (
+    <ProGate
+      label="Edge Profile"
+      consequence="Without an edge profile you cannot identify which regimes you consistently outperform in."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
+  return (
+    <div className="border border-zinc-800 p-8 space-y-2">
+      <Label>Edge Profile</Label>
+      <p className="text-xs text-gray-500 mb-4">
+        Your historical performance breakdown by regime type
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// WEEKLY REPORT PANEL
+// ─────────────────────────────────────────
+function WeeklyReportPanel({ email, coin, isPro, onUnlock }) {
+  const [data,    setData]    = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!email || !isPro) return;
+    setLoading(true);
+    Promise.all([
+      fetch(`${BACKEND}/discipline-score?email=${encodeURIComponent(email)}`).then(r => r.json()),
+      fetch(`${BACKEND}/performance-comparison?email=${encodeURIComponent(email)}&coin=${coin}`).then(r => r.json()),
+    ])
+      .then(([discipline, performance]) => setData({ discipline, performance }))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [email, coin, isPro]);
+
+  const inner = data ? (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          {
+            label: "Discipline Score",
+            value: data.discipline?.score !== null ? `${data.discipline?.score}` : "—",
+            suffix: "",
+            color: data.discipline?.score >= 70 ? "text-emerald-400" :
+                   data.discipline?.score >= 50 ? "text-yellow-400"  : "text-red-400",
+            sub: data.discipline?.label ?? "—",
+          },
+          {
+            label: "Your Return",
+            value: data.performance?.user_total_return !== null
+              ? `${(data.performance?.user_total_return ?? 0) > 0 ? "+" : ""}${data.performance?.user_total_return?.toFixed(1)}`
+              : "—",
+            suffix: data.performance?.user_total_return !== null ? "%" : "",
+            color: (data.performance?.user_total_return ?? 0) >= 0 ? "text-emerald-400" : "text-red-400",
+            sub: "This period",
+          },
+          {
+            label: "Model Return",
+            value: data.performance?.model_total_return !== null
+              ? `${(data.performance?.model_total_return ?? 0) > 0 ? "+" : ""}${data.performance?.model_total_return?.toFixed(1)}`
+              : "—",
+            suffix: data.performance?.model_total_return !== null ? "%" : "",
+            color: "text-blue-400",
+            sub: "If followed model",
+          },
+          {
+            label: "Alpha",
+            value: data.performance?.alpha !== null
+              ? `${(data.performance?.alpha ?? 0) > 0 ? "+" : ""}${data.performance?.alpha?.toFixed(1)}`
+              : "—",
+            suffix: data.performance?.alpha !== null ? "%" : "",
+            color: (data.performance?.alpha ?? 0) >= 0 ? "text-emerald-400" : "text-red-400",
+            sub: "vs model",
+          },
+        ].map(({ label, value, suffix, color, sub }) => (
+          <div key={label} className="border border-zinc-800 p-4 space-y-1">
+            <div className="text-xs text-gray-500">{label}</div>
+            <div className={`text-2xl font-semibold ${color}`}>{value}{suffix}</div>
+            <div className="text-xs text-gray-600">{sub}</div>
+          </div>
+        ))}
+      </div>
+      {data.discipline?.flags?.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-gray-500 uppercase tracking-widest">
+            Notable Events This Period
+          </div>
+          {data.discipline.flags.slice(0, 5).map((flag, i) => (
+            <div key={i} className={`border px-4 py-2.5 text-xs flex justify-between items-center ${
+              flag.type === "penalty"
+                ? "border-red-900    bg-red-950/50    text-red-300"
+                : "border-emerald-900 bg-emerald-950/50 text-emerald-300"
+            }`}>
+              <span>{flag.label}</span>
+              <span className="opacity-60">{flag.date} · {flag.regime}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="border border-zinc-800 px-4 py-3 text-xs text-gray-500 space-y-1">
+        <div className="font-medium text-gray-400">Period Summary</div>
+        <div>
+          {data.performance?.message ?? "Log more sessions to generate a full weekly summary."}
+        </div>
+      </div>
+    </div>
+  ) : loading ? (
+    <div className="text-sm text-gray-500">Loading weekly report...</div>
+  ) : (
+    <div className="text-sm text-gray-500">
+      No report data yet. Log exposure to generate your weekly summary.
+    </div>
+  );
+
+  if (!isPro) return (
+    <ProGate
+      label="Weekly Performance Report"
+      consequence="Weekly reports show whether your discipline is improving or deteriorating over time."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
+  return (
+    <div className="border border-zinc-800 p-8 space-y-2">
+      <Label>Weekly Performance Report</Label>
+      <p className="text-xs text-gray-500 mb-4">
+        Discipline score, returns, and notable events from this period
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// PORTFOLIO HEALTH SCORE
+// ─────────────────────────────────────────
+function PortfolioHealthScore({ stack, email, isPro, onUnlock }) {
+  const [disciplineData, setDisciplineData] = useState(null);
+
+  useEffect(() => {
+    if (!email || !isPro) return;
+    fetch(`${BACKEND}/discipline-score?email=${encodeURIComponent(email)}`)
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setDisciplineData(d); })
+      .catch(console.error);
+  }, [email, isPro]);
+
+  const regimeQuality   = deriveQuality(stack);
+  const disciplineScore = disciplineData?.score ?? null;
+  const exposureDelta   = Math.abs((stack?.exposure ?? 50) - 50);
+  const exposureAlign   = Math.max(0, 100 - exposureDelta * 1.5);
+
+  const healthScore = disciplineScore !== null && regimeQuality
+    ? Math.round(
+        regimeQuality.score * 0.40 +
+        disciplineScore     * 0.35 +
+        exposureAlign       * 0.25
+      )
+    : regimeQuality
+    ? regimeQuality.score
+    : null;
+
+  const healthColor =
+    healthScore === null ? "text-gray-500"    :
+    healthScore >= 80    ? "text-emerald-400" :
+    healthScore >= 60    ? "text-green-400"   :
+    healthScore >= 40    ? "text-yellow-400"  :
+    healthScore >= 20    ? "text-orange-400"  : "text-red-400";
+
+  const healthLabel =
+    healthScore === null ? "Insufficient data" :
+    healthScore >= 80    ? "Optimal"           :
+    healthScore >= 60    ? "Healthy"           :
+    healthScore >= 40    ? "Moderate Risk"     :
+    healthScore >= 20    ? "Elevated Risk"     : "High Risk";
+
+  const healthBarCls =
+    healthScore === null ? "bg-zinc-700"    :
+    healthScore >= 80    ? "bg-emerald-500" :
+    healthScore >= 60    ? "bg-green-500"   :
+    healthScore >= 40    ? "bg-yellow-500"  :
+    healthScore >= 20    ? "bg-orange-500"  : "bg-red-500";
+
+  const components = [
+    { label: "Regime Quality",     value: regimeQuality?.score ?? null, weight: "40%", hint: regimeQuality?.structural ?? "—"             },
+    { label: "Discipline Score",   value: disciplineScore,              weight: "35%", hint: disciplineData?.label ?? "Log exposure to unlock" },
+    { label: "Exposure Alignment", value: Math.round(exposureAlign),    weight: "25%", hint: "vs regime recommendation"                    },
+  ];
+
+  const inner = (
+    <div className="space-y-6">
+      <div className="flex items-center gap-8">
+        <div className="text-center space-y-2 shrink-0">
+          <div className={`text-6xl font-bold ${healthColor}`}>{healthScore ?? "—"}</div>
+          <div className={`text-sm font-medium ${healthColor}`}>{healthLabel}</div>
+          <Bar value={healthScore ?? 0} cls={healthBarCls} />
+          <div className="text-xs text-gray-600">Portfolio Health</div>
+        </div>
+        <div className="flex-1 space-y-4">
+          {components.map(({ label, value, weight, hint }) => (
+            <div key={label} className="space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-500">{label}</span>
+                <div className="flex gap-3">
+                  <span className="text-gray-700">{weight}</span>
+                  <span className={
+                    value === null ? "text-gray-600"    :
+                    value >= 70    ? "text-emerald-400" :
+                    value >= 50    ? "text-yellow-400"  : "text-red-400"
+                  }>
+                    {value !== null ? `${value}%` : "—"}
+                  </span>
+                </div>
+              </div>
+              <div className="w-full bg-zinc-800 rounded-full h-1">
+                <div
+                  className={`h-1 rounded-full transition-all ${
+                    value === null ? "bg-zinc-700"    :
+                    value >= 70    ? "bg-emerald-500" :
+                    value >= 50    ? "bg-yellow-500"  : "bg-red-500"
+                  }`}
+                  style={{ width: `${value ?? 0}%` }}
+                />
+              </div>
+              <div className="text-xs text-gray-700">{hint}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {healthScore !== null && healthScore < 40 && (
+        <div className="border border-red-900 bg-red-950 px-4 py-3 text-red-300 text-sm">
+          ⚠ Portfolio health is low. Review regime quality and exposure alignment before adding positions.
+        </div>
+      )}
+      {healthScore !== null && healthScore >= 80 && (
+        <div className="border border-emerald-900 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm">
+          ✓ Portfolio health is optimal. Conditions are favourable for disciplined position sizing.
+        </div>
+      )}
+    </div>
+  );
+
+  if (!isPro) return (
+    <ProGate
+      label="Portfolio Health Score"
+      consequence="Without a health score you have no single metric to assess your overall trading posture."
+      onUnlock={onUnlock}
+    >{inner}</ProGate>
+  );
+  return (
+    <div className="border border-zinc-800 p-8 space-y-2">
+      <Label>Portfolio Health Score</Label>
+      <p className="text-xs text-gray-500 mb-4">
+        Composite score across regime quality, discipline, and exposure alignment
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// EMAIL CAPTURE
+// ─────────────────────────────────────────
+function EmailCapture({ onEmailSet }) {
+  const [input,   setInput]   = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done,    setDone]    = useState(false);
+  const [error,   setError]   = useState(null);
+
+  const submit = async () => {
+    const email = input.trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    setLoading(true); setError(null);
+    try {
+      await fetch(`${BACKEND}/subscribe`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ email }),
+      });
+      setDone(true);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("cp_email", email);
+      }
+      onEmailSet(email);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <div className="border border-emerald-800 bg-emerald-950 px-6 py-4 text-emerald-300 text-sm">
+        ✓ Daily regime brief confirmed. Check your inbox.
+      </div>
+    );
+  }
+
+  return (
+    <div className="border border-zinc-700 bg-zinc-900/60 px-6 py-5 space-y-3">
+      <div className="space-y-1">
+        <div className="text-sm font-medium text-white">Get the daily regime brief</div>
+        <div className="text-xs text-gray-500">
+          Regime verdict, shift risk, and directive — delivered every morning. Free.
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="email"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder="your@email.com"
+          className="flex-1 bg-zinc-800 border border-zinc-700 text-white px-4 py-2.5 rounded-md text-sm focus:outline-none focus:border-zinc-500 placeholder-zinc-600"
+        />
+        <button
+          onClick={submit}
+          disabled={loading}
+          className="bg-white text-black px-5 py-2.5 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
+        >
+          {loading ? "..." : "Get Brief"}
+        </button>
+      </div>
+      {error && <div className="text-xs text-red-400">{error}</div>}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// ADVANCED ANALYTICS
+// ─────────────────────────────────────────
+function AdvancedAnalytics({ children, isPro }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="space-y-4">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full border border-zinc-800 px-6 py-4 flex justify-between items-center hover:border-zinc-600 transition-colors"
+      >
+        <div className="text-left space-y-0.5">
+          <div className="text-sm font-medium text-white">Advanced Analytics</div>
+          <div className="text-xs text-gray-500">
+            Correlation · Heatmap · Transition matrix · Timeline · Breadth · Risk events
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 ml-4">
+          {!isPro && (
+            <span className="text-xs text-gray-600 flex items-center gap-1">
+              <Lock />Some require Pro
+            </span>
+          )}
+          <svg
+            className={`w-4 h-4 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+      {open && (
+        <div className="space-y-4">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -2422,74 +3487,149 @@ function PerformancePanel({ email, isPro, onUnlock }) {
 // PRO MODAL
 // ─────────────────────────────────────────
 function ProModal({ onClose }) {
+  const [billingCycle, setBillingCycle] = useState("monthly");
+  const [loading,      setLoading]      = useState(false);
+
   const checkout = async () => {
+    setLoading(true);
     try {
-      const res  = await fetch(`${BACKEND}/create-checkout-session`, {
+      const res = await fetch(`${BACKEND}/create-checkout-session`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ email: "" }),
+        body:    JSON.stringify({ billing_cycle: billingCycle }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const features = [
+    { category: "Core Decision Engine", items: [
+      "Exposure recommendation % — regime-adjusted",
+      "Shift risk % — composite deterioration signal",
+      "Survival probability — regime persistence model",
+      "Hazard rate — failure risk vs historical norm",
+      "Decision Engine — today's systematic directive",
+      "Consequence Simulator — cost of inaction",
+      "PnL Impact Estimator — expected value modeling",
+      "Drawdown Simulator — 3 scenario loss modeling",
+    ]},
+    { category: "Regime Intelligence", items: [
+      "Regime quality grade (A / B / C / D)",
+      "Regime stress meter — composite breakdown signal",
+      "Regime countdown — statistical time remaining",
+      "Regime playbook — protocol for current conditions",
+      "Confidence trend — 24H conviction trajectory",
+      "Volatility & liquidity environment",
+      "Transition probability matrix",
+      "Full coherence index per timeframe",
+    ]},
+    { category: "Personal Accountability", items: [
+      "Risk profile calibration — personalised exposure",
+      "Exposure logger — track your actual positions",
+      "Discipline streak — consecutive aligned sessions",
+      "Discipline score — model adherence over time",
+      "Mistake replay — deviations during risk events",
+      "Performance comparison — your alpha vs model",
+      "Edge profile — your best and worst regimes",
+      "Weekly performance report",
+    ]},
+    { category: "Portfolio & Alerts", items: [
+      "Portfolio health score — composite risk rating",
+      "Portfolio exposure allocator",
+      "Cross-asset correlation monitor",
+      "Real-time shift alerts via email",
+      "Daily regime brief every morning",
+      "Weekly discipline summary report",
+      "All 7 assets: BTC ETH SOL BNB AVAX LINK ADA",
+    ]},
+  ];
+
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50
-                    flex items-center justify-center px-4">
-      <div className="bg-zinc-950 border border-zinc-700 max-w-md w-full
-                      p-10 space-y-6 relative">
-        <button onClick={onClose}
-          className="absolute top-4 right-4 text-gray-600 hover:text-white transition-colors">
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-start justify-center px-4 py-8 overflow-y-auto">
+      <div className="bg-zinc-950 border border-zinc-700 max-w-lg w-full p-10 space-y-7 relative my-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-600 hover:text-white transition-colors"
+        >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <Label>ChainPulse Pro</Label>
-        <h2 className="text-2xl font-semibold leading-tight">
-          Unlock Full Regime Analytics
-        </h2>
-        <p className="text-gray-400 text-sm">
-          You are seeing regime labels and alignment. Pro unlocks survival
-          modeling, hazard rate, coherence, trend maturity, playbook engine,
-          stress meter, exposure tracker, and real-time shift alerts.
-        </p>
-        <ul className="space-y-2 text-sm text-gray-300">
-          {[
-            "Coherence index per timeframe layer",
-            "Survival probability & hazard rate",
-            "Regime playbook — what to do NOW",
-            "Personalized exposure tracker",
-            "Regime quality grade (A/B/C/D)",
-            "Regime stress meter",
-            "Regime countdown timer",
-            "Confidence trend chart",
-            "Volatility & liquidity environment",
-            "Transition probability matrix",
-            "Portfolio exposure allocator",
-            "Cross-asset correlation monitor",
-            "Decision engine — daily directive",
-            "If You Do Nothing — consequence panel",
-            "Risk profile calibration",
-            "Exposure logger & discipline score",
-            "Performance comparison vs model",
-            "Real-time shift alerts via email",
-          ].map((f) => (
-            <li key={f} className="flex items-center gap-2">
-              <span className="text-emerald-400">✓</span>{f}
-            </li>
+        <div className="space-y-2">
+          <Label>ChainPulse Pro</Label>
+          <h2 className="text-2xl font-semibold leading-tight">
+            Stop Trading Without a Risk Framework
+          </h2>
+          <p className="text-gray-400 text-sm leading-relaxed">
+            You can see the regime. But without survival modeling, hazard rate,
+            and a systematic directive, you are making decisions with incomplete information.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setBillingCycle("monthly")}
+            className={`flex-1 py-2.5 rounded-md text-sm font-medium border transition-colors ${
+              billingCycle === "monthly"
+                ? "bg-white text-black border-white"
+                : "bg-transparent text-gray-400 border-zinc-700 hover:border-zinc-500"
+            }`}
+          >
+            Monthly — \$39
+          </button>
+          <button
+            onClick={() => setBillingCycle("annual")}
+            className={`flex-1 py-2.5 rounded-md text-sm font-medium border transition-colors relative ${
+              billingCycle === "annual"
+                ? "bg-white text-black border-white"
+                : "bg-transparent text-gray-400 border-zinc-700 hover:border-zinc-500"
+            }`}
+          >
+            Annual — \$29/mo
+            <span className="absolute -top-2 -right-2 bg-emerald-500 text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">
+              -26%
+            </span>
+          </button>
+        </div>
+        <div className="space-y-4 max-h-72 overflow-y-auto pr-1">
+          {features.map(({ category, items }) => (
+            <div key={category} className="space-y-2">
+              <div className="text-xs text-gray-500 uppercase tracking-widest">{category}</div>
+              <ul className="space-y-1.5">
+                {items.map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-gray-300">
+                    <span className="text-emerald-400 shrink-0">✓</span>{f}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
-        <div className="space-y-3 pt-2">
-          <button onClick={checkout}
-            className="w-full bg-white text-black py-4 rounded-md font-semibold
-                       hover:bg-gray-100 transition-colors">
-            Activate Pro — \$29/month
+        </div>
+        <div className="space-y-3 pt-1">
+          <button
+            onClick={checkout}
+            disabled={loading}
+            className="w-full bg-white text-black py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 text-sm"
+          >
+            {loading
+  ? "Redirecting..."
+  : billingCycle === "annual"
+  ? "Start Using Full Regime Intelligence — \$348/year"
+  : "Start Using Full Regime Intelligence — \$39/month"}
           </button>
           <div className="text-center text-gray-600 text-xs">
-            7-day risk-free · Cancel anytime
+            7-day risk-free evaluation · Cancel anytime · Instant access
           </div>
+        </div>
+        <div className="border border-zinc-800 px-4 py-3 space-y-1">
+          <div className="text-xs text-gray-500">
+            "One avoided breakdown pays for this many times over."
+          </div>
+          <div className="text-xs text-gray-700">For traders managing \$5,000+</div>
         </div>
       </div>
     </div>
@@ -2500,31 +3640,34 @@ function ProModal({ onClose }) {
 // MAIN DASHBOARD
 // ─────────────────────────────────────────
 export default function Dashboard() {
-  const [stack,       setStack]       = useState(null);
-  const [latest,      setLatest]      = useState(null);
-  const [curveData,   setCurveData]   = useState([]);
-  const [historyData, setHistoryData] = useState([]);
-  const [overview,    setOverview]    = useState([]);
-  const [breadth,     setBreadth]     = useState(null);
-  const [confidence,  setConfidence]  = useState(null);
-  const [volEnv,      setVolEnv]      = useState(null);
-  const [transitions, setTransitions] = useState(null);
-  const [correlation, setCorrelation] = useState(null);
-  const [riskEvents,  setRiskEvents]  = useState([]);
-  const [coin,        setCoin]        = useState("BTC");
-  const [loading,     setLoading]     = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [proSuccess,  setProSuccess]  = useState(false);
-  const [showModal,   setShowModal]   = useState(false);
-  const [token,       setToken]       = useState(null);
-  const [email,       setEmail]       = useState("");
+  const [stack,        setStack]        = useState(null);
+  const [latest,       setLatest]       = useState(null);
+  const [curveData,    setCurveData]    = useState([]);
+  const [historyData,  setHistoryData]  = useState([]);
+  const [overview,     setOverview]     = useState([]);
+  const [breadth,      setBreadth]      = useState(null);
+  const [confidence,   setConfidence]   = useState(null);
+  const [volEnv,       setVolEnv]       = useState(null);
+  const [transitions,  setTransitions]  = useState(null);
+  const [correlation,  setCorrelation]  = useState(null);
+  const [riskEvents,   setRiskEvents]   = useState([]);
+  const [decision,     setDecision]     = useState(null);
+  const [coin,         setCoin]         = useState("BTC");
+  const [loading,      setLoading]      = useState(true);
+  const [lastUpdated,  setLastUpdated]  = useState(null);
+  const [proSuccess,   setProSuccess]   = useState(false);
+  const [showModal,    setShowModal]    = useState(false);
+  const [token,        setToken]        = useState(null);
+  const [email,        setEmail]        = useState("");
 
+  // ── Init token + email from URL / localStorage ──
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params      = new URLSearchParams(window.location.search);
     const urlToken    = params.get("token");
     const urlEmail    = params.get("email");
     const successFlag = params.get("success");
+
     if (urlToken) {
       saveToken(urlToken);
       setToken(urlToken);
@@ -2533,10 +3676,18 @@ export default function Dashboard() {
       const stored = getToken();
       if (stored) setToken(stored);
     }
-    if (urlEmail) setEmail(urlEmail);
+
+    if (urlEmail) {
+      setEmail(urlEmail);
+    } else {
+      const storedEmail = localStorage.getItem("cp_email");
+      if (storedEmail) setEmail(storedEmail);
+    }
+
     if (successFlag === "true") setProSuccess(true);
   }, []);
 
+  // ── Data fetch ──
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
     try {
       const headers = {};
@@ -2547,16 +3698,16 @@ export default function Dashboard() {
         overviewRes, confidenceRes, volRes,
         transRes, corrRes, eventsRes,
       ] = await Promise.all([
-        fetch(`${BACKEND}/regime-stack?coin=${selectedCoin}`,            { headers }),
-        fetch(`${BACKEND}/latest?coin=${selectedCoin}`,                  { headers }),
-        fetch(`${BACKEND}/survival-curve?coin=${selectedCoin}`,          { headers }),
-        fetch(`${BACKEND}/regime-history?coin=${selectedCoin}&limit=48`, { headers }),
-        fetch(`${BACKEND}/market-overview`,                              { headers }),
-        fetch(`${BACKEND}/regime-confidence?coin=${selectedCoin}`,       { headers }),
-        fetch(`${BACKEND}/volatility-environment?coin=${selectedCoin}`,  { headers }),
-        fetch(`${BACKEND}/regime-transitions?coin=${selectedCoin}`,      { headers }),
+        fetch(`${BACKEND}/regime-stack?coin=${selectedCoin}`,             { headers }),
+        fetch(`${BACKEND}/latest?coin=${selectedCoin}`,                   { headers }),
+        fetch(`${BACKEND}/survival-curve?coin=${selectedCoin}`,           { headers }),
+        fetch(`${BACKEND}/regime-history?coin=${selectedCoin}&limit=48`,  { headers }),
+        fetch(`${BACKEND}/market-overview`,                               { headers }),
+        fetch(`${BACKEND}/regime-confidence?coin=${selectedCoin}`,        { headers }),
+        fetch(`${BACKEND}/volatility-environment?coin=${selectedCoin}`,   { headers }),
+        fetch(`${BACKEND}/regime-transitions?coin=${selectedCoin}`,       { headers }),
         fetch(`${BACKEND}/correlation?coins=${SUPPORTED_COINS.join(",")}`,{ headers }),
-        fetch(`${BACKEND}/risk-events`,                                  { headers }),
+        fetch(`${BACKEND}/risk-events`,                                   { headers }),
       ]);
 
       const [
@@ -2569,11 +3720,11 @@ export default function Dashboard() {
         curveRes.json(),
         histRes.json(),
         overviewRes.json(),
-        confidenceRes.ok  ? confidenceRes.json()  : Promise.resolve(null),
-        volRes.ok         ? volRes.json()          : Promise.resolve(null),
-        transRes.ok       ? transRes.json()        : Promise.resolve(null),
-        corrRes.ok        ? corrRes.json()         : Promise.resolve(null),
-        eventsRes.ok      ? eventsRes.json()       : Promise.resolve({ events: [] }),
+        confidenceRes.ok ? confidenceRes.json()  : Promise.resolve(null),
+        volRes.ok        ? volRes.json()          : Promise.resolve(null),
+        transRes.ok      ? transRes.json()        : Promise.resolve(null),
+        corrRes.ok       ? corrRes.json()         : Promise.resolve(null),
+        eventsRes.ok     ? eventsRes.json()       : Promise.resolve({ events: [] }),
       ]);
 
       setStack(stackData);
@@ -2590,7 +3741,7 @@ export default function Dashboard() {
       setLastUpdated(new Date());
 
       if (stackData?.pro_required && !currentToken) {
-        setTimeout(() => setShowModal(true), 2000);
+        setTimeout(() => setShowModal(true), 3000);
       }
     } catch (err) {
       console.error("Fetch error:", err);
@@ -2606,42 +3757,42 @@ export default function Dashboard() {
     return () => clearInterval(iv);
   }, [coin, token, fetchData]);
 
+  // ── Loading state ──
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center
-                      justify-center gap-4 text-gray-500">
-        <div className="w-8 h-8 border-2 border-zinc-700 border-t-white
-                        rounded-full animate-spin" />
-        <div className="text-sm">Loading Regime Model...</div>
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4 text-gray-500">
+        <div className="w-8 h-8 border-2 border-zinc-700 border-t-white rounded-full animate-spin" />
+        <div className="text-sm">Initialising Regime Model...</div>
       </div>
     );
   }
 
+  // ── No data state ──
   if (!stack || stack.message) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center
-                      justify-center gap-4 text-gray-400">
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4 text-gray-400">
         <div className="text-center space-y-3">
           <div>No regime data available yet.</div>
           <div className="text-sm text-gray-600">
-            The model is initializing. Run /update-all to seed data.
+            Model is initialising. Run /update-all to seed data.
           </div>
         </div>
       </div>
     );
   }
 
-  const isPro      = !stack.pro_required;
-  const exposure   = stack.exposure          ?? 0;
-  const shiftRisk  = stack.shift_risk        ?? 0;
-  const alignment  = stack.alignment         ?? 0;
-  const direction  = stack.direction         ?? "mixed";
-  const regimeAge  = stack.regime_age_hours  ?? 0;
-  const maturity   = stack.trend_maturity    ?? null;
-  const survival   = stack.survival          ?? null;
-  const hazard     = stack.hazard            ?? null;
-  const percentile = stack.percentile        ?? null;
-  const execLabel  = stack.execution?.label  ?? null;
+  // ── Derived state ──
+  const isPro       = !stack.pro_required;
+  const exposure    = stack.exposure          ?? 0;
+  const shiftRisk   = stack.shift_risk        ?? 0;
+  const alignment   = stack.alignment         ?? 0;
+  const direction   = stack.direction         ?? "mixed";
+  const regimeAge   = stack.regime_age_hours  ?? 0;
+  const maturity    = stack.trend_maturity    ?? null;
+  const survival    = stack.survival          ?? null;
+  const hazard      = stack.hazard            ?? null;
+  const percentile  = stack.percentile        ?? null;
+  const execLabel   = stack.execution?.label  ?? null;
   const avgDuration = stack.avg_regime_duration_hours ?? 48;
 
   const maturityLabel =
@@ -2650,56 +3801,23 @@ export default function Dashboard() {
     maturity > 25 ? "Mid Phase"    : "Early Phase";
 
   return (
-    <main className="min-h-screen bg-black text-white px-6 py-16">
+    <main className="min-h-screen bg-black text-white px-4 sm:px-6 py-12">
       {showModal && <ProModal onClose={() => setShowModal(false)} />}
 
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-6">
 
+        {/* ── Pro success banner ── */}
         {proSuccess && (
-          <div className="border border-emerald-700 bg-emerald-950
-                          text-emerald-300 px-6 py-4 rounded-md text-sm">
-            ✓ Pro access activated. Welcome to ChainPulse Pro.
+          <div className="border border-emerald-700 bg-emerald-950 text-emerald-300 px-6 py-4 rounded-md text-sm">
+            ✓ Pro access activated. Welcome to ChainPulse.
           </div>
         )}
 
-        {!isPro && (
-          <div onClick={() => setShowModal(true)}
-            className="border border-zinc-700 bg-zinc-900 px-6 py-4
-                       flex flex-col sm:flex-row justify-between
-                       items-start sm:items-center gap-4
-                       cursor-pointer hover:border-zinc-500 transition-colors">
-            <div className="space-y-1">
-              <div className="text-sm text-white font-medium">
-                Viewing free tier — regime labels only
-              </div>
-              <div className="text-xs text-gray-500">
-                Playbook, survival, hazard, stress meter and 10+ signals locked.
-              </div>
-            </div>
-            <button className="bg-white text-black px-5 py-2 rounded-md
-                               text-sm font-semibold whitespace-nowrap hover:bg-gray-100">
-              Unlock Pro
-            </button>
-          </div>
-        )}
-
-        {shiftRisk > 70 && (
-          <div className="border border-red-700 bg-red-950 px-6 py-5 text-red-300 space-y-1">
-            <div className="font-semibold text-sm">
-              ⚠ Regime Deterioration Alert — {coin}
-            </div>
-            <div className="text-xs text-red-400">
-              Shift risk elevated to {shiftRisk}%. Consider reducing exposure.
-            </div>
-          </div>
-        )}
-
-        <div className="flex flex-col sm:flex-row justify-between
-                        items-start sm:items-center gap-4">
+        {/* ── Header ── */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">
-              Probabilistic Regime Intelligence
-            </h1>
+            <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">ChainPulse</div>
+            <h1 className="text-xl font-semibold">Regime Intelligence System</h1>
             {lastUpdated && (
               <div className="text-xs text-gray-600 mt-1">
                 Updated {lastUpdated.toLocaleTimeString()} · auto-refresh 60s
@@ -2709,39 +3827,77 @@ export default function Dashboard() {
           <div className="flex gap-2 flex-wrap">
             {SUPPORTED_COINS.map((c) => (
               <button key={c} onClick={() => setCoin(c)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                   coin === c
                     ? "bg-white text-black"
-                    : "bg-zinc-900 text-gray-400 hover:bg-zinc-800"
+                    : "bg-zinc-900 text-gray-400 hover:bg-zinc-800 border border-zinc-800"
                 }`}>{c}</button>
             ))}
           </div>
         </div>
 
-        {/* HERO */}
+        {/* ── TODAY'S VERDICT ── */}
+        <TodaysVerdict
+          stack={stack}
+          decision={decision}
+          isPro={isPro}
+          onUnlock={() => setShowModal(true)}
+        />
+
+        {/* ── Free tier banner ── */}
+        {!isPro && (
+          <FreeTierBanner onUnlock={() => setShowModal(true)} />
+        )}
+
+        {/* ── Shift risk alert ── */}
+        <ShiftRiskAlert
+          shiftRisk={shiftRisk}
+          coin={coin}
+          isPro={isPro}
+          onUnlock={() => setShowModal(true)}
+        />
+
+        {/* ── HERO GRID ── */}
         <div className="grid md:grid-cols-3 gap-4">
-          <div className="border border-zinc-800 p-8 text-center space-y-3
-                          md:col-span-1 flex flex-col justify-center">
+
+          {/* Exposure hero */}
+          <div className="border border-zinc-800 p-8 text-center space-y-3 flex flex-col justify-center">
             <Label>Exposure Recommendation</Label>
-            <div className={`text-7xl font-semibold ${exposureColor(exposure)}`}>
-              {exposure}%
-            </div>
-            <div className="text-xs text-gray-500">
-              {alignment >= 80 ? "High conviction" :
-               alignment >= 50 ? "Moderate conviction" : "Low conviction"}
-            </div>
-            <div className="w-full bg-zinc-800 rounded-full h-1">
-              <div
-                className={`h-1 rounded-full transition-all duration-700 ${
+            {isPro ? (
+              <>
+                <div className={`text-7xl font-semibold ${exposureColor(exposure)}`}>
+                  {exposure}%
+                </div>
+                <div className="text-xs text-gray-500">
+                  {alignment >= 80 ? "High conviction" :
+                   alignment >= 50 ? "Moderate conviction" : "Low conviction"}
+                </div>
+                <Bar value={exposure} cls={
                   exposure > 60 ? "bg-emerald-500" :
                   exposure > 35 ? "bg-yellow-500"  : "bg-red-500"
-                }`}
-                style={{ width: `${exposure}%` }}
-              />
-            </div>
+                } />
+              </>
+            ) : (
+              <>
+                <div
+                  className="text-7xl font-semibold text-zinc-700 blur-sm select-none cursor-pointer"
+                  onClick={() => setShowModal(true)}
+                >
+                  00%
+                </div>
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="text-xs text-gray-600 hover:text-white transition-colors flex items-center gap-1 justify-center"
+                >
+                  <Lock />Unlock exposure — Pro
+                </button>
+                <Bar value={50} cls="bg-zinc-700" />
+              </>
+            )}
           </div>
 
-                    <div className="border border-zinc-800 p-8 space-y-5 md:col-span-2">
+          {/* Regime context */}
+          <div className="border border-zinc-800 p-8 space-y-5 md:col-span-2">
             <div className="flex justify-between items-start">
               <div>
                 <Label>Current Regime</Label>
@@ -2758,6 +3914,7 @@ export default function Dashboard() {
               </span>
             </div>
 
+            {/* Timeframe stack mini */}
             <div className="grid grid-cols-3 gap-3">
               {[
                 { label: "Macro (1D)",     data: stack.macro     },
@@ -2776,9 +3933,10 @@ export default function Dashboard() {
               ))}
             </div>
 
+            {/* Alignment bar */}
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-gray-500">
-                <span>Alignment</span>
+                <span>Timeframe Alignment</span>
                 <span className={alignColor(alignment)}>{alignment}%</span>
               </div>
               <div className="w-full bg-zinc-800 rounded-full h-1">
@@ -2790,51 +3948,56 @@ export default function Dashboard() {
                   style={{ width: `${alignment}%` }}
                 />
               </div>
+              <div className="text-xs text-gray-600">
+                {alignment >= 80 ? "All timeframes agree — high conviction" :
+                 alignment >= 50 ? "Partial alignment — moderate conviction" :
+                 "Conflicting timeframes — reduce position size"}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* STATS GRID */}
+        {/* ── STATS GRID ── */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <StatCard
             label="Survival Probability"
             value={isPro ? survival : null}
             color={isPro ? riskColor(100 - (survival || 0)) : ""}
-            barCls={isPro
-              ? (survival > 60 ? "bg-green-500" : survival > 40 ? "bg-yellow-500" : "bg-red-500")
-              : ""}
-            hint="Prob. current regime continues"
+            barCls={isPro ? (survival > 60 ? "bg-green-500" : survival > 40 ? "bg-yellow-500" : "bg-red-500") : ""}
+            hint="Probability current regime continues"
             locked={!isPro}
+            consequence="Survival probability quantifies regime decay risk."
+            onUnlock={() => setShowModal(true)}
           />
           <StatCard
             label="Regime Shift Risk"
-            value={shiftRisk}
-            color={riskColor(shiftRisk)}
-            barCls={shiftRisk > 70 ? "bg-red-500" : shiftRisk > 45 ? "bg-yellow-500" : "bg-green-500"}
+            value={isPro ? shiftRisk : null}
+            color={isPro ? riskColor(shiftRisk) : ""}
+            barCls={isPro ? (shiftRisk > 70 ? "bg-red-500" : shiftRisk > 45 ? "bg-yellow-500" : "bg-green-500") : ""}
             hint="Composite deterioration signal"
-            locked={false}
+            locked={!isPro}
+            consequence="Shift risk identifies breakdown probability before price moves."
+            onUnlock={() => setShowModal(true)}
           />
           <StatCard
             label="Hazard Rate"
             value={isPro ? hazard : null}
             color={isPro ? riskColor(hazard || 0) : ""}
-            barCls={isPro
-              ? (hazard > 70 ? "bg-red-500" : hazard > 45 ? "bg-yellow-500" : "bg-green-500")
-              : ""}
+            barCls={isPro ? (hazard > 70 ? "bg-red-500" : hazard > 45 ? "bg-yellow-500" : "bg-green-500") : ""}
             hint="Failure risk vs historical norm"
             locked={!isPro}
+            consequence="Hazard rate measures how fragile this regime is vs history."
+            onUnlock={() => setShowModal(true)}
           />
           <StatCard
             label="Macro Coherence"
             value={isPro ? stack.macro_coherence?.toFixed(1) : null}
-            color={isPro
-              ? ((stack.macro_coherence || 0) > 60 ? "text-emerald-400" : "text-yellow-400")
-              : ""}
-            barCls={isPro
-              ? ((stack.macro_coherence || 0) > 60 ? "bg-emerald-500" : "bg-yellow-500")
-              : ""}
-            hint="1D timeframe signal alignment"
+            color={isPro ? ((stack.macro_coherence || 0) > 60 ? "text-emerald-400" : "text-yellow-400") : ""}
+            barCls={isPro ? ((stack.macro_coherence || 0) > 60 ? "bg-emerald-500" : "bg-yellow-500") : ""}
+            hint="1D timeframe signal strength"
             locked={!isPro}
+            consequence="Coherence measures whether the signal is strong or noisy."
+            onUnlock={() => setShowModal(true)}
           />
           <StatCard
             label="Strength Percentile"
@@ -2843,32 +4006,57 @@ export default function Dashboard() {
             barCls="bg-blue-500"
             hint="Relative to historical scores"
             locked={!isPro}
+            consequence="Percentile rank shows how extreme the current regime is historically."
+            onUnlock={() => setShowModal(true)}
           />
           <StatCard
             label="Execution Score"
             value={stack.execution?.score?.toFixed(1) ?? "—"}
             suffix=""
             color={regimeText(execLabel)}
-            hint="Raw 1H momentum-vol score"
+            hint="Raw 1H momentum-vol composite"
             locked={false}
           />
         </div>
 
-        {/* DECISION ENGINE — highest priority new feature */}
-        <DecisionEnginePanel
+        {/* ── PORTFOLIO HEALTH SCORE ── */}
+        <PortfolioHealthScore
           stack={stack}
+          email={email}
           isPro={isPro}
           onUnlock={() => setShowModal(true)}
         />
 
-        {/* IF YOU DO NOTHING */}
+        {/* ── DECISION ENGINE ── */}
+        <DecisionEnginePanel
+          stack={stack}
+          isPro={isPro}
+          onUnlock={() => setShowModal(true)}
+          onDecisionLoaded={setDecision}
+        />
+
+        {/* ── CONSEQUENCE SIMULATOR ── */}
         <IfNothingPanel
           stack={stack}
           isPro={isPro}
           onUnlock={() => setShowModal(true)}
         />
 
-        {/* STRESS + COUNTDOWN */}
+        {/* ── PNL IMPACT ESTIMATOR ── */}
+        <PnLImpactEstimator
+          stack={stack}
+          isPro={isPro}
+          onUnlock={() => setShowModal(true)}
+        />
+
+        {/* ── DRAWDOWN SIMULATOR ── */}
+        <DrawdownSimulator
+          stack={stack}
+          isPro={isPro}
+          onUnlock={() => setShowModal(true)}
+        />
+
+        {/* ── STRESS + COUNTDOWN ── */}
         <div className="grid md:grid-cols-2 gap-4">
           <StressMeter
             stack={stack}
@@ -2882,7 +4070,7 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* QUALITY + CONFIDENCE TREND */}
+        {/* ── QUALITY + CONFIDENCE TREND ── */}
         <div className="grid md:grid-cols-2 gap-4">
           <RegimeQualityCard
             stack={stack}
@@ -2897,21 +4085,21 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* PLAYBOOK */}
+        {/* ── PLAYBOOK ── */}
         <RegimePlaybook
           stack={stack}
           isPro={isPro}
           onUnlock={() => setShowModal(true)}
         />
 
-        {/* EXPOSURE TRACKER */}
+        {/* ── EXPOSURE TRACKER ── */}
         <ExposureTracker
           stack={stack}
           isPro={isPro}
           onUnlock={() => setShowModal(true)}
         />
 
-        {/* RISK PROFILE */}
+        {/* ── RISK PROFILE ── */}
         <RiskProfilePanel
           email={email}
           isPro={isPro}
@@ -2919,7 +4107,7 @@ export default function Dashboard() {
           onProfileSaved={(profile) => console.log("Profile saved:", profile)}
         />
 
-        {/* EXPOSURE LOGGER */}
+        {/* ── EXPOSURE LOGGER ── */}
         <ExposureLogger
           stack={stack}
           email={email}
@@ -2927,35 +4115,66 @@ export default function Dashboard() {
           onUnlock={() => setShowModal(true)}
         />
 
-        {/* DISCIPLINE SCORE */}
+        {/* ── STREAK TRACKER ── */}
+        <StreakTracker
+          email={email}
+          isPro={isPro}
+          onUnlock={() => setShowModal(true)}
+        />
+
+        {/* ── DISCIPLINE SCORE ── */}
         <DisciplinePanel
           email={email}
           isPro={isPro}
           onUnlock={() => setShowModal(true)}
         />
 
-        {/* PERFORMANCE COMPARISON */}
+        {/* ── MISTAKE REPLAY ── */}
+        <MistakeReplayPanel
+          email={email}
+          coin={coin}
+          isPro={isPro}
+          onUnlock={() => setShowModal(true)}
+        />
+
+        {/* ── PERFORMANCE COMPARISON ── */}
         <PerformancePanel
+          email={email}
+          coin={coin}
+          isPro={isPro}
+          onUnlock={() => setShowModal(true)}
+        />
+
+        {/* ── EDGE PROFILE ── */}
+        <EdgeProfilePanel
           email={email}
           isPro={isPro}
           onUnlock={() => setShowModal(true)}
         />
 
-        {/* REGIME STACK */}
+        {/* ── WEEKLY REPORT ── */}
+        <WeeklyReportPanel
+          email={email}
+          coin={coin}
+          isPro={isPro}
+          onUnlock={() => setShowModal(true)}
+        />
+
+        {/* ── REGIME STACK DETAIL ── */}
         <RegimeStackCard
           stack={stack}
           isPro={isPro}
           onUnlock={() => setShowModal(true)}
         />
 
-        {/* CONFIDENCE PANEL */}
+        {/* ── CONFIDENCE PANEL ── */}
         <ConfidencePanel
           confidence={confidence}
           isPro={isPro}
           onUnlock={() => setShowModal(true)}
         />
 
-        {/* REGIME MATURITY */}
+        {/* ── REGIME MATURITY ── */}
         <RegimeMaturity
           regimeAge={regimeAge}
           avgDuration={avgDuration}
@@ -2964,27 +4183,14 @@ export default function Dashboard() {
           onUnlock={() => setShowModal(true)}
         />
 
-        {/* TRANSITION MATRIX */}
-        <TransitionMatrix
-          transitions={transitions}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
-
-        {/* VOL ENVIRONMENT */}
+        {/* ── VOL ENVIRONMENT ── */}
         <VolEnvironment
           env={volEnv}
           isPro={isPro}
           onUnlock={() => setShowModal(true)}
         />
 
-        {/* REGIME TIMELINE */}
-        <RegimeTimeline
-          history={historyData}
-          coin={coin}
-        />
-
-        {/* SURVIVAL CURVE */}
+        {/* ── SURVIVAL CURVE ── */}
         <SurvivalCurve
           curve={curveData}
           regimeAge={regimeAge}
@@ -2992,71 +4198,142 @@ export default function Dashboard() {
           onUnlock={() => setShowModal(true)}
         />
 
-        {/* REGIME HEATMAP */}
-        <RegimeHeatmap
-          overview={overview}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
-
-        {/* CORRELATION */}
-        <CorrelationPanel
-          correlation={correlation}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
-
-        {/* PORTFOLIO ALLOCATOR */}
-        <PortfolioAllocator
-          stack={stack}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
-
-        {/* BREADTH */}
-        <BreadthPanel breadth={breadth} />
-
-        {/* REGIME MAP */}
-        <RegimeMap
-          overview={overview}
-          activeCoin={coin}
-          onSelect={setCoin}
-        />
-
-        {/* RISK EVENTS */}
-        <RiskEvents events={riskEvents} />
-
-        {/* INTERPRETATION */}
+        {/* ── SIGNAL INTERPRETATION ── */}
         <InterpretationPanel
           stack={stack}
           latest={latest}
           isPro={isPro}
         />
 
-        {/* PRO UPSELL */}
+        {/* ── EMAIL CAPTURE ── */}
+        {!email && (
+          <EmailCapture onEmailSet={setEmail} />
+        )}
+
+        {/* ── ADVANCED ANALYTICS — collapsed ── */}
+        <AdvancedAnalytics isPro={isPro}>
+          <TransitionMatrix
+            transitions={transitions}
+            isPro={isPro}
+            onUnlock={() => setShowModal(true)}
+          />
+          <RegimeHeatmap
+            overview={overview}
+            isPro={isPro}
+            onUnlock={() => setShowModal(true)}
+          />
+          <CorrelationPanel
+            correlation={correlation}
+            isPro={isPro}
+            onUnlock={() => setShowModal(true)}
+          />
+          <PortfolioAllocator
+            stack={stack}
+            isPro={isPro}
+            onUnlock={() => setShowModal(true)}
+          />
+          <BreadthPanel breadth={breadth} />
+          <RegimeMap
+            overview={overview}
+            activeCoin={coin}
+            onSelect={setCoin}
+          />
+          <RegimeTimeline
+            history={historyData}
+            coin={coin}
+          />
+          <RiskEvents events={riskEvents} />
+        </AdvancedAnalytics>
+
+        {/* ── PRO UPSELL FOOTER ── */}
         {!isPro && (
           <div
-            className="border border-zinc-700 p-10 text-center space-y-5
-                       cursor-pointer hover:border-zinc-500 transition-colors"
+            className="border border-zinc-700 p-10 text-center space-y-6 cursor-pointer hover:border-zinc-500 transition-colors"
             onClick={() => setShowModal(true)}
           >
-            <Label>ChainPulse Pro</Label>
-            <h3 className="text-2xl font-semibold">Unlock Full Regime Analytics</h3>
-            <p className="text-gray-400 max-w-xl mx-auto text-sm">
-              Playbook engine, survival curve, hazard rate, stress meter,
-              exposure tracker, regime countdown, confidence trend, decision
-              engine, discipline score, performance comparison, and more.
-            </p>
-            <div className="text-gray-300 text-sm">\$29/month · Designed for traders managing \$5k+</div>
-            <div className="text-gray-500 text-xs max-w-md mx-auto">
-              Average user avoids 1–2 poor entries per month.
-              At \$5k+ managed, that covers the cost many times over.
+            <div>
+              <Label>ChainPulse Pro</Label>
+              <h3 className="text-2xl font-semibold mt-2">
+                One avoided breakdown pays for this.
+              </h3>
+              <p className="text-gray-400 max-w-lg mx-auto text-sm leading-relaxed mt-3">
+                Exposure modeling, survival analysis, hazard rate, decision engine,
+                discipline tracking, drawdown simulation, PnL impact estimation,
+                and real-time alerts. Everything you need to trade with a
+                systematic risk framework.
+              </p>
             </div>
-            <button className="bg-white text-black px-8 py-4 rounded-md
-                               font-semibold hover:bg-gray-100 transition-colors">
-              Activate Pro — \$29/month
-            </button>
-            <div className="text-gray-600 text-xs">7-day risk-free · Cancel anytime</div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto text-left">
+              {[
+                { icon: "→", label: "Daily Directive",      desc: "Decision engine tells you what to do"  },
+                { icon: "→", label: "Survival Modeling",    desc: "Quantify regime decay probability"      },
+                { icon: "→", label: "Discipline Score",     desc: "Track protocol adherence over time"     },
+                { icon: "→", label: "Drawdown Simulation",  desc: "Model loss at any price decline"        },
+                { icon: "→", label: "PnL Impact Estimator", desc: "Expected value of your exposure"        },
+                { icon: "→", label: "Edge Profile",         desc: "Your best and worst regime types"       },
+                { icon: "→", label: "Regime Playbook",      desc: "Protocol for current conditions"        },
+                { icon: "→", label: "Real-time Alerts",     desc: "Shift alerts direct to your inbox"      },
+              ].map(({ icon, label, desc }) => (
+                <div key={label} className="border border-zinc-800 p-3 space-y-1 text-left">
+                  <div className="text-xs font-medium text-white flex items-center gap-1.5">
+                    <span className="text-emerald-400">{icon}</span>
+                    {label}
+                  </div>
+                  <div className="text-xs text-gray-600">{desc}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-center gap-6 text-sm">
+                <div className="border border-zinc-700 px-5 py-3 space-y-0.5">
+                  <div className="text-white font-semibold">\$39 / month</div>
+                  <div className="text-xs text-gray-600">Billed monthly</div>
+                </div>
+                <div className="border border-zinc-500 px-5 py-3 space-y-0.5 relative">
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">
+                    Save 26%
+                  </div>
+                  <div className="text-white font-semibold">\$29 / month</div>
+                  <div className="text-xs text-gray-600">Billed annually — \$348</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <button
+                className="bg-white text-black px-10 py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors text-sm"
+                onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
+              >
+                Start Using Full Regime Intelligence
+              </button>
+              <div className="text-gray-600 text-xs">
+                7-day risk-free evaluation · Cancel anytime · Instant access
+              </div>
+              <div className="text-gray-700 text-xs">
+                For swing traders managing \$5,000+
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── PRO FOOTER — logged in ── */}
+        {isPro && (
+          <div className="border border-zinc-800 px-6 py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div className="space-y-0.5">
+              <div className="text-xs text-gray-500 uppercase tracking-widest">ChainPulse Pro</div>
+              <div className="text-sm text-gray-400">
+                Full regime intelligence active · All signals live
+              </div>
+            </div>
+            <div className="flex gap-4 text-xs text-gray-600">
+              <span>Auto-refresh: 60s</span>
+              <span>·</span>
+              <span>7 assets tracked</span>
+              <span>·</span>
+              <span>3 timeframes</span>
+            </div>
           </div>
         )}
 
