@@ -1,0 +1,227 @@
+!doctype html
+html
+head
+  meta charset=utf-8 
+  titleChainPulse — Weekly Regime Snapshottitle
+  style
+     PDFPrint setup 
+    @page { size A4; margin 16mm; }
+     { box-sizing border-box; }
+    html, body { height 100%; }
+    body {
+      font-family Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color #0b0b0f;
+      background #fff;
+      font-size 12px;
+      line-height 1.45;
+      margin 0;
+    }
+
+     Layout 
+    .container { max-width 760px; margin 0 auto; }
+    .topbar {
+      display flex; justify-content space-between; align-items flex-start;
+      border-bottom 1px solid #e8e8ee;
+      padding-bottom 12px; margin-bottom 14px;
+    }
+    .brand { font-weight 800; letter-spacing 0.2px; font-size 14px; }
+    .muted { color #6b7280; }
+    .title { font-size 20px; font-weight 800; margin 10px 0 4px; }
+    .subtitle { font-size 12px; color #6b7280; margin 0 0 12px; }
+
+    .grid4 { display grid; grid-template-columns repeat(4, 1fr); gap 10px; }
+    .grid2 { display grid; grid-template-columns repeat(2, 1fr); gap 10px; }
+    .card {
+      border 1px solid #e8e8ee; border-radius 10px;
+      padding 10px 12px;
+      background #fff;
+    }
+    .k { font-size 10px; color #6b7280; text-transform uppercase; letter-spacing 0.12em; }
+    .v { font-size 16px; font-weight 800; margin-top 6px; }
+    .small { font-size 11px; color #6b7280; margin-top 6px; }
+
+    .section { margin-top 12px; }
+    .h2 { font-size 12px; font-weight 800; margin 0 0 8px; text-transform uppercase; letter-spacing 0.12em; }
+    .p { margin 0; color #111827; }
+
+    .pill {
+      display inline-block; padding 2px 8px; border-radius 999px;
+      border 1px solid #e8e8ee; font-size 11px; font-weight 700;
+    }
+    .green { color #065f46; background #ecfdf5; border-color #a7f3d0; }
+    .yellow { color #854d0e; background #fffbeb; border-color #fde68a; }
+    .red { color #7f1d1d; background #fef2f2; border-color #fecaca; }
+    .blue { color #1e3a8a; background #eff6ff; border-color #bfdbfe; }
+
+    table { width 100%; border-collapse collapse; }
+    td, th { padding 8px 0; border-bottom 1px solid #f0f1f6; vertical-align top; }
+    th { text-align left; font-size 10px; color #6b7280; text-transform uppercase; letter-spacing 0.12em; }
+
+    .bar {
+      width 100%; height 7px; background #f3f4f6; border-radius 999px; overflow hidden;
+      border 1px solid #edeef3;
+      margin-top 6px;
+    }
+    .bar  div { height 100%; border-radius 999px; }
+
+    .footer {
+      margin-top 14px; padding-top 10px;
+      border-top 1px solid #e8e8ee;
+      font-size 10px; color #6b7280;
+      display flex; justify-content space-between; gap 10px; flex-wrap wrap;
+    }
+
+     Keep cards from breaking awkwardly 
+    .card, .section { break-inside avoid; page-break-inside avoid; }
+  style
+head
+
+body
+  div class=container
+    div class=topbar
+      div
+        div class=brandChainPulsediv
+        div class=mutedWeekly Regime Snapshotdiv
+      div
+      div class=muted style=text-alignright
+        divstrongAssetstrong BTCdiv
+        divstrongPeriodstrong Mar 08 → Mar 15div
+        divstrongCadencestrong Hourlydiv
+      div
+    div
+
+    div class=titleWeekly Report — BTC Regime Intelligencediv
+    div class=subtitle
+      Summary of regime conditions, exposure guidance, and risk posture for the week ahead.
+    div
+
+    !-- Executive Summary --
+    div class=card section
+      div class=h2Executive Summarydiv
+      p class=p
+        BTC remained span class=pill greenRisk-Onspan on the execution timeframe with
+        strongmoderate alignmentstrong across Macro  Trend  Execution.
+        Shift risk stayed span class=pill yellowelevatedspan, implying higher-than-normal probability of a transition.
+        Recommended posture strongmaintain exposurestrong but strongavoid adding leveragestrong until hazard and shift risk improve.
+      p
+    div
+
+    !-- Key Metrics --
+    div class=section grid4
+      div class=card
+        div class=kWeekly Verdictdiv
+        div class=vMaintaindiv
+        div class=smallDecision score 67  100div
+        div class=bardiv style=width67%; background#22c55e;divdiv
+      div
+      div class=card
+        div class=kRecommended Exposurediv
+        div class=v58%div
+        div class=smallBand 50–65%div
+        div class=bardiv style=width58%; background#3b82f6;divdiv
+      div
+      div class=card
+        div class=kShift Riskdiv
+        div class=v61%div
+        div class=smallDeterioration moderatediv
+        div class=bardiv style=width61%; background#f59e0b;divdiv
+      div
+      div class=card
+        div class=kRegime Qualitydiv
+        div class=vB+div
+        div class=smallStructure healthydiv
+        div class=bardiv style=width72%; background#22c55e;divdiv
+      div
+    div
+
+    !-- Regime Stack --
+    div class=card section
+      div class=h2Regime Stackdiv
+      table
+        thead
+          tr
+            thTimeframeth
+            th style=text-alignright;Regimeth
+          tr
+        thead
+        tbody
+          tr
+            tdstrongMacro (1D)strongdiv class=mutedLonger-horizon biasdivtd
+            td style=text-alignright;span class=pill greenRisk-Onspantd
+          tr
+          tr
+            tdstrongTrend (4H)strongdiv class=mutedSwing  structuredivtd
+            td style=text-alignright;span class=pill yellowNeutralspantd
+          tr
+          tr
+            tdstrongExecution (1H)strongdiv class=mutedEntry  sizingdivtd
+            td style=text-alignright;span class=pill greenRisk-Onspantd
+          tr
+        tbody
+      table
+
+      div class=section style=displayflex;gap8px;flex-wrapwrap;
+        span class=pill blueAlignment 67%span
+        span class=pill blueDirection Bullishspan
+        span class=pill yellowNote Neutral 4H reduces convictionspan
+      div
+    div
+
+    !-- Protocol --
+    div class=card section
+      div class=h2Next Week Protocoldiv
+      table
+        tbody
+          tr
+            td style=padding-right14px;strongExposurestrongtd
+            tdKeep exposure near strong55–60%strong. Avoid increasing leverage while shift risk remains above strong60%strong.td
+          tr
+          tr
+            td style=padding-right14px;strongEntriesstrongtd
+            tdPrefer pullbacks over breakout chasing. Size down when alignment is below strong70%strong.td
+          tr
+          tr
+            td style=padding-right14px;strongRiskstrongtd
+            tdIf hazard rises above strong70%strong, trim exposure by strong15–25%strong and stop adding risk.td
+          tr
+          tr
+            td style=padding-right14px;strongConfirmationstrongtd
+            tdWait for 4H trend confirmation before sizing up aggressively.td
+          tr
+        tbody
+      table
+    div
+
+    !-- Discipline + Performance (sample) --
+    div class=section grid2
+      div class=card
+        div class=h2Discipline Summary (Sample)div
+        div class=v78 span class=pill green style=vertical-alignmiddle;Goodspandiv
+        div class=smallFollowed model 7  9 sessionsdiv
+        div class=bardiv style=width78%; background#22c55e;divdiv
+        div class=smallTop issue over-exposed during elevated hazard.div
+      div
+      div class=card
+        div class=h2Performance vs Model (Sample)div
+        table
+          tbody
+            trtdYour returntdtd style=text-alignright;strong style=color#065f46;+3.4%strongtdtr
+            trtdModel returntdtd style=text-alignright;strong style=color#1e3a8a;+4.6%strongtdtr
+            trtdAlphatdtd style=text-alignright;strong style=color#7f1d1d;-1.2%strongtdtr
+          tbody
+        table
+        div class=smallRecommendation reduce decision latency in late-phase regimes.div
+      div
+    div
+
+    div class=footer
+      div
+        ChainPulse — Not financial advice. This is a sample report for demonstration purposes.
+      div
+      div
+        chainpulse.proapp
+      div
+    div
+  div
+body
+html
