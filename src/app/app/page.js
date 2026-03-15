@@ -174,7 +174,7 @@ function ProGate({ label, consequence, children, onUnlock }) {
             onClick={onUnlock}
             className="w-full bg-white text-black px-4 py-2.5 rounded-md text-xs font-semibold hover:bg-gray-100 transition-colors"
           >
-            Unlock — \$39/month
+            Unlock — $39/month
           </button>
           <div className="text-xs text-gray-700">7-day risk-free · Cancel anytime</div>
         </div>
@@ -4302,7 +4302,7 @@ export default function Dashboard() {
                     Save 26%
                   </div>
                   <div className="text-white font-semibold">$29 / month</div>
-                  <div className="text-xs text-gray-600">Billed annually — \$348</div>
+                  <div className="text-xs text-gray-600">Billed annually — $348</div>
                 </div>
               </div>
             </div>
