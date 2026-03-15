@@ -3579,7 +3579,7 @@ function ProModal({ onClose }) {
                 : "bg-transparent text-gray-400 border-zinc-700 hover:border-zinc-500"
             }`}
           >
-            Monthly — \$39
+            Monthly — $39
           </button>
           <button
             onClick={() => setBillingCycle("annual")}
@@ -3589,7 +3589,7 @@ function ProModal({ onClose }) {
                 : "bg-transparent text-gray-400 border-zinc-700 hover:border-zinc-500"
             }`}
           >
-            Annual — \$29/mo
+            Annual — $29/mo
             <span className="absolute -top-2 -right-2 bg-emerald-500 text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">
               -26%
             </span>
@@ -3618,8 +3618,8 @@ function ProModal({ onClose }) {
             {loading
   ? "Redirecting..."
   : billingCycle === "annual"
-  ? "Start Using Full Regime Intelligence — \$348/year"
-  : "Start Using Full Regime Intelligence — \$39/month"}
+  ? "Start Using Full Regime Intelligence — $348/year"
+  : "Start Using Full Regime Intelligence — $39/month"}
           </button>
           <div className="text-center text-gray-600 text-xs">
             7-day risk-free evaluation · Cancel anytime · Instant access
@@ -3629,7 +3629,7 @@ function ProModal({ onClose }) {
           <div className="text-xs text-gray-500">
             "One avoided breakdown pays for this many times over."
           </div>
-          <div className="text-xs text-gray-700">For traders managing \$5,000+</div>
+          <div className="text-xs text-gray-700">For traders managing $5,000+</div>
         </div>
       </div>
     </div>
