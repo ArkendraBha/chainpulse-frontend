@@ -7,7 +7,9 @@ import {
   CartesianGrid, ReferenceLine,
 } from "recharts";
 
-const BACKEND         = process.env.NEXT_PUBLIC_BACKEND_URL;
+const BACKEND =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  "https://chainpulse-backend-2xok.onrender.com";
 const SUPPORTED_COINS = ["BTC", "ETH", "SOL", "BNB", "AVAX", "LINK", "ADA"];
 const REFRESH_MS      = 60_000;
 
