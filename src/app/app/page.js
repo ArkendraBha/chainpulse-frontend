@@ -3637,6 +3637,72 @@ function ProModal({ onClose }) {
 }
 
 // ─────────────────────────────────────────
+// LIVE PRICE TICKER
+// ─────────────────────────────────────────
+function LivePriceTicker() {
+  const [prices, setPrices] = useState({});
+  const [changes, setChanges] = useState({});
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const symbols = SUPPORTED_COINS.map((c) => `${c}USDT`);
+        const res = await fetch(
+          `https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`
+        );
+        const data = await res.json();
+        const p = {};
+        const ch = {};
+        data.forEach((item) => {
+          const coin = item.symbol.replace("USDT", "");
+          p[coin]  = parseFloat(item.lastPrice);
+          ch[coin] = parseFloat(item.priceChangePercent);
+        });
+        setPrices(p);
+        setChanges(ch);
+      } catch (err) {
+        console.error("Price fetch error:", err);
+      }
+    };
+
+    fetchPrices();
+    const iv = setInterval(fetchPrices, 30_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const formatPrice = (price) => {
+    if (!price) return "—";
+    if (price >= 1000) return price.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    if (price >= 1)    return price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return price.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  };
+
+  return (
+    <div className="border border-zinc-800 bg-zinc-900/40 px-4 py-3">
+      <div className="flex gap-6 overflow-x-auto scrollbar-hide">
+        {SUPPORTED_COINS.map((coin) => {
+          const price  = prices[coin];
+          const change = changes[coin];
+          const isPos  = change >= 0;
+          return (
+            <div key={coin} className="flex items-center gap-3 shrink-0">
+              <span className="text-xs font-semibold text-gray-300">{coin}</span>
+              <span className="text-xs text-white font-mono">
+                ${formatPrice(price)}
+              </span>
+              {change !== undefined && (
+                <span className={`text-xs font-medium ${isPos ? "text-emerald-400" : "text-red-400"}`}>
+                  {isPos ? "+" : ""}{change?.toFixed(2)}%
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+// ─────────────────────────────────────────
 // MAIN DASHBOARD
 // ─────────────────────────────────────────
 export default function Dashboard() {
@@ -3811,6 +3877,10 @@ export default function Dashboard() {
       {showModal && <ProModal onClose={() => setShowModal(false)} />}
 
       <div className="max-w-6xl mx-auto space-y-6">
+<div className="max-w-6xl mx-auto space-y-6 overflow-visible">
+
+  {/* ── LIVE PRICE TICKER ── */}
+  <LivePriceTicker />
 
         {/* ── Pro success banner ── */}
         {proSuccess && (
