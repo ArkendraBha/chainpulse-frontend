@@ -3872,15 +3872,14 @@ export default function Dashboard() {
     maturity > 50 ? "Late Phase"   :
     maturity > 25 ? "Mid Phase"    : "Early Phase";
 
-  return (
-    <main className="min-h-screen bg-black text-white px-4 sm:px-6 py-12">
-      {showModal && <ProModal onClose={() => setShowModal(false)} />}
+ return (
+  <main className="min-h-screen bg-black text-white px-4 sm:px-6 py-12">
+    {showModal && <ProModal onClose={() => setShowModal(false)} />}
 
-      <div className="max-w-6xl mx-auto space-y-6">
-<div className="max-w-6xl mx-auto space-y-6 overflow-visible">
+    <div className="max-w-6xl mx-auto space-y-6 overflow-visible">  {/* ← merged */}
 
-  {/* ── LIVE PRICE TICKER ── */}
-  <LivePriceTicker />
+      {/* ── LIVE PRICE TICKER ── */}
+      <LivePriceTicker />
 
         {/* ── Pro success banner ── */}
         {proSuccess && (
