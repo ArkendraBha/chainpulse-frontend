@@ -174,7 +174,7 @@ function ProGate({ label, consequence, children, onUnlock }) {
             onClick={onUnlock}
             className="w-full bg-white text-black px-4 py-2.5 rounded-md text-xs font-semibold hover:bg-gray-100 transition-colors"
           >
-            Unlock — \$39/month
+            Unlock — $39/month
           </button>
           <div className="text-xs text-gray-700">7-day risk-free · Cancel anytime</div>
         </div>
@@ -281,7 +281,7 @@ function TodaysVerdict({ stack, decision, isPro, onUnlock }) {
               onClick={onUnlock}
               className="bg-white text-black px-5 py-2 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap"
             >
-              Unlock Pro — \$39/mo
+              Unlock Pro — $39/mo
             </button>
           )}
         </div>
@@ -309,7 +309,7 @@ function FreeTierBanner({ onUnlock }) {
           onClick={onUnlock}
           className="bg-white text-black px-6 py-2.5 rounded-md text-sm font-semibold whitespace-nowrap hover:bg-gray-100 transition-colors shrink-0"
         >
-          Unlock Full System — \$39/mo
+          Unlock Full System — $39/mo
         </button>
       </div>
     </div>
@@ -1707,7 +1707,7 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
               Without survival modeling, you cannot quantify regime decay probability.
             </div>
             <button className="bg-white text-black px-4 py-2.5 rounded-md text-xs font-semibold">
-              Unlock Pro — \$39/month
+              Unlock Pro — $39/month
             </button>
           </div>
         </div>
@@ -3579,7 +3579,7 @@ function ProModal({ onClose }) {
                 : "bg-transparent text-gray-400 border-zinc-700 hover:border-zinc-500"
             }`}
           >
-            Monthly — $39
+            Monthly — $39/mo
           </button>
           <button
             onClick={() => setBillingCycle("annual")}
@@ -4288,14 +4288,14 @@ export default function Dashboard() {
             <div className="space-y-2">
               <div className="flex justify-center gap-6 text-sm">
                 <div className="border border-zinc-700 px-5 py-3 space-y-0.5">
-                  <div className="text-white font-semibold">\$39 / month</div>
+                  <div className="text-white font-semibold">$39 / month</div>
                   <div className="text-xs text-gray-600">Billed monthly</div>
                 </div>
                 <div className="border border-zinc-500 px-5 py-3 space-y-0.5 relative">
                   <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">
                     Save 26%
                   </div>
-                  <div className="text-white font-semibold">\$29 / month</div>
+                  <div className="text-white font-semibold">$29 / month</div>
                   <div className="text-xs text-gray-600">Billed annually — \$348</div>
                 </div>
               </div>
