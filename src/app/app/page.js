@@ -4388,7 +4388,7 @@ export default function Dashboard() {
                 7-day risk-free evaluation · Cancel anytime · Instant access
               </div>
               <div className="text-gray-700 text-xs">
-                For swing traders managing \$5,000+
+                For swing traders managing $5,000+
               </div>
             </div>
           </div>
@@ -4416,3 +4416,4 @@ export default function Dashboard() {
       </div>
     </main>
   );
+}
