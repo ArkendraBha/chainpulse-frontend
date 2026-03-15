@@ -8,16 +8,16 @@ const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
 export default function Pricing() {
   const [annual, setAnnual] = useState(false);
 
-  const monthlyPrice = 29;
-  const annualPrice = 19;
-  const annualTotal = annualPrice * 12;
+  const monthlyPrice = 39;
+  const annualPrice  = 29;
+  const annualTotal  = annualPrice * 12;
 
   const handleCheckout = async () => {
     try {
       const res = await fetch(`${BACKEND}/create-checkout-session`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "" }),
+        body:    JSON.stringify({ billing_cycle: annual ? "annual" : "monthly" }),
       });
       const data = await res.json();
       if (data.url) {
@@ -50,9 +50,7 @@ export default function Pricing() {
 
           {/* BILLING TOGGLE */}
           <div className="flex items-center justify-center gap-4 pt-4">
-            <span
-              className={`text-sm ${!annual ? "text-white" : "text-gray-500"}`}
-            >
+            <span className={`text-sm ${!annual ? "text-white" : "text-gray-500"}`}>
               Monthly
             </span>
             <button
@@ -63,18 +61,14 @@ export default function Pricing() {
             >
               <span
                 className={`absolute top-1 w-4 h-4 rounded-full transition-all ${
-                  annual
-                    ? "left-7 bg-black"
-                    : "left-1 bg-white"
+                  annual ? "left-7 bg-black" : "left-1 bg-white"
                 }`}
               />
             </button>
-            <span
-              className={`text-sm ${annual ? "text-white" : "text-gray-500"}`}
-            >
+            <span className={`text-sm ${annual ? "text-white" : "text-gray-500"}`}>
               Annual
               <span className="ml-2 text-xs text-emerald-400 font-medium">
-                Save 34%
+                Save 26%
               </span>
             </span>
           </div>
@@ -100,81 +94,191 @@ export default function Pricing() {
             )}
             {!annual && (
               <div className="text-gray-600 text-xs">
-                Or ${annualPrice}/mo billed annually
+                Or ${annualPrice}/mo billed annually — save \$120/year
               </div>
             )}
           </div>
 
           <div className="text-gray-500 text-xs border-t border-zinc-800 pt-6">
-            Early access pricing — subject to increase
+            7-day risk-free evaluation · Cancel anytime
           </div>
 
           <ul className="space-y-4 text-sm text-gray-300">
-            <li className="flex items-start gap-3">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>Full multi-asset dashboard — BTC, ETH, SOL, BNB, AVAX</span>
+
+            <li className="text-xs text-gray-500 uppercase tracking-widest pt-1">
+              Core Decision Engine
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>Regime survival curve and hazard modeling</span>
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Exposure recommendation % — regime-adjusted allocation</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>Exposure allocation engine</span>
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Shift risk % — composite deterioration signal</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>Coherence index and strength percentile</span>
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Survival probability — regime persistence model</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>Real-time regime shift email alerts</span>
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Hazard rate — failure risk vs historical norm</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>Weekly regime snapshot reports</span>
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Decision Engine — today's systematic directive</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>48-hour regime score history chart</span>
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Consequence Simulator — cost of inaction</span>
             </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>PnL Impact Estimator — expected value modeling</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Drawdown Simulator — 3 scenario loss modeling</span>
+            </li>
+
+            <li className="text-xs text-gray-500 uppercase tracking-widest pt-3">
+              Regime Intelligence
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Regime quality grade (A / B / C / D)</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Regime stress meter — composite breakdown signal</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Regime countdown — statistical time remaining</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Regime playbook — protocol for current conditions</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Confidence trend — 24H conviction trajectory</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Volatility & liquidity environment</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Transition probability matrix</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Full coherence index per timeframe</span>
+            </li>
+
+            <li className="text-xs text-gray-500 uppercase tracking-widest pt-3">
+              Personal Accountability
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Risk profile calibration — personalised exposure</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Exposure logger — track your actual positions</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Discipline streak — consecutive aligned sessions</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Discipline score — model adherence over time</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Mistake replay — deviations during risk events</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Performance comparison — your alpha vs model</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Edge profile — your best and worst regimes</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Weekly performance report</span>
+            </li>
+
+            <li className="text-xs text-gray-500 uppercase tracking-widest pt-3">
+              Portfolio & Alerts
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Portfolio health score — composite risk rating</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Portfolio exposure allocator</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Cross-asset correlation monitor</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Real-time shift alerts via email</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Daily regime brief every morning</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>Weekly discipline summary report</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+              <span>All 7 assets: BTC ETH SOL BNB AVAX LINK ADA</span>
+            </li>
+
           </ul>
 
           <button
             onClick={handleCheckout}
             className="w-full bg-white text-black py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors"
           >
-            Activate Pro — ${annual ? annualPrice : monthlyPrice}/month
+            Start Using Full Regime Intelligence — ${annual ? annualPrice : monthlyPrice}/month
           </button>
 
           <div className="text-center text-gray-600 text-xs space-y-1">
-            <div>7-day risk-free access · Cancel anytime</div>
+            <div>7-day risk-free evaluation · Cancel anytime</div>
             <div>Secure checkout via Stripe</div>
           </div>
 
         </div>
 
-
-
-      
-
-{/* PSYCHOLOGY ANCHOR */}
-<div className="border border-zinc-800 p-8 space-y-4 text-sm text-gray-400">
-  <div className="text-white font-medium">The Real Cost of Getting It Wrong</div>
-  <p>
-    Designed for traders managing \$5,000 or more.
-    At that size, one avoided late-stage overexposure event of 3%
-    saves \$150 — more than five months of Pro.
-  </p>
-  <p>
-    Average Pro user avoids 1–2 poor entries per month
-    by acting on regime deterioration data before it becomes obvious.
-  </p>
-  <p className="text-gray-600 text-xs">
-    ChainPulse does not guarantee outcomes.
-    Past regime behavior does not predict future results.
-  </p>
-</div>
+        {/* PSYCHOLOGY ANCHOR */}
+        <div className="border border-zinc-800 p-8 space-y-4 text-sm text-gray-400">
+          <div className="text-white font-medium">The Real Cost of Getting It Wrong</div>
+          <p>
+            Designed for traders managing \$5,000 or more.
+            At that size, one avoided late-stage overexposure event of 3%
+            saves \$150 — nearly four months of Pro.
+          </p>
+          <p>
+            The decision engine, drawdown simulator, and consequence modeler
+            exist for one reason: to quantify the cost of ignoring regime data
+            before it becomes a loss.
+          </p>
+          <p className="text-gray-600 text-xs">
+            ChainPulse does not guarantee outcomes.
+            Past regime behavior does not predict future results.
+          </p>
+        </div>
 
         {/* FAQ */}
         <div className="max-w-3xl mx-auto space-y-8">
@@ -191,8 +295,9 @@ export default function Pricing() {
               <p className="text-gray-400">
                 It tells you the statistical state of the current market regime,
                 how mature it is, how likely it is to continue, and what
-                exposure allocation is supported by the data. It does not
-                tell you what to buy or sell.
+                exposure allocation is supported by the data. The decision
+                engine then gives you a systematic directive for today's session.
+                It does not tell you what to buy or sell.
               </p>
             </div>
 
@@ -203,8 +308,9 @@ export default function Pricing() {
               <p className="text-gray-400">
                 Signal services tell you when to enter and exit specific trades.
                 ChainPulse tells you how much capital to have deployed given
-                current regime conditions. It is a risk allocation framework,
-                not a trade signal engine.
+                current regime conditions — and tracks whether your decisions
+                are aligned with the model over time. It is a risk allocation
+                framework with personal accountability, not a trade signal engine.
               </p>
             </div>
 
@@ -213,8 +319,8 @@ export default function Pricing() {
                 What assets are covered?
               </div>
               <p className="text-gray-400">
-                BTC, ETH, SOL, BNB, and AVAX — updated hourly from live
-                Binance market data.
+                BTC, ETH, SOL, BNB, AVAX, LINK, and ADA — updated hourly
+                from live market data across three timeframes.
               </p>
             </div>
 
@@ -226,6 +332,18 @@ export default function Pricing() {
                 Email alerts are dispatched when regime shift risk exceeds 70%
                 for any tracked asset. Alerts are throttled to a maximum of
                 once per 12 hours per asset to prevent noise.
+              </p>
+            </div>
+
+            <div className="border-b border-zinc-900 pb-6 space-y-2">
+              <div className="text-white font-medium">
+                What is the discipline score?
+              </div>
+              <p className="text-gray-400">
+                Every time you log your actual exposure, the model compares it
+                against the regime recommendation. Your discipline score tracks
+                how consistently you follow the protocol over time — and flags
+                the specific sessions where deviations cost you the most.
               </p>
             </div>
 
@@ -244,9 +362,11 @@ export default function Pricing() {
                 Is there a free tier?
               </div>
               <p className="text-gray-400">
-                The live regime snapshot on the dashboard is publicly visible.
-                Pro unlocks full analytics, multi-asset coverage, shift alerts,
-                and weekly reports.
+                The live regime snapshot and execution score on the dashboard
+                are publicly visible. Pro unlocks full analytics, exposure
+                modeling, survival analysis, the decision engine, discipline
+                tracking, multi-asset coverage, shift alerts, and all
+                personal accountability features.
               </p>
             </div>
 
