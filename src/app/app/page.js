@@ -161,10 +161,10 @@ function Lock() {
 // ─────────────────────────────────────────
 function ProGate({ label, consequence, children, onUnlock }) {
   return (
-    <div className="border border-zinc-800 p-8 space-y-4 relative overflow-hidden">
+    <div className="border border-zinc-800 p-8 space-y-4 relative overflow-visible">
       <Label>{label}</Label>
-      <div className="blur-sm select-none pointer-events-none opacity-40">{children}</div>
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="blur-sm select-none pointer-events-none opacity-40 max-h-32 overflow-hidden">{children}</div>
+      <div className="absolute inset-0 flex items-center justify-center z-10">
         <div className="bg-zinc-950 border border-zinc-700 px-8 py-6 text-center space-y-3 max-w-sm mx-4">
           <div className="text-sm font-medium text-white"><Lock />{label}</div>
           {consequence && (
@@ -174,7 +174,7 @@ function ProGate({ label, consequence, children, onUnlock }) {
             onClick={onUnlock}
             className="w-full bg-white text-black px-4 py-2.5 rounded-md text-xs font-semibold hover:bg-gray-100 transition-colors"
           >
-            Unlock — $39/month
+            Unlock — \$39/month
           </button>
           <div className="text-xs text-gray-700">7-day risk-free · Cancel anytime</div>
         </div>
