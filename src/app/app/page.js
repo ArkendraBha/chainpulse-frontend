@@ -130,7 +130,7 @@ const PLAYBOOKS = {
 // ─────────────────────────────────────────
 function Bar({ value = 0, cls = "bg-white" }) {
   return (
-    <div className="w-full bg-zinc-800 rounded-full h-1 mt-1.5">
+    <div className="w-full bg-white/5 rounded-full h-1 mt-1.5">
       <div
         className={`h-1 rounded-full transition-all duration-700 ${cls}`}
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
@@ -141,7 +141,9 @@ function Bar({ value = 0, cls = "bg-white" }) {
 
 function Label({ children }) {
   return (
-    <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">{children}</div>
+    <div className="text-[11px] text-zinc-500 uppercase tracking-[0.2em] mb-1.5">
+      {children}
+    </div>
   );
 }
 
@@ -161,22 +163,35 @@ function Lock() {
 // ─────────────────────────────────────────
 function ProGate({ label, consequence, children, onUnlock }) {
   return (
-    <div className="border border-zinc-800 p-8 space-y-4 relative overflow-visible">
+    <div className="bg-zinc-950/60 border border-white/5 p-8 space-y-4 relative overflow-hidden rounded-lg">
       <Label>{label}</Label>
-      <div className="blur-sm select-none pointer-events-none opacity-40 max-h-32 overflow-hidden">{children}</div>
+      <div className="blur-sm select-none pointer-events-none opacity-30 max-h-32 overflow-hidden">
+        {children}
+      </div>
       <div className="absolute inset-0 flex items-center justify-center z-10">
-        <div className="bg-zinc-950 border border-zinc-700 px-8 py-6 text-center space-y-3 max-w-sm mx-4">
-          <div className="text-sm font-medium text-white"><Lock />{label}</div>
+        <div className="
+          bg-zinc-950/95 border border-white/8
+          px-8 py-6 text-center space-y-3 max-w-sm mx-4
+          rounded-xl shadow-2xl shadow-black/50
+          backdrop-blur-sm
+        ">
+          <div className="text-sm font-semibold text-white flex items-center justify-center gap-1.5">
+            <Lock />{label}
+          </div>
           {consequence && (
-            <div className="text-xs text-gray-500">{consequence}</div>
+            <div className="text-xs text-zinc-500 leading-relaxed">{consequence}</div>
           )}
           <button
             onClick={onUnlock}
-            className="w-full bg-white text-black px-4 py-2.5 rounded-md text-xs font-semibold hover:bg-gray-100 transition-colors"
+            className="
+              w-full bg-white text-black px-4 py-2.5 rounded-lg
+              text-xs font-semibold hover:bg-zinc-100
+              transition-colors shadow-sm
+            "
           >
             Unlock — $39/month
           </button>
-          <div className="text-xs text-gray-700">7-day risk-free · Cancel anytime</div>
+          <div className="text-xs text-zinc-700">7-day risk-free · Cancel anytime</div>
         </div>
       </div>
     </div>
@@ -190,31 +205,35 @@ function StatCard({ label, value, suffix = "%", color, barCls, hint, locked, con
   if (locked)
     return (
       <div
-        className="border border-zinc-800 p-5 space-y-2 relative overflow-hidden cursor-pointer group"
+        className="bg-white/1 border border-white/5 p-5 space-y-2 relative overflow-hidden cursor-pointer group rounded-lg"
         onClick={onUnlock}
       >
         <Label>{label}</Label>
-        <div className="text-3xl font-semibold text-zinc-700 blur-sm select-none">00.0</div>
-        <Bar value={50} cls="bg-zinc-700" />
+        <div className="text-3xl font-semibold text-zinc-800 blur-sm select-none tabular-nums">
+          00.0
+        </div>
+        <Bar value={50} cls="bg-zinc-800" />
         {hint && <div className="text-xs text-zinc-800 blur-sm select-none">{hint}</div>}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
           <div className="text-center space-y-1 px-3">
-            <span className="text-xs text-gray-400 flex items-center gap-1 justify-center">
+            <span className="text-xs text-zinc-400 flex items-center gap-1 justify-center">
               <Lock />Pro
             </span>
             {consequence && (
-              <div className="text-xs text-gray-600">{consequence}</div>
+              <div className="text-xs text-zinc-600 max-w-[140px] text-center leading-relaxed">{consequence}</div>
             )}
           </div>
         </div>
       </div>
     );
   return (
-    <div className="border border-zinc-800 p-5 space-y-2">
+    <div className="bg-white/1 border border-white/5 p-5 space-y-2 rounded-lg">
       <Label>{label}</Label>
-      <div className={`text-3xl font-semibold ${color}`}>{value}{suffix}</div>
+      <div className={`text-3xl font-semibold tabular-nums ${color}`}>
+        {value}{suffix}
+      </div>
       {barCls && <Bar value={parseFloat(value) || 0} cls={barCls} />}
-      {hint && <div className="text-xs text-gray-600 pt-1">{hint}</div>}
+      {hint && <div className="text-xs text-zinc-600 pt-1">{hint}</div>}
     </div>
   );
 }
@@ -3639,69 +3658,169 @@ function ProModal({ onClose }) {
 // ─────────────────────────────────────────
 // LIVE PRICE TICKER
 // ─────────────────────────────────────────
-function LivePriceTicker() {
-  const [prices, setPrices] = useState({});
+function LivePriceTicker({ activeCoin, onCoinSelect }) {
+  const [prices,  setPrices]  = useState({});
   const [changes, setChanges] = useState({});
+  const [prev,    setPrev]    = useState({});
 
   useEffect(() => {
     const fetchPrices = async () => {
       try {
         const symbols = SUPPORTED_COINS.map((c) => `${c}USDT`);
-        const res = await fetch(
+        const res  = await fetch(
           `https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`
         );
         const data = await res.json();
-        const p = {};
-        const ch = {};
+        const p = {}, ch = {};
         data.forEach((item) => {
           const coin = item.symbol.replace("USDT", "");
           p[coin]  = parseFloat(item.lastPrice);
           ch[coin] = parseFloat(item.priceChangePercent);
         });
+        setPrev(prices);
         setPrices(p);
         setChanges(ch);
       } catch (err) {
         console.error("Price fetch error:", err);
       }
     };
-
     fetchPrices();
     const iv = setInterval(fetchPrices, 30_000);
     return () => clearInterval(iv);
   }, []);
 
-  const formatPrice = (price) => {
+  const fmt = (price) => {
     if (!price) return "—";
-    if (price >= 1000) return price.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    if (price >= 1000) return price.toLocaleString("en-US", { maximumFractionDigits: 0 });
     if (price >= 1)    return price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     return price.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
   };
 
   return (
-    <div className="border border-zinc-800 bg-zinc-900/40 px-4 py-3">
-      <div className="flex gap-6 overflow-x-auto scrollbar-hide">
-        {SUPPORTED_COINS.map((coin) => {
-          const price  = prices[coin];
-          const change = changes[coin];
-          const isPos  = change >= 0;
-          return (
-            <div key={coin} className="flex items-center gap-3 shrink-0">
-              <span className="text-xs font-semibold text-gray-300">{coin}</span>
-              <span className="text-xs text-white font-mono">
-                ${formatPrice(price)}
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide py-0.5 flex-wrap">
+      {SUPPORTED_COINS.map((coin) => {
+        const price    = prices[coin];
+        const change   = changes[coin];
+        const isPos    = (change ?? 0) >= 0;
+        const isActive = coin === activeCoin;
+        const flash    = prev[coin] && price && price !== prev[coin];
+
+        return (
+          <button
+            key={coin}
+            onClick={() => onCoinSelect?.(coin)}
+            className={`
+              flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 shrink-0
+              border
+              ${isActive
+                ? "bg-white/8 border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+                : "bg-white/2 border-white/5 hover:bg-white/5 hover:border-white/10"
+              }
+              ${flash ? "animate-pulse" : ""}
+            `}
+          >
+            <span className={`text-xs font-semibold ${isActive ? "text-white" : "text-zinc-300"}`}>
+              {coin}
+            </span>
+            <span className="text-xs text-zinc-400 tabular-nums font-mono">
+              ${fmt(price)}
+            </span>
+            {change !== undefined && (
+              <span className={`text-xs font-medium tabular-nums ${isPos ? "text-emerald-400" : "text-red-400"}`}>
+                {isPos ? "+" : ""}{change?.toFixed(2)}%
               </span>
-              {change !== undefined && (
-                <span className={`text-xs font-medium ${isPos ? "text-emerald-400" : "text-red-400"}`}>
-                  {isPos ? "+" : ""}{change?.toFixed(2)}%
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
+
+// ─────────────────────────────────────────
+// SITE HEADER
+// ─────────────────────────────────────────
+
+function SiteHeader({ coin, onCoinSelect, isPro, onUnlock, prices, changes }) {
+  return (
+    <header className="
+      sticky top-0 z-40 w-full
+      bg-zinc-950/80 backdrop-blur-md
+      border-b border-white/5
+    ">
+      {/* ── Top row: brand + nav + CTA ── */}
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex items-center justify-between h-14 gap-6">
+
+          {/* Brand */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-6 h-6 rounded-md bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-emerald-400" />
+            </div>
+            <span className="text-sm font-semibold text-white tracking-tight">
+              ChainPulse
+            </span>
+            <span className="text-xs text-zinc-600 hidden sm:block">Quant</span>
+          </div>
+
+          {/* Nav */}
+          <nav className="hidden md:flex items-center gap-1">
+            {[
+              { label: "Home",        href: "/"            },
+              { label: "Dashboard",   href: "/app"         },
+              { label: "Pricing",     href: "/pricing"     },
+              { label: "Methodology", href: "/methodology" },
+            ].map(({ label, href }) => (
+              <a
+                key={label}
+                href={href}
+                className="px-3 py-1.5 text-sm text-zinc-400 hover:text-white transition-colors rounded-md hover:bg-white/4"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+
+          {/* Right side */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Live indicator */}
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-zinc-500">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live
+            </div>
+
+            {isPro ? (
+              <span className="text-xs text-emerald-400 border border-emerald-900/60 bg-emerald-950/40 px-3 py-1.5 rounded-md">
+                Pro Active
+              </span>
+            ) : (
+              <button
+                onClick={onUnlock}
+                className="
+                  bg-white text-black text-xs font-semibold
+                  px-4 py-2 rounded-lg
+                  hover:bg-zinc-100 transition-colors
+                  shadow-sm
+                "
+              >
+                Go Pro
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Bottom row: coin market pills ── */}
+      <div className="border-t border-white/4 bg-zinc-950/40">
+        <div className="max-w-7xl mx-auto px-6 py-2">
+          <LivePriceTicker activeCoin={coin} onCoinSelect={onCoinSelect} />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+
 // ─────────────────────────────────────────
 // MAIN DASHBOARD
 // ─────────────────────────────────────────
@@ -3872,42 +3991,49 @@ export default function Dashboard() {
     maturity > 50 ? "Late Phase"   :
     maturity > 25 ? "Mid Phase"    : "Early Phase";
 
- return (
-  <main className="min-h-screen bg-black text-white px-4 sm:px-6 py-12">
-    {showModal && <ProModal onClose={() => setShowModal(false)} />}
+   return (
+    <main className="min-h-screen bg-black text-white">
+      {showModal && <ProModal onClose={() => setShowModal(false)} />}
 
-    <div className="max-w-6xl mx-auto space-y-6 overflow-visible">  {/* ← merged */}
+      <SiteHeader
+        coin={coin}
+        onCoinSelect={setCoin}
+        isPro={isPro}
+        onUnlock={() => setShowModal(true)}
+      />
 
-      {/* ── LIVE PRICE TICKER ── */}
-      <LivePriceTicker />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-5">
 
-        {/* ── Pro success banner ── */}
+                {/* ── Pro success banner ── */}
         {proSuccess && (
-          <div className="border border-emerald-700 bg-emerald-950 text-emerald-300 px-6 py-4 rounded-md text-sm">
-            ✓ Pro access activated. Welcome to ChainPulse.
+          <div className="border border-emerald-800/60 bg-emerald-950/40 text-emerald-300 px-5 py-3.5 rounded-lg text-sm flex items-center gap-2">
+            <span className="text-emerald-400">✓</span>
+            Pro access activated. Welcome to ChainPulse.
           </div>
         )}
 
-        {/* ── Header ── */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                {/* ── Header ── */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-2">
           <div>
-            <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">ChainPulse</div>
-            <h1 className="text-xl font-semibold">Regime Intelligence System</h1>
+            <div className="text-[11px] text-zinc-500 uppercase tracking-[0.2em] mb-1.5">
+              ChainPulse
+            </div>
+            <h1 className="text-xl font-semibold tracking-tight">
+              Regime Intelligence System
+            </h1>
             {lastUpdated && (
-              <div className="text-xs text-gray-600 mt-1">
+              <div className="text-xs text-zinc-600 mt-1 tabular-nums">
                 Updated {lastUpdated.toLocaleTimeString()} · auto-refresh 60s
               </div>
             )}
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {SUPPORTED_COINS.map((c) => (
-              <button key={c} onClick={() => setCoin(c)}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  coin === c
-                    ? "bg-white text-black"
-                    : "bg-zinc-900 text-gray-400 hover:bg-zinc-800 border border-zinc-800"
-                }`}>{c}</button>
-            ))}
+          {/* Trust indicators — coin selector moved to header */}
+          <div className="flex items-center gap-4 text-xs text-zinc-600">
+            <span>Data: Binance</span>
+            <span className="w-px h-3 bg-zinc-800" />
+            <span>Model: hourly</span>
+            <span className="w-px h-3 bg-zinc-800" />
+            <span>7 assets</span>
           </div>
         </div>
 
