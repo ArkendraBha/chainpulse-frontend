@@ -129,13 +129,13 @@ context: "Strong risk-off has the highest historical drawdown for buy-and-hold. 
 function Bar({ value = 0, cls = "bg-white" }) {
   return (
     <div className="w-full bg-white/5 rounded-full h-1 mt-1.5">
-<div className={h-1 rounded-full transition-all duration-700 ${cls}}
-style={{ width: ${Math.min(100, Math.max(0, value))}% }}
-/>
-</div>
-);
+      <div
+        className={`h-1 rounded-full transition-all duration-700 ${cls}`}
+        style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+      />
+    </div>
+  );
 }
-
 function Label({ children }) {
   return (
     <div className="text-[11px] text-zinc-500 uppercase tracking-[0.2em] mb-1.5">
