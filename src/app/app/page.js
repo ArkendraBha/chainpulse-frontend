@@ -488,7 +488,7 @@ const inner = (
 {[
 { l: "Strategy Mode", v: pb.strategy_mode, c: pb.strategy_color },
 { l: "Exposure Band", v: pb.exposure_band, c: "text-white" },
-{ l: "Est. Remaining", v: remaining < 24 ? ~${remaining.toFixed(0)}h : ~${(remaining/24).toFixed(1)}d, c: "text-white" },
+{ l: "Est. Remaining", v: remaining < 24 ? `~${remaining.toFixed(0)}h` : `~${(remaining/24).toFixed(1)}d`, c: "text-white" },
 ].map(({ l, v, c }) => (
 <div key={l} className="border border-zinc-800 px-4 py-2 text-center space-y-0.5">
 <div className="text-xs text-gray-500">{l}</div>
