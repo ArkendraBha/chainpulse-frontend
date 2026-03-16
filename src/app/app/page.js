@@ -282,11 +282,11 @@ Today's Regime Verdict — {stack?.coin ?? "BTC"}
 </div>
 <div className="text-center">
 <div className="text-xs text-gray-600">Exposure</div>
-<div className={text-xl font-bold ${exposureColor(exposure)}}>{exposure}%</div>
+<div className={`text-xl font-bold ${exposureColor(exposure)}`}>{exposure}%</div>
 </div>
 <div className="text-center">
 <div className="text-xs text-gray-600">Shift Risk</div>
-<div className={text-xl font-bold ${riskColor(shiftRisk)}}>{shiftRisk}%</div>
+<div className={`text-xl font-bold ${riskColor(shiftRisk)}`}>{shiftRisk}%</div>
 </div>
 </>
 ) : (
