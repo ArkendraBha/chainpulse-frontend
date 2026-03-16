@@ -13,7 +13,36 @@ function getRegimeColor(label) {
   if (label.includes("Risk-Off")) return "text-red-400";
   return "text-yellow-400";
 }
+function LandingHeader() {
+  return (
+    <header className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-white/5">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="h-14 flex items-center justify-between">
+          <div className="text-sm font-semibold">ChainPulse Quant</div>
+          <nav className="flex items-center gap-4 text-sm text-zinc-400">
+            <Link href="/" className="hover:text-white">Home</Link>
+            <Link href="/app" className="hover:text-white">Dashboard</Link>
+            <Link href="/pricing" className="hover:text-white">Pricing</Link>
+            <Link href="/methodology" className="hover:text-white">Methodology</Link>
+            <Link
+              href="/pricing"
+              className="ml-3 bg-white text-black px-4 py-2 rounded-lg text-xs font-semibold hover:bg-zinc-100"
+            >
+              Go Pro
+            </Link>
+          </nav>
+        </div>
+      </div>
 
+      {/* Market pills row (optional) */}
+      <div className="border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-2">
+          {/* If you want the same LivePriceTicker here, import/reuse it */}
+        </div>
+      </div>
+    </header>
+  );
+}
 export default function Landing() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
@@ -55,7 +84,9 @@ export default function Landing() {
   const coherence = liveData?.latest?.coherence;
 
   return (
+
     <main className="min-h-screen bg-black text-white">
+<LandingHeader />
 
       {/* ── HERO ── */}
       <section className="px-8 py-32 border-b border-zinc-900">
