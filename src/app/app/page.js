@@ -3845,7 +3845,6 @@ function ProModal({ onClose }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        </button>
 
         <div className="space-y-2">
           <Label>ChainPulse Pro</Label>
