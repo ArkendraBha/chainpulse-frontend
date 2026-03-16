@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useState, useCallback } from "react";
 import {
   AreaChart, Area, LineChart, Line, RadialBarChart, RadialBar,
