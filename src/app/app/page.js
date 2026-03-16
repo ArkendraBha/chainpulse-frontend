@@ -262,7 +262,7 @@ return (
 Today's Regime Verdict — {stack?.coin ?? "BTC"}
 </div>
 {isPro && decision ? (
-<div className={text-lg font-semibold ${s.text}}>
+<div className={`text-lg font-semibold ${s.text}`}>
 {decision.directive}
 </div>
 ) : (
