@@ -403,10 +403,19 @@ quality.score >= 35 ? "bg-orange-500" : "bg-red-500"
 <div className="space-y-4">
 <div>
 <div className="text-xs text-gray-500">Structural Health</div>
-<div className={
-text
-text-xl font-semibold mt-1 ${             ["Excellent","Strong"].includes(quality.structural) ? "text-emerald-400" :             quality.structural === "Healthy"   ? "text-green-400"  :             quality.structural === "Weakening" ? "text-yellow-400" : "text-red-400"           }
-}>{quality.structural}</div>
+<div
+  className={`text-xl font-semibold mt-1 ${
+    ["Excellent", "Strong"].includes(quality.structural)
+      ? "text-emerald-400"
+      : quality.structural === "Healthy"
+      ? "text-green-400"
+      : quality.structural === "Weakening"
+      ? "text-yellow-400"
+      : "text-red-400"
+  }`}
+>
+  {quality.structural}
+</div>
 </div>
 <div>
 <div className="text-xs text-gray-500">Breakdown Risk</div>
