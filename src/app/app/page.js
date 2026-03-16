@@ -338,7 +338,7 @@ const style = severity === "critical"
 : "border-orange-800 bg-orange-950 text-orange-300";
 
 return (
-<div className={border ${style} px-6 py-5 space-y-1}>
+<div className={`border ${style} px-6 py-5 space-y-1`}>
 <div className="font-semibold text-sm flex items-center gap-2">
 <span>⚠</span>
 <span>
