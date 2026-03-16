@@ -253,10 +253,10 @@ return { border: "border-red-800", bg: "bg-red-950/60", text: "text-red-300", do
 const s = verdictStyle();
 
 return (
-<div className={border ${s.border} ${s.bg} px-6 py-5}>
+<div className={`border ${s.border} ${s.bg} px-6 py-5`}>
 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 <div className="flex items-center gap-3">
-<div className={w-2 h-2 rounded-full ${s.dot} animate-pulse shrink-0} />
+<div className={`w-2 h-2 rounded-full ${s.dot} animate-pulse shrink-0`} />
 <div>
 <div className="text-xs text-gray-500 uppercase tracking-widest mb-0.5">
 Today's Regime Verdict — {stack?.coin ?? "BTC"}
