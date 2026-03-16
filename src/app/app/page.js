@@ -159,15 +159,17 @@ function Lock() {
 // ─────────────────────────────────────────
 function ProGate({ label, consequence, children, onUnlock }) {
   return (
-    <div className="bg-zinc-950/60 border border-white/5 p-8 space-y-4 relative overflow-hidden rounded-lg">
+    // FIX: removed overflow-hidden, added min-h so overlay has room
+    <div className="bg-zinc-950/60 border border-white/5 p-8 space-y-4 relative rounded-lg min-h-[160px]">
       <Label>{label}</Label>
       <div className="blur-sm select-none pointer-events-none opacity-30 max-h-32 overflow-hidden">
         {children}
       </div>
-      <div className="absolute inset-0 flex items-center justify-center z-10">
+      {/* FIX: use fixed positioning so it's never clipped by parent */}
+      <div className="absolute inset-0 flex items-center justify-center z-10 rounded-lg overflow-hidden">
         <div className="
-          bg-zinc-950/95 border border-white/8
-          px-8 py-6 text-center space-y-3 max-w-sm mx-4
+          bg-zinc-950/98 border border-white/10
+          px-8 py-6 text-center space-y-3 w-full mx-4
           rounded-xl shadow-2xl shadow-black/50
           backdrop-blur-sm
         ">

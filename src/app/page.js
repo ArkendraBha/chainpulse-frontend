@@ -8,53 +8,16 @@ const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
 function getRegimeColor(label) {
   if (!label) return "text-gray-400";
   if (label.includes("Strong Risk-On")) return "text-emerald-400";
-  if (label.includes("Risk-On")) return "text-green-400";
+  if (label.includes("Risk-On"))        return "text-green-400";
   if (label.includes("Strong Risk-Off")) return "text-red-500";
-  if (label.includes("Risk-Off")) return "text-red-400";
+  if (label.includes("Risk-Off"))       return "text-red-400";
   return "text-yellow-400";
 }
-function LandingHeader() {
-  return (
-    <header className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-white/5">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="h-14 flex items-center justify-between">
-          <div className="text-sm font-semibold">ChainPulse Quant</div>
-          <nav className="flex items-center gap-4 text-sm text-zinc-400">
-            <Link href="/" className="hover:text-white">
-              Home
-            </Link>
-            <Link href="/app" className="hover:text-white">
-              Dashboard
-            </Link>
-            <Link href="/pricing" className="hover:text-white">
-              Pricing
-            </Link>
-            <Link href="/methodology" className="hover:text-white">
-              Methodology
-            </Link>
-            <Link
-              href="/pricing"
-              className="ml-3 bg-white text-black px-4 py-2 rounded-lg text-xs font-semibold hover:bg-zinc-100"
-            >
-              Go Pro
-            </Link>
-          </nav>
-        </div>
-      </div>
 
-      {/* Market pills row (optional) */}
-      <div className="border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-6 py-2">
-          {/* If you want the same LivePriceTicker here, import/reuse it */}
-        </div>
-      </div>
-    </header>
-  );
-}
 export default function Landing() {
-  const [email, setEmail] = useState("");
+  const [email,      setEmail]      = useState("");
   const [subscribed, setSubscribed] = useState(false);
-  const [liveData, setLiveData] = useState(null);
+  const [liveData,   setLiveData]   = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -83,15 +46,12 @@ export default function Landing() {
     }
   };
 
-  const label = liveData?.latest?.label;
-  // Shift risk is free — exposure is NOT shown on landing
+  const label     = liveData?.latest?.label;
   const shiftRisk = liveData?.stats?.regime_shift_risk_percent;
   const coherence = liveData?.latest?.coherence;
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <LandingHeader />
-
       {/* ── HERO ── */}
       <section className="px-8 py-32 border-b border-zinc-900">
         <div className="max-w-5xl mx-auto text-center space-y-10">
@@ -111,15 +71,13 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
             <Link
               href="/app"
-              className="bg-white text-black px-8 py-4 rounded-md font-semibold
-                         hover:bg-gray-100 transition-colors"
+              className="bg-white text-black px-8 py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors"
             >
               View Live Regime
             </Link>
             <Link
               href="/methodology"
-              className="border border-zinc-700 px-8 py-4 rounded-md text-gray-300
-                         hover:border-zinc-500 transition-colors"
+              className="border border-zinc-700 px-8 py-4 rounded-md text-gray-300 hover:border-zinc-500 transition-colors"
             >
               Read Methodology
             </Link>
@@ -150,9 +108,7 @@ export default function Landing() {
                     <div className="text-gray-500 text-xs uppercase tracking-widest">
                       Regime
                     </div>
-                    <div
-                      className={`text-2xl font-semibold mt-2 ${getRegimeColor(label)}`}
-                    >
+                    <div className={`text-2xl font-semibold mt-2 ${getRegimeColor(label)}`}>
                       {label}
                     </div>
                   </div>
@@ -160,15 +116,10 @@ export default function Landing() {
                     <div className="text-gray-500 text-xs uppercase tracking-widest">
                       Shift Risk
                     </div>
-                    <div
-                      className={`text-3xl font-semibold mt-2 ${
-                        shiftRisk > 70
-                          ? "text-red-400"
-                          : shiftRisk > 45
-                            ? "text-yellow-400"
-                            : "text-green-400"
-                      }`}
-                    >
+                    <div className={`text-3xl font-semibold mt-2 ${
+                      shiftRisk > 70  ? "text-red-400"    :
+                      shiftRisk > 45  ? "text-yellow-400" : "text-green-400"
+                    }`}>
                       {shiftRisk}%
                     </div>
                   </div>
@@ -177,17 +128,12 @@ export default function Landing() {
                       Coherence
                     </div>
                     <div className="text-3xl font-semibold mt-2">
-                      {typeof coherence === "number"
-                        ? coherence.toFixed(1)
-                        : "—"}
-                      %
+                      {typeof coherence === "number" ? coherence.toFixed(1) : "—"}%
                     </div>
                   </div>
                 </div>
-                {/* Exposure is deliberately not shown on landing — it is Pro */}
                 <div className="border border-zinc-800 px-4 py-3 text-xs text-gray-600 mt-2">
-                  Deployment recommendation and full analytics available in Pro
-                  dashboard
+                  Deployment recommendation and full analytics available in Pro dashboard
                 </div>
                 <div className="text-gray-600 text-xs pt-2">
                   Data refreshes automatically · Full analytics in dashboard
@@ -195,12 +141,8 @@ export default function Landing() {
               </>
             ) : (
               <div className="space-y-3 py-4">
-                <div className="text-gray-500">
-                  Connecting to regime model...
-                </div>
-                <div className="text-gray-700 text-sm">
-                  Live Binance data · Updated hourly
-                </div>
+                <div className="text-gray-500">Connecting to regime model...</div>
+                <div className="text-gray-700 text-sm">Live Binance data · Updated hourly</div>
               </div>
             )}
           </div>
@@ -219,22 +161,22 @@ export default function Landing() {
           <h2 className="text-3xl font-semibold">Who This Is For</h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
             ChainPulse is built for swing traders actively managing between
-            $5,000 and $250,000. If you are allocating real capital and making
+            \$5,000 and \$250,000. If you are allocating real capital and making
             sizing decisions based on market conditions, this is your framework.
           </p>
           <div className="grid md:grid-cols-3 gap-6 text-sm text-left">
             {[
               {
                 title: "Swing traders",
-                desc: "Holding positions for 2–30 days who need to know when to press size and when to stand down.",
+                desc:  "Holding positions for 2–30 days who need to know when to press size and when to stand down.",
               },
               {
                 title: "Active allocators",
-                desc: "Managing a crypto portfolio across multiple assets who want a systematic exposure framework.",
+                desc:  "Managing a crypto portfolio across multiple assets who want a systematic exposure framework.",
               },
               {
                 title: "Risk-conscious operators",
-                desc: "Traders who have experienced late-stage overexposure and want a statistical system to prevent recurrence.",
+                desc:  "Traders who have experienced late-stage overexposure and want a statistical system to prevent recurrence.",
               },
             ].map(({ title, desc }) => (
               <div key={title} className="border border-zinc-800 p-6 space-y-2">
@@ -256,15 +198,15 @@ export default function Landing() {
             {[
               {
                 title: "Late-Stage Overexposure",
-                desc: "Sizing up when momentum is mature and deterioration is already statistically underway.",
+                desc:  "Sizing up when momentum is mature and deterioration is already statistically underway.",
               },
               {
                 title: "Early Exit Bias",
-                desc: "Reducing exposure in regimes that remain statistically persistent — leaving significant return on the table.",
+                desc:  "Reducing exposure in regimes that remain statistically persistent — leaving significant return on the table.",
               },
               {
                 title: "Ignoring Deterioration",
-                desc: "Holding full size through hazard escalation because there is no objective signal to act on.",
+                desc:  "Holding full size through hazard escalation because there is no objective signal to act on.",
               },
             ].map(({ title, desc }) => (
               <div key={title} className="space-y-3">
@@ -291,30 +233,28 @@ export default function Landing() {
           <div className="grid md:grid-cols-4 gap-8 text-sm">
             {[
               {
-                n: "01",
+                n:     "01",
                 title: "Regime Classification",
-                desc: "Multi-timeframe momentum and volatility scoring classifies market state in real time.",
+                desc:  "Multi-timeframe momentum and volatility scoring classifies market state in real time.",
               },
               {
-                n: "02",
+                n:     "02",
                 title: "Coherence Measurement",
-                desc: "Directional alignment across timeframes distinguishes strong trends from transitional noise.",
+                desc:  "Directional alignment across timeframes distinguishes strong trends from transitional noise.",
               },
               {
-                n: "03",
+                n:     "03",
                 title: "Survival Modeling",
-                desc: "Historical regime durations generate conditional survival probabilities for the current state.",
+                desc:  "Historical regime durations generate conditional survival probabilities for the current state.",
               },
               {
-                n: "04",
+                n:     "04",
                 title: "Deployment Output",
-                desc: "A single allocation recommendation calibrated to regime strength, persistence, and hazard.",
+                desc:  "A single allocation recommendation calibrated to regime strength, persistence, and hazard.",
               },
             ].map(({ n, title, desc }) => (
               <div key={n} className="space-y-3">
-                <div className="text-gray-500 text-xs uppercase tracking-widest">
-                  {n}
-                </div>
+                <div className="text-gray-500 text-xs uppercase tracking-widest">{n}</div>
                 <div className="text-white font-medium">{title}</div>
                 <p className="text-gray-400">{desc}</p>
               </div>
@@ -331,18 +271,9 @@ export default function Landing() {
           </h2>
           <div className="grid md:grid-cols-3 gap-10">
             {[
-              {
-                stat: "5",
-                desc: "Regime states tracked across 7 assets simultaneously",
-              },
-              {
-                stat: "4",
-                desc: "Independent statistical signals composited per output",
-              },
-              {
-                stat: "Hourly",
-                desc: "Live Binance data updated continuously across all timeframes",
-              },
+              { stat: "5",      desc: "Regime states tracked across 7 assets simultaneously"            },
+              { stat: "4",      desc: "Independent statistical signals composited per output"            },
+              { stat: "Hourly", desc: "Live Binance data updated continuously across all timeframes"    },
             ].map(({ stat, desc }) => (
               <div key={stat} className="space-y-3">
                 <div className="text-3xl font-semibold">{stat}</div>
@@ -360,23 +291,23 @@ export default function Landing() {
             One Poorly Timed Position Costs More Than a Year of Pro
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            ChainPulse Pro is $39/month. For traders managing $5,000+, one
-            avoided late-stage overexposure event of 3% saves $150 — more than
+            ChainPulse Pro is \$39/month. For traders managing \$5,000+, one
+            avoided late-stage overexposure event of 3% saves \$150 — more than
             five months of Pro.
           </p>
           <div className="grid md:grid-cols-3 gap-6 text-sm mt-4">
             {[
               {
                 title: "Full Multi-Asset Dashboard",
-                desc: "BTC, ETH, SOL, BNB, AVAX, LINK, ADA regime analytics",
+                desc:  "BTC, ETH, SOL, BNB, AVAX, LINK, ADA regime analytics",
               },
               {
                 title: "Regime Shift Alerts",
-                desc: "Email alerts when deterioration risk exceeds threshold",
+                desc:  "Email alerts when deterioration risk exceeds threshold",
               },
               {
                 title: "Daily Regime Brief",
-                desc: "Morning snapshot of all regime conditions across assets",
+                desc:  "Morning snapshot of all regime conditions across assets",
               },
             ].map(({ title, desc }) => (
               <div key={title} className="border border-zinc-800 p-6 space-y-2">
@@ -387,8 +318,7 @@ export default function Landing() {
           </div>
           <Link
             href="/pricing"
-            className="inline-block bg-white text-black px-8 py-4 rounded-md
-                       font-semibold hover:bg-gray-100 transition-colors"
+            className="inline-block bg-white text-black px-8 py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors"
           >
             View Pricing
           </Link>
@@ -411,39 +341,30 @@ export default function Landing() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSubscribe()}
-                className="px-4 py-3 bg-zinc-900 border border-zinc-700 text-white
-                           rounded-md w-72 focus:outline-none focus:border-zinc-500"
+                className="px-4 py-3 bg-zinc-900 border border-zinc-700 text-white rounded-md w-72 focus:outline-none focus:border-zinc-500"
               />
               <button
                 onClick={handleSubscribe}
-                className="bg-white text-black px-6 py-3 rounded-md font-semibold
-                           hover:bg-gray-100 transition-colors"
+                className="bg-white text-black px-6 py-3 rounded-md font-semibold hover:bg-gray-100 transition-colors"
               >
                 Subscribe Free
               </button>
             </div>
           ) : (
-            <div
-              className="border border-emerald-800 bg-emerald-950 text-emerald-400
-                            px-6 py-4 rounded-md text-sm"
-            >
+            <div className="border border-emerald-800 bg-emerald-950 text-emerald-400 px-6 py-4 rounded-md text-sm">
               ✓ Confirmation sent. Check your inbox to activate.
             </div>
           )}
+
+          {/* FIX: removed nested <a> — single anchor only */}
           <div className="pt-2">
             <a
-              href={`${BACKEND}/sample-report`}
+              href="https://drive.google.com/uc?export=download&id=1C0yFNklyRafuADZIEJlo4VLbNu84F5gM"
               target="_blank"
               rel="noreferrer"
               className="text-gray-600 hover:text-gray-400 text-sm underline transition-colors"
             >
-              <a
-                href="https://drive.google.com/uc?export=download&id=1C0yFNklyRafuADZIEJlo4VLbNu84F5gM"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Download sample report (PDF) →
-              </a>
+              Download sample report (PDF) →
             </a>
           </div>
         </div>
@@ -460,8 +381,7 @@ export default function Landing() {
           </p>
           <Link
             href="/methodology"
-            className="inline-block border border-zinc-700 px-8 py-4 rounded-md
-                       text-gray-300 hover:border-zinc-500 transition-colors"
+            className="inline-block border border-zinc-700 px-8 py-4 rounded-md text-gray-300 hover:border-zinc-500 transition-colors"
           >
             Read Full Methodology
           </Link>
@@ -470,33 +390,13 @@ export default function Landing() {
 
       {/* ── FOOTER ── */}
       <footer className="px-8 py-12">
-        <div
-          className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between
-                        items-center gap-6 text-gray-600 text-xs"
-        >
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-gray-600 text-xs">
           <div className="font-medium text-gray-500">ChainPulse</div>
           <div className="flex gap-8">
-            <Link href="/app" className="hover:text-gray-400 transition-colors">
-              Dashboard
-            </Link>
-            <Link
-              href="/pricing"
-              className="hover:text-gray-400 transition-colors"
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/methodology"
-              className="hover:text-gray-400 transition-colors"
-            >
-              Methodology
-            </Link>
-            <Link
-              href="/blog"
-              className="hover:text-gray-400 transition-colors"
-            >
-              Blog
-            </Link>
+            <Link href="/app"         className="hover:text-gray-400 transition-colors">Dashboard</Link>
+            <Link href="/pricing"     className="hover:text-gray-400 transition-colors">Pricing</Link>
+            <Link href="/methodology" className="hover:text-gray-400 transition-colors">Methodology</Link>
+            <Link href="/blog"        className="hover:text-gray-400 transition-colors">Blog</Link>
           </div>
           <div>Not financial advice. Manage your own risk.</div>
         </div>
