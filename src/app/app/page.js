@@ -623,10 +623,11 @@ Analyse My Exposure
 </button>
 {result && (
 <div className="space-y-4">
-<div className={
-text
-border px-5 py-4 space-y-1 ${             result.overBand ? "border-red-900 bg-red-950 text-red-300" :             result.isOver   ? "border-yellow-900 bg-yellow-950 text-yellow-300" :                               "border-emerald-900 bg-emerald-950 text-emerald-300"           }
-}>
+<div className={`border px-5 py-4 space-y-1 ${
+  result.overBand ? "border-red-900 bg-red-950 text-red-300" :
+  result.isOver   ? "border-yellow-900 bg-yellow-950 text-yellow-300" :
+                    "border-emerald-900 bg-emerald-950 text-emerald-300"
+}`}>
 <div className="font-semibold text-sm">
 {result.overBand
 ? ⚠ Exposure ${result.delta}% above regime tolerance
