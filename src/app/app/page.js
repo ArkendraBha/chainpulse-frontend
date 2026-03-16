@@ -444,13 +444,12 @@ quality.score >= 35 ? "bg-orange-500" : "bg-red-500"
 <span className="text-xs text-gray-600 w-20 shrink-0">{l}</span>
 <div className="flex-1 bg-zinc-800 rounded-full h-1">
 <div
-className={
-text
-h-1 rounded-full transition-all ${                   (inv ? 100 - v : v) >= 70 ? "bg-emerald-500" :                   (inv ? 100 - v : v) >= 50 ? "bg-yellow-500"  : "bg-red-500"                 }
-}
-style={{ width: ${v}% }}
-/>
-</div>
+  className={`h-1 rounded-full transition-all ${
+    (inv ? 100 - v : v) >= 70 ? "bg-emerald-500" :
+    (inv ? 100 - v : v) >= 50 ? "bg-yellow-500"  : "bg-red-500"
+  }`}
+  style={{ width: `${v}%` }}
+/></div>
 <span className="text-xs text-gray-400 w-8 text-right">{v}%</span>
 </div>
 ))}
