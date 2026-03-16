@@ -419,11 +419,19 @@ quality.score >= 35 ? "bg-orange-500" : "bg-red-500"
 </div>
 <div>
 <div className="text-xs text-gray-500">Breakdown Risk</div>
-<div className={
-text
-text-xl font-semibold mt-1 ${             quality.breakdown === "Low"          ? "text-emerald-400" :             quality.breakdown === "Low-Moderate" ? "text-green-400"   :             quality.breakdown === "Moderate"     ? "text-yellow-400"  :             quality.breakdown === "Elevated"     ? "text-orange-400"  : "text-red-400"           }
-}>{quality.breakdown}</div>
-</div>
+<div
+  className={`text-xl font-semibold mt-1 ${
+    ["Excellent", "Strong"].includes(quality.structural)
+      ? "text-emerald-400"
+      : quality.structural === "Healthy"
+      ? "text-green-400"
+      : quality.structural === "Weakening"
+      ? "text-yellow-400"
+      : "text-red-400"
+  }`}
+>
+  {quality.structural}
+</div></div>
 </div>
 <div className="space-y-3">
 {[
