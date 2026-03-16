@@ -278,7 +278,7 @@ Today's Regime Verdict — {stack?.coin ?? "BTC"}
 <>
 <div className="text-center">
 <div className="text-xs text-gray-600">Decision Score</div>
-<div className={text-xl font-bold ${s.text}}>{decision.score}</div>
+<div className={`text-xl font-bold ${s.text}`}>{decision.score}</div>
 </div>
 <div className="text-center">
 <div className="text-xs text-gray-600">Exposure</div>
