@@ -481,7 +481,7 @@ const inner = (
 <div className="space-y-6">
 <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
 <div>
-<div className={text-2xl font-semibold ${regimeText(execLabel)}}>{execLabel}</div>
+<div className={`text-2xl font-semibold ${regimeText(execLabel)}`}>{execLabel}</div>
 <div className="text-xs text-gray-500 mt-1">{regimeAge.toFixed(1)}h active</div>
 </div>
 <div className="flex gap-3 flex-wrap">
@@ -492,7 +492,7 @@ const inner = (
 ].map(({ l, v, c }) => (
 <div key={l} className="border border-zinc-800 px-4 py-2 text-center space-y-0.5">
 <div className="text-xs text-gray-500">{l}</div>
-<div className={text-sm font-semibold ${c}}>{v}</div>
+<div className={`text-sm font-semibold ${c}`}>{v}</div>
 </div>
 ))}
 </div>
@@ -740,8 +740,8 @@ barSize={14}
 </RadialBarChart>
 </ResponsiveContainer>
 <div className="absolute inset-0 flex flex-col items-center justify-center">
-<div className={text-4xl font-bold ${stressColor}}>{stress}</div>
-<div className={text-xs font-medium ${stressColor}}>{stressLabel}</div>
+<div className={`text-4xl font-bold ${stressColor}`}>{stress}</div>
+<div className={`text-xs font-medium ${stressColor}`}>{stressLabel}</div>
 </div>
 </div>
 <div className="flex-1 space-y-4 w-full">
@@ -761,7 +761,7 @@ Composite stress from hazard rate, shift risk, alignment breakdown, and survival
 <div className={
 text
 h-1.5 rounded-full transition-all ${                   v >= 70 ? "bg-red-500" : v >= 45 ? "bg-yellow-500" : "bg-green-500"                 }
-} style={{ width: ${Math.round(v)}% }} />
+} style={{ width: `${Math.round(v)}%` }} />
 </div>
 <div className="text-xs text-gray-500 w-8 text-right">{Math.round(v)}%</div>
 <div className="text-xs text-gray-700 w-8">{w}</div>
@@ -801,7 +801,7 @@ remaining < 48 ? "text-yellow-400" : "text-emerald-400";
 const inner = (
 <div className="grid md:grid-cols-3 gap-6 items-center">
 <div className="space-y-3">
-<div className={text-4xl font-bold ${urgency}}>
+<div className={`text-4xl font-bold ${urgency}`}>
 {remaining < 24
 ? ~${remaining.toFixed(0)}h
 : ~${(remaining / 24).toFixed(1)}d}
@@ -824,7 +824,7 @@ pct >= 40 ? "bg-yellow-500" : "bg-emerald-500"
 ].map(({ l, v, c }) => (
 <div key={l} className="border border-zinc-800 p-3 space-y-1">
 <div className="text-xs text-gray-500">{l}</div>
-<div className={text-sm font-semibold ${c}}>{v}</div>
+<div className={`text-sm font-semibold ${c}`}>{v}</div>
 </div>
 ))}
 </div>
@@ -875,10 +875,11 @@ const inner = (
 <div className="space-y-4">
 <div className="flex justify-between items-start">
 <div>
-<div className={text-3xl font-semibold ${confColor(latest)}}>{latest}%</div>
+<div className={`text-3xl font-semibold ${confColor(latest)}`}>{latest}%</div>
 <div className="text-xs text-gray-500 mt-1">Current regime confidence</div>
 </div>
-<div className={text-sm font-medium ${tColor}}>{trending}</div>
+<div className={`text-sm font-medium ${tColor}`
+}>{trending}</div>
 </div>
 <ResponsiveContainer width="100%" height={100}>
 <AreaChart data={trendData}>
@@ -941,7 +942,7 @@ return (
 <h2 className="text-xl font-semibold">{stack.coin} Multi-Timeframe Analysis</h2>
 </div>
 {stack.direction && (
-<span className={text-xs px-3 py-1 rounded-full border ${dirBadge(stack.direction)}}>
+<span className={`text-xs px-3 py-1 rounded-full border ${dirBadge(stack.direction)}`}>
 {stack.direction === "bullish" ? "↑ Bullish" :
 stack.direction === "bearish" ? "↓ Bearish" : "→ Mixed"}
 </span>
@@ -958,7 +959,7 @@ flex items-center justify-between px-5 py-4 border rounded-sm ${               d
 <span className="text-gray-300 font-medium text-sm">{label}</span>
 <span className="text-gray-600 text-xs ml-1">({tf})</span>
 </div>
-<div className={text-sm font-semibold flex-1 ${data ? regimeText(data.label) : "text-gray-600"}}>
+<div className={`text-sm font-semibold flex-1 ${data ? regimeText(data.label) : "text-gray-600"}`}>
 {data?.label ?? "—"}
 </div>
 <div className="text-xs text-right w-28 hidden sm:block">
@@ -973,7 +974,7 @@ flex items-center justify-between px-5 py-4 border rounded-sm ${               d
 <div className="grid grid-cols-2 gap-4">
 <div className="border border-zinc-800 p-5 space-y-2">
 <Label>Alignment</Label>
-<div className={text-3xl font-semibold ${alignColor(stack.alignment || 0)}}>
+<div className={`text-3xl font-semibold ${alignColor(stack.alignment || 0)}`}>
 {stack.alignment ?? "—"}%
 </div>
 <Bar value={stack.alignment || 0}
@@ -984,7 +985,7 @@ cls={(stack.alignment||0)>=80?"bg-emerald-500":(stack.alignment||0)>=50?"bg-yell
 <Label>Recommended Exposure</Label>
 {isPro ? (
 <>
-<div className={text-3xl font-semibold ${exposureColor(stack.exposure || 0)}}>
+<div className={`text-3xl font-semibold ${exposureColor(stack.exposure || 0)}`}>
 {stack.exposure ?? "—"}%
 </div>
 <Bar value={stack.exposure||0} cls={(stack.exposure||0)>60?"bg-emerald-500":(stack.exposure||0)>35?"bg-yellow-500":"bg-red-500"} />
@@ -1007,7 +1008,7 @@ cls={(stack.alignment||0)>=80?"bg-emerald-500":(stack.alignment||0)>=50?"bg-yell
 ].map(({ l, v, fn }) => (
 <div key={l} className="border border-zinc-800 p-4 space-y-1">
 <Label>{l}</Label>
-<div className={text-xl font-semibold ${fn(v || 0)}}>{v ?? "—"}%</div>
+<div className={`text-xl font-semibold ${fn(v || 0)}`}>{v ?? "—"}%</div>
 </div>
 ))}
 </div>
@@ -1029,10 +1030,10 @@ const inner = (
 <div className="space-y-5">
 <div className="flex justify-between items-start">
 <div>
-<div className={text-4xl font-semibold ${confColor(confidence?.score ?? 0)}}>
+<div className={`text-4xl font-semibold ${confColor(confidence?.score ?? 0)}`}>
 {confidence?.score ?? "—"}%
 </div>
-<div className={text-sm mt-1 ${confColor(confidence?.score ?? 0)}}>
+<div className={`text-sm mt-1 ${confColor(confidence?.score ?? 0)}`}>
 {confidence?.label ?? "—"}
 </div>
 </div>
@@ -1083,7 +1084,7 @@ const inner = (
 {items.map(({ label, value, score }) => (
 <div key={label} className="border border-zinc-800 p-4 space-y-2">
 <div className="text-xs text-gray-500">{label}</div>
-<div className={text-xl font-semibold ${envColor(value)}}>{value ?? "—"}</div>
+<div className={`text-xl font-semibold ${envColor(value)}`}>{value ?? "—"}</div>
 {score != null && (
 <>
 <Bar value={score} cls={score > 70 ? "bg-red-500" : score > 40 ? "bg-yellow-500" : "bg-green-500"} />
@@ -1124,7 +1125,7 @@ className={
 text
 h-1.5 rounded-full transition-all duration-700 ${                   state === transitions?.current_state ? "bg-white" :                   state.includes("Risk-On")  ? "bg-green-500" :                   state.includes("Risk-Off") ? "bg-red-500"   : "bg-yellow-500"                 }
 }
-style={{ width: ${prob}% }}
+style={{ width: `${prob}%` }}
 />
 </div>
 <div className="text-sm font-semibold text-white w-10 text-right">{prob}%</div>
@@ -1358,12 +1359,12 @@ const inner = (
 </td>
 ))}
 <td className="px-3 py-2.5 text-center">
-<span className={text-sm font-semibold ${alignColor(item.alignment || 0)}}>
+<span className={`text-sm font-semibold ${alignColor(item.alignment || 0)}`}>
 {item.alignment ?? "—"}%
 </span>
 </td>
 <td className="px-3 py-2.5 text-center">
-<span className={text-xs px-2 py-0.5 rounded-full border ${dirBadge(item.direction || "mixed")}}>
+<span className={`text-xs px-2 py-0.5 rounded-full border ${dirBadge(item.direction || "mixed")}`}>
 {item.direction === "bullish" ? "↑" : item.direction === "bearish" ? "↓" : "→"}
 </span>
 </td>
@@ -1380,7 +1381,7 @@ const inner = (
 { label: "R-", cls: "bg-red-900/20 text-red-400 border-red-900/30" },
 { label: "S.R-", cls: "bg-red-900/40 text-red-400 border-red-900/50" },
 ].map(({ label, cls }) => (
-<span key={label} className={text-xs px-2 py-0.5 rounded-sm border ${cls}}>{label}</span>
+<span key={label} className={`text-xs px-2 py-0.5 rounded-sm border ${cls}`}>{label}</span>
 ))}
 <span className="text-xs text-gray-600 ml-2 self-center">
 S = Strong · R+ = Risk-On · R- = Risk-Off · NEU = Neutral
@@ -1431,10 +1432,10 @@ return (
 </div>
 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
 {sorted.map((e) => (
-<div key={e.name} className={border px-4 py-3 rounded-sm space-y-1.5 ${impactStyle(e.impact)}}>
+<div key={e.name} className={`border px-4 py-3 rounded-sm space-y-1.5 ${impactStyle(e.impact)}`}>
 <div className="font-medium text-sm">{e.name}</div>
 <div className="text-xs opacity-70">{e.type}</div>
-<div className={text-xs font-medium px-2 py-0.5 rounded-full border inline-block ${impactStyle(e.impact)}}>
+<div className={`text-xs font-medium px-2 py-0.5 rounded-full border inline-block ${impactStyle(e.impact)}`}>
 {e.impact} Impact
 </div>
 </div>
@@ -1461,7 +1462,7 @@ maturityLabel === "Mid Phase" ? "bg-yellow-500" : "bg-emerald-500";
 const inner = (
 <div className="space-y-4">
 <div className="flex items-end gap-4">
-<div className={text-3xl font-semibold ${phaseColor}}>{maturityLabel ?? "—"}</div>
+<div className={`text-3xl font-semibold ${phaseColor}`}>{maturityLabel ?? "—"}</div>
 <div className="text-sm text-gray-500 pb-1">
 {regimeAge.toFixed(1)}h / {(avgDuration || 0).toFixed(0)}h avg
 </div>
@@ -1552,21 +1553,21 @@ return (
 <h2 className="text-base font-semibold">Trend Participation ({total} assets)</h2>
 </div>
 <div className="text-right">
-<div className={text-3xl font-semibold ${scoreColor}}>
+<div className={`text-3xl font-semibold ${scoreColor}`}>
 {breadth_score > 0 ? "+" : ""}{breadth_score}
 </div>
-<div className={text-xs mt-0.5 ${scoreColor}}>{trendLabel}</div>
+<div className={`text-xs mt-0.5 ${scoreColor}`}>{trendLabel}</div>
 </div>
 </div>
 <div className="flex h-2 rounded-full overflow-hidden gap-px">
 {bullish > 0 && (
-<div className="bg-green-500 transition-all" style={{ width: ${(bullish / total) * 100}% }} />
+<div className="bg-green-500 transition-all" style={{ width: `${(bullish / total) * 100}%` }} />
 )}
 {neutral > 0 && (
-<div className="bg-yellow-500 transition-all" style={{ width: ${(neutral / total) * 100}% }} />
+<div className="bg-yellow-500 transition-all" style={{ width: `${(neutral / total) * 100}%` }} />
 )}
 {bearish > 0 && (
-<div className="bg-red-500 transition-all" style={{ width: ${(bearish / total) * 100}% }} />
+<div className="bg-red-500 transition-all" style={{ width: `${(bearish / total) * 100}%` }} />
 )}
 </div>
 <div className="flex gap-6 text-xs">
@@ -1602,13 +1603,13 @@ border p-3 text-left space-y-1.5 transition-colors rounded-sm ${               i
 ].map(({ l, v }) => (
 <div key={l} className="flex items-center gap-1">
 <span className="text-gray-600 text-xs w-3">{l}</span>
-<span className={text-xs ${regimeText(v)}}>
+<span className={`text-xs ${regimeText(v)}`}>
 {v ? v.replace("Strong ","S.").replace("Risk-On","R+").replace("Risk-Off","R-") : "—"}
 </span>
 </div>
 ))}
 {item.alignment != null && (
-<div className={text-xs font-medium ${alignColor(item.alignment)}}>
+<div className={`text-xs font-medium ${alignColor(item.alignment)}`}>
 {item.alignment}%
 </div>
 )}
@@ -1769,21 +1770,21 @@ const inner = decision ? (
 {(() => {
 const s = directiveStyle(decision.action);
 return (
-<div className={border ${s.border} ${s.bg} p-6 space-y-3}>
+<div className={`border ${s.border} ${s.bg} p-6 space-y-3`}>
 <div className="flex justify-between items-start">
 <div>
 <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">ChainPulse Directive</div>
-<div className={text-3xl font-bold ${s.text}}>{decision.directive}</div>
+<div className={`text-3xl font-bold ${s.text}`}>{decision.directive}</div>
 </div>
 <div className="text-right">
 <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">Decision Score</div>
-<div className={text-3xl font-bold ${s.text}}>{decision.score}</div>
+<div className={`text-3xl font-bold ${s.text}`}>{decision.score}</div>
 </div>
 </div>
-<div className={text-sm ${s.text} opacity-80}>{decision.description}</div>
+<div className={`text-sm ${s.text} opacity-80`}>{decision.description}</div>
 <div className="w-full bg-zinc-800 rounded-full h-2">
-<div className={h-2 rounded-full transition-all duration-700 ${s.bar}}
-style={{ width: ${decision.score}% }} />
+<div className={`h-2 rounded-full transition-all duration-700 ${s.bar}`}
+style={{ width: `${decision.score}%` }} />
 </div>
 </div>
 );
@@ -1809,7 +1810,7 @@ style={{ width: ${decision.score}% }} />
 <div className={
 text
 h-1.5 rounded-full transition-all ${                     val >= 70 ? "bg-emerald-500" : val >= 50 ? "bg-yellow-500" : "bg-red-500"                   }
-} style={{ width: ${val}% }} />
+} style={{ width: `${val}%` }} />
 </div>
 <div className="text-xs text-gray-400 w-8 text-right">{val}%</div>
 </div>
@@ -1908,7 +1909,7 @@ className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounde
 </div>
 {result && (
 <div className="space-y-4">
-<div className={border p-5 space-y-2 ${severityStyle(result.severity)}}>
+<div className={`border p-5 space-y-2 ${severityStyle(result.severity)}`}>
 <div className="font-semibold text-sm">{result.message}</div>
 <div className="text-xs opacity-70">{result.sub}</div>
 </div>
@@ -1923,7 +1924,7 @@ sub: Model: ${result.model_loss_pct}% },
 ].map(({ label, value, color, sub }) => (
 <div key={label} className="border border-zinc-800 p-4 space-y-1">
 <div className="text-xs text-gray-500">{label}</div>
-<div className={text-xl font-semibold ${color}}>{value}</div>
+<div className={`text-xl font-semibold ${color}`}>{value}</div>
 {sub && <div className="text-xs text-gray-600">{sub}</div>}
 </div>
 ))}
@@ -1932,13 +1933,13 @@ sub: Model: ${result.model_loss_pct}% },
 <div className="text-xs text-gray-500">Your exposure vs model recommendation</div>
 <div className="relative h-4 bg-zinc-800 rounded-full overflow-hidden">
 <div className="absolute h-full bg-zinc-700/60"
-style={{ left: ${Math.max(0, result.model_exposure - 10)}%, width: "20%" }} />
+style={{ left: `${Math.max(0, result.model_exposure - 10)}%`, width: "20%" }} />
 <div className="absolute h-full w-0.5 bg-white opacity-60"
-style={{ left: ${Math.min(99, result.model_exposure)}% }} />
+style={{ left: `${Math.min(99, result.model_exposure)}%` }} />
 <div className={
 text
 absolute h-full w-1 rounded-full ${                 result.severity === "high" ? "bg-red-400" : result.severity === "medium" ? "bg-yellow-400" : "bg-emerald-400"               }
-} style={{ left: ${Math.min(99, result.user_exposure)}% }} />
+} style={{ left: `${Math.min(99, result.user_exposure)}%` }} />
 </div>
 <div className="flex justify-between text-xs text-gray-600">
 <span>0%</span>
@@ -2055,7 +2056,7 @@ text
 border p-5 space-y-2 ${               result.userEV >= 0 ? "border-emerald-900 bg-emerald-950" : "border-red-900 bg-red-950"             }
 }>
 <div className="text-xs text-gray-500">Your Expected Value</div>
-<div className={text-3xl font-bold ${result.userEV >= 0 ? "text-emerald-300" : "text-red-300"}}>
+<div className={`text-3xl font-bold ${result.userEV >= 0 ? "text-emerald-300" : "text-red-300"}`}>
 {result.userEV >= 0 ? "+" : ""}{result.userEV.toLocaleString()} </div> <div className="text-xs text-gray-500">At {userExposure}% exposure</div> </div> <div className={`border p-5 space-y-2 {
 result.modelEV >= 0 ? "border-blue-900 bg-blue-950" : "border-zinc-800 bg-zinc-900"
 }
@@ -2627,7 +2628,7 @@ className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounde
 </div>
 <div className="space-y-1">
 <div className="text-xs text-gray-600">Model says</div>
-<div className={text-xl font-semibold ${exposureColor(stack?.exposure ?? 0)}}>
+<div className={`text-xl font-semibold ${exposureColor(stack?.exposure ?? 0)}`}>
 {stack?.exposure ?? "—"}%
 </div>
 </div>
@@ -2697,8 +2698,8 @@ streak >= 1 ? "Getting Started" : "No streak yet";
 const inner = (
 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
 <div className="space-y-2 shrink-0">
-<div className={text-6xl font-bold ${streakColor}}>{streak}</div>
-<div className={text-sm font-medium ${streakColor}}>{streakLabel}</div>
+<div className={`text-6xl font-bold ${streakColor}`}>{streak}</div>
+<div className={`text-sm font-medium ${streakColor}`}>{streakLabel}</div>
 <div className="text-xs text-gray-600">consecutive aligned sessions</div>
 </div>
 <div className="flex-1 space-y-3 w-full">
@@ -2784,10 +2785,10 @@ const inner = data ? (
 <div className="space-y-6">
 <div className="flex items-start justify-between gap-6">
 <div className="space-y-2">
-<div className={text-6xl font-bold ${scoreColor(data.score)}}>
+<div className={`text-6xl font-bold ${scoreColor(data.score)}`}>
 {data.score !== null ? ${data.score} : "—"}
 </div>
-<div className={text-lg font-medium ${scoreColor(data.score)}}>{data.label}</div>
+<div className={`text-lg font-medium ${scoreColor(data.score)}`}>{data.label}</div>
 <Bar value={data.score ?? 0} cls={
 (data.score ?? 0) >= 85 ? "bg-emerald-500" :
 (data.score ?? 0) >= 70 ? "bg-green-500" :
@@ -2805,7 +2806,7 @@ const inner = data ? (
 ].map(({ l, v, c }) => (
 <div key={l} className="border border-zinc-800 p-3 text-center space-y-1">
 <div className="text-xs text-gray-600">{l}</div>
-<div className={text-xl font-semibold ${c}}>{v}</div>
+<div className={`text-xl font-semibold ${c}`}>{v}</div>
 </div>
 ))}
 </div>
@@ -2875,7 +2876,7 @@ return "border-yellow-800 bg-yellow-950 text-yellow-300";
 const inner = data?.replays?.length > 0 ? (
 <div className="space-y-3">
 {data.replays.map((replay, i) => (
-<div key={i} className={border p-5 space-y-3 ${severityStyle(replay.severity)}}>
+<div key={i} className={`border p-5 space-y-3 ${severityStyle(replay.severity)}`}>
 <div className="flex justify-between items-start gap-4">
 <div>
 <div className="text-sm font-semibold">{replay.message}</div>
@@ -3007,7 +3008,7 @@ color: "text-gray-300",
 ].map(({ label, value, color }) => (
 <div key={label} className="border border-zinc-800 p-4 space-y-1">
 <div className="text-xs text-gray-500">{label}</div>
-<div className={text-2xl font-semibold ${color}}>{value}</div>
+<div className={`text-2xl font-semibold ${color}`}>{value}</div>
 </div>
 ))}
 </div>
@@ -3046,7 +3047,7 @@ Performance by Regime
 <div className="space-y-2">
 {Object.entries(data.regime_breakdown).map(([regime, stats]) => (
 <div key={regime} className="flex items-center justify-between border border-zinc-800 px-4 py-3">
-<div className={text-sm font-medium w-36 shrink-0 ${regimeText(regime)}}>
+<div className={`text-sm font-medium w-36 shrink-0 ${regimeText(regime)}`}>
 {regime}
 </div>
 <div className="flex gap-6 text-xs">
@@ -3074,7 +3075,7 @@ Model:{" "}
 {data.best_regime && (
 <div className="border border-emerald-900 bg-emerald-950 p-4 space-y-1">
 <div className="text-xs text-gray-500">Best Regime for You</div>
-<div className={text-sm font-semibold ${regimeText(data.best_regime)}}>
+<div className={`text-sm font-semibold ${regimeText(data.best_regime)}`}>
 {data.best_regime}
 </div>
 </div>
@@ -3082,7 +3083,7 @@ Model:{" "}
 {data.worst_regime && (
 <div className="border border-red-900 bg-red-950 p-4 space-y-1">
 <div className="text-xs text-gray-500">Worst Regime for You</div>
-<div className={text-sm font-semibold ${regimeText(data.worst_regime)}}>
+<div className={`text-sm font-semibold ${regimeText(data.worst_regime)}`}>
 {data.worst_regime}
 </div>
 </div>
@@ -3147,7 +3148,7 @@ loading
 <div className="w-full bg-zinc-800 rounded-full h-1">
 <div
 className="h-1 bg-blue-500 rounded-full transition-all"
-style={{ width: ${((data.entry_count ?? 0) / 5) * 100}% }}
+style={{ width: `${((data.entry_count ?? 0) / 5) * 100}%` }}
 />
 </div>
 <div className="text-xs text-gray-600">
@@ -3160,7 +3161,7 @@ style={{ width: ${((data.entry_count ?? 0) / 5) * 100}% }}
 {data.best_regime && (
 <div className="border border-emerald-900 bg-emerald-950 p-4 space-y-1">
 <div className="text-xs text-gray-500">Your Best Regime</div>
-<div className={text-base font-semibold ${regimeText(data.best_regime)}}>
+<div className={`text-base font-semibold ${regimeText(data.best_regime)}`}>
 {data.best_regime}
 </div>
 <div className="text-xs text-gray-500">Strongest historical edge</div>
@@ -3169,7 +3170,7 @@ style={{ width: ${((data.entry_count ?? 0) / 5) * 100}% }}
 {data.worst_regime && (
 <div className="border border-red-900 bg-red-950 p-4 space-y-1">
 <div className="text-xs text-gray-500">Your Worst Regime</div>
-<div className={text-base font-semibold ${regimeText(data.worst_regime)}}>
+<div className={`text-base font-semibold ${regimeText(data.worst_regime)}`}>
 {data.worst_regime}
 </div>
 <div className="text-xs text-gray-500">Underperforms here historically</div>
@@ -3184,7 +3185,7 @@ Performance by Regime
 <div className="space-y-2">
 {Object.entries(data.profile).map(([regime, stats]) => (
 <div key={regime} className="border border-zinc-800 px-4 py-3 flex items-center justify-between gap-4">
-<div className={text-sm font-medium w-36 shrink-0 ${regimeText(regime)}}>
+<div className={`text-sm font-medium w-36 shrink-0 ${regimeText(regime)}`}>
 {regime}
 </div>
 <div className="flex-1">
@@ -3211,7 +3212,7 @@ text-sm font-semibold ${                     stats.avg_return >= 0 ? "text-emera
 }>
 {stats.avg_return > 0 ? "+" : ""}{stats.avg_return}%
 </div>
-<div className={text-xs ${perfColor(stats.performance)}}>
+<div className={`text-xs ${perfColor(stats.performance)}`}>
 {stats.performance}
 </div>
 </div>
@@ -3311,7 +3312,7 @@ sub: "vs model",
 ].map(({ label, value, suffix, color, sub }) => (
 <div key={label} className="border border-zinc-800 p-4 space-y-1">
 <div className="text-xs text-gray-500">{label}</div>
-<div className={text-2xl font-semibold ${color}}>{value}{suffix}</div>
+<div className={`text-2xl font-semibold ${color}`}>{value}{suffix}</div>
 <div className="text-xs text-gray-600">{sub}</div>
 </div>
 ))}
@@ -3421,8 +3422,8 @@ const inner = (
 <div className="space-y-6">
 <div className="flex items-center gap-8">
 <div className="text-center space-y-2 shrink-0">
-<div className={text-6xl font-bold ${healthColor}}>{healthScore ?? "—"}</div>
-<div className={text-sm font-medium ${healthColor}}>{healthLabel}</div>
+<div className={`text-6xl font-bold ${healthColor}`}>{healthScore ?? "—"}</div>
+<div className={`text-sm font-medium ${healthColor}`}>{healthLabel}</div>
 <Bar value={healthScore ?? 0} cls={healthBarCls} />
 <div className="text-xs text-gray-600">Portfolio Health</div>
 </div>
@@ -3448,7 +3449,7 @@ className={
 text
 h-1 rounded-full transition-all ${                     value === null ? "bg-zinc-700"    :                     value >= 70    ? "bg-emerald-500" :                     value >= 50    ? "bg-yellow-500"  : "bg-red-500"                   }
 }
-style={{ width: ${value ?? 0}% }}
+style={{ width: `${value ?? 0}%` }}
 />
 </div>
 <div className="text-xs text-gray-700">{hint}</div>
@@ -3576,7 +3577,7 @@ Correlation · Heatmap · Transition matrix · Timeline · Breadth · Risk event
 </span>
 )}
 <svg
-className={w-4 h-4 text-gray-500 transition-transform ${open ? "rotate-180" : ""}}
+className={`w-4 h-4 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}
 fill="none" stroke="currentColor" viewBox="0 0 24 24"
 >
 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
