@@ -630,10 +630,10 @@ Analyse My Exposure
 }`}>
 <div className="font-semibold text-sm">
 {result.overBand
-? ⚠ Exposure ${result.delta}% above regime tolerance
-: result.isOver
-? ⚡ ${result.delta}% above optimal mid-point
-: ✓ ${result.delta}% below optimal — capacity to add}
+  ? `⚠ Exposure ${result.delta}% above regime tolerance`
+  : result.isOver
+  ? `⚡ ${result.delta}% above optimal mid-point`
+  : `✓ ${result.delta}% below optimal — capacity to add`}
 </div>
 <div className="text-xs opacity-70">
 Effective exposure: {result.effectiveExp}% · Optimal band: {result.minBand}–{result.maxBand}% · Regime: {result.regimeLabel}
