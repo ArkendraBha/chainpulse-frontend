@@ -504,10 +504,9 @@ const inner = (
 ].map(({ l, v }) => (
 <div key={l} className="border border-zinc-800 p-4 space-y-3">
 <div className="text-xs text-gray-500 uppercase tracking-widest">{l}</div>
-<div className={
-text
-text-3xl font-semibold ${               v >= 60 ? "text-emerald-400" : v >= 50 ? "text-yellow-400" : "text-red-400"             }
-}>{v}%</div>
+<div className={`text-3xl font-semibold ${
+  v >= 60 ? "text-emerald-400" : v >= 50 ? "text-yellow-400" : "text-red-400"
+}`}>{v}%</div>
 <Bar value={v} cls={v >= 60 ? "bg-emerald-500" : v >= 50 ? "bg-yellow-500" : "bg-red-500"} />
 <div className="text-xs text-gray-600">Historical in {execLabel} regimes</div>
 </div>
