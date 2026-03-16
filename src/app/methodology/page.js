@@ -2,15 +2,14 @@ export default function Methodology() {
   return (
     <main className="min-h-screen bg-black text-white px-8 py-16">
       <div className="max-w-4xl mx-auto space-y-12">
-
         <div>
           <h1 className="text-4xl font-semibold">
             ChainPulse Quantitative Methodology
           </h1>
           <p className="text-gray-400 mt-4">
             ChainPulse is a probabilistic regime modeling system designed to
-            optimize exposure allocation during shifting market environments.
-            It does not predict price direction. It models regime persistence.
+            optimize exposure allocation during shifting market environments. It
+            does not predict price direction. It models regime persistence.
           </p>
         </div>
 
@@ -30,20 +29,18 @@ export default function Methodology() {
             <li>Score normalization (-100 to +100)</li>
           </ul>
           <p className="text-gray-400 mt-4">
-            Regimes are classified into Strong Risk-On, Risk-On,
-            Neutral, Risk-Off, and Strong Risk-Off.
+            Regimes are classified into Strong Risk-On, Risk-On, Neutral,
+            Risk-Off, and Strong Risk-Off.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold mb-4">
-            2. Coherence Index
-          </h2>
+          <h2 className="text-2xl font-semibold mb-4">2. Coherence Index</h2>
           <p className="text-gray-400">
-            Coherence measures directional alignment strength across
-            regime components. High coherence environments typically
-            reflect sustained trends. Low coherence environments reflect
-            choppy or transitional states.
+            Coherence measures directional alignment strength across regime
+            components. High coherence environments typically reflect sustained
+            trends. Low coherence environments reflect choppy or transitional
+            states.
           </p>
         </section>
 
@@ -61,7 +58,8 @@ export default function Methodology() {
             <li>Relative maturity of the current phase</li>
           </ul>
           <p className="text-gray-400 mt-4">
-            This transforms regime detection into a time-aware probabilistic model.
+            This transforms regime detection into a time-aware probabilistic
+            model.
           </p>
         </section>
 
@@ -71,8 +69,8 @@ export default function Methodology() {
           </h2>
           <p className="text-gray-400">
             The hazard rate estimates regime deterioration risk relative to
-            historical averages. Rising hazard indicates statistical
-            instability within the current regime state.
+            historical averages. Rising hazard indicates statistical instability
+            within the current regime state.
           </p>
         </section>
 
@@ -81,9 +79,9 @@ export default function Methodology() {
             5. Historical Strength Percentile
           </h2>
           <p className="text-gray-400">
-            Current regime strength is ranked against historical
-            observations. Percentile context allows traders to identify
-            extreme environments rather than relying on raw values.
+            Current regime strength is ranked against historical observations.
+            Percentile context allows traders to identify extreme environments
+            rather than relying on raw values.
           </p>
         </section>
 
@@ -91,9 +89,7 @@ export default function Methodology() {
           <h2 className="text-2xl font-semibold mb-4">
             6. Exposure Allocation Engine
           </h2>
-          <p className="text-gray-400">
-            Recommended exposure is derived from:
-          </p>
+          <p className="text-gray-400">Recommended exposure is derived from:</p>
           <ul className="text-gray-400 mt-4 space-y-2 list-disc list-inside">
             <li>Regime strength magnitude</li>
             <li>Survival probability</li>
@@ -106,9 +102,7 @@ export default function Methodology() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold mb-4">
-            Model Philosophy
-          </h2>
+          <h2 className="text-2xl font-semibold mb-4">Model Philosophy</h2>
           <p className="text-gray-400">
             Most traders increase size late in mature trends and reduce size
             early in developing ones. ChainPulse is designed to counter that
@@ -120,7 +114,6 @@ export default function Methodology() {
           ChainPulse is a decision-support framework. It does not guarantee
           outcomes and should not be considered financial advice.
         </div>
-
       </div>
     </main>
   );

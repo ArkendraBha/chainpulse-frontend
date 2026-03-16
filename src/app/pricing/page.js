@@ -9,15 +9,15 @@ export default function Pricing() {
   const [annual, setAnnual] = useState(false);
 
   const monthlyPrice = 39;
-  const annualPrice  = 29;
-  const annualTotal  = annualPrice * 12;
+  const annualPrice = 29;
+  const annualTotal = annualPrice * 12;
 
   const handleCheckout = async () => {
     try {
       const res = await fetch(`${BACKEND}/create-checkout-session`, {
-        method:  "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ billing_cycle: annual ? "annual" : "monthly" }),
+        body: JSON.stringify({ billing_cycle: annual ? "annual" : "monthly" }),
       });
       const data = await res.json();
       if (data.url) {
@@ -34,7 +34,6 @@ export default function Pricing() {
   return (
     <main className="min-h-screen bg-black text-white px-8 py-24">
       <div className="max-w-5xl mx-auto space-y-16">
-
         {/* HEADER */}
         <div className="text-center space-y-4">
           <div className="text-xs text-gray-500 uppercase tracking-widest">
@@ -44,13 +43,14 @@ export default function Pricing() {
             Simple, Transparent Pricing
           </h1>
           <p className="text-gray-400 text-lg max-w-xl mx-auto">
-            One plan. Everything included.
-            For traders allocating real capital.
+            One plan. Everything included. For traders allocating real capital.
           </p>
 
           {/* BILLING TOGGLE */}
           <div className="flex items-center justify-center gap-4 pt-4">
-            <span className={`text-sm ${!annual ? "text-white" : "text-gray-500"}`}>
+            <span
+              className={`text-sm ${!annual ? "text-white" : "text-gray-500"}`}
+            >
               Monthly
             </span>
             <button
@@ -65,7 +65,9 @@ export default function Pricing() {
                 }`}
               />
             </button>
-            <span className={`text-sm ${annual ? "text-white" : "text-gray-500"}`}>
+            <span
+              className={`text-sm ${annual ? "text-white" : "text-gray-500"}`}
+            >
               Annual
               <span className="ml-2 text-xs text-emerald-400 font-medium">
                 Save 26%
@@ -76,7 +78,6 @@ export default function Pricing() {
 
         {/* PRICING CARD */}
         <div className="max-w-lg mx-auto border border-zinc-700 p-12 space-y-8">
-
           <div className="space-y-2">
             <div className="text-sm text-gray-500 uppercase tracking-widest">
               ChainPulse Pro
@@ -104,13 +105,14 @@ export default function Pricing() {
           </div>
 
           <ul className="space-y-4 text-sm text-gray-300">
-
             <li className="text-xs text-gray-500 uppercase tracking-widest pt-1">
               Core Decision Engine
             </li>
             <li className="flex items-start gap-3">
               <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
-              <span>Exposure recommendation % — regime-adjusted allocation</span>
+              <span>
+                Exposure recommendation % — regime-adjusted allocation
+              </span>
             </li>
             <li className="flex items-start gap-3">
               <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
@@ -244,30 +246,31 @@ export default function Pricing() {
               <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
               <span>All 7 assets: BTC ETH SOL BNB AVAX LINK ADA</span>
             </li>
-
           </ul>
 
           <button
             onClick={handleCheckout}
             className="w-full bg-white text-black py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors"
           >
-            Start Using Full Regime Intelligence — ${annual ? annualPrice : monthlyPrice}/month
+            Start Using Full Regime Intelligence — $
+            {annual ? annualPrice : monthlyPrice}/month
           </button>
 
           <div className="text-center text-gray-600 text-xs space-y-1">
             <div>7-day risk-free evaluation · Cancel anytime</div>
             <div>Secure checkout via Stripe</div>
           </div>
-
         </div>
 
         {/* PSYCHOLOGY ANCHOR */}
         <div className="border border-zinc-800 p-8 space-y-4 text-sm text-gray-400">
-          <div className="text-white font-medium">The Real Cost of Getting It Wrong</div>
+          <div className="text-white font-medium">
+            The Real Cost of Getting It Wrong
+          </div>
           <p>
-            Designed for traders managing \$5,000 or more.
-            At that size, one avoided late-stage overexposure event of 3%
-            saves \$150 — nearly four months of Pro.
+            Designed for traders managing \$5,000 or more. At that size, one
+            avoided late-stage overexposure event of 3% saves \$150 — nearly
+            four months of Pro.
           </p>
           <p>
             The decision engine, drawdown simulator, and consequence modeler
@@ -275,8 +278,8 @@ export default function Pricing() {
             before it becomes a loss.
           </p>
           <p className="text-gray-600 text-xs">
-            ChainPulse does not guarantee outcomes.
-            Past regime behavior does not predict future results.
+            ChainPulse does not guarantee outcomes. Past regime behavior does
+            not predict future results.
           </p>
         </div>
 
@@ -287,7 +290,6 @@ export default function Pricing() {
           </h2>
 
           <div className="space-y-6 text-sm">
-
             <div className="border-b border-zinc-900 pb-6 space-y-2">
               <div className="text-white font-medium">
                 What exactly does ChainPulse tell me?
@@ -296,8 +298,8 @@ export default function Pricing() {
                 It tells you the statistical state of the current market regime,
                 how mature it is, how likely it is to continue, and what
                 exposure allocation is supported by the data. The decision
-                engine then gives you a systematic directive for today's session.
-                It does not tell you what to buy or sell.
+                engine then gives you a systematic directive for today's
+                session. It does not tell you what to buy or sell.
               </p>
             </div>
 
@@ -310,7 +312,8 @@ export default function Pricing() {
                 ChainPulse tells you how much capital to have deployed given
                 current regime conditions — and tracks whether your decisions
                 are aligned with the model over time. It is a risk allocation
-                framework with personal accountability, not a trade signal engine.
+                framework with personal accountability, not a trade signal
+                engine.
               </p>
             </div>
 
@@ -319,8 +322,8 @@ export default function Pricing() {
                 What assets are covered?
               </div>
               <p className="text-gray-400">
-                BTC, ETH, SOL, BNB, AVAX, LINK, and ADA — updated hourly
-                from live market data across three timeframes.
+                BTC, ETH, SOL, BNB, AVAX, LINK, and ADA — updated hourly from
+                live market data across three timeframes.
               </p>
             </div>
 
@@ -330,8 +333,8 @@ export default function Pricing() {
               </div>
               <p className="text-gray-400">
                 Email alerts are dispatched when regime shift risk exceeds 70%
-                for any tracked asset. Alerts are throttled to a maximum of
-                once per 12 hours per asset to prevent noise.
+                for any tracked asset. Alerts are throttled to a maximum of once
+                per 12 hours per asset to prevent noise.
               </p>
             </div>
 
@@ -352,8 +355,8 @@ export default function Pricing() {
                 Can I cancel anytime?
               </div>
               <p className="text-gray-400">
-                Yes. Cancel from your Stripe billing portal at any time.
-                No questions asked.
+                Yes. Cancel from your Stripe billing portal at any time. No
+                questions asked.
               </p>
             </div>
 
@@ -365,11 +368,10 @@ export default function Pricing() {
                 The live regime snapshot and execution score on the dashboard
                 are publicly visible. Pro unlocks full analytics, exposure
                 modeling, survival analysis, the decision engine, discipline
-                tracking, multi-asset coverage, shift alerts, and all
-                personal accountability features.
+                tracking, multi-asset coverage, shift alerts, and all personal
+                accountability features.
               </p>
             </div>
-
           </div>
         </div>
 
@@ -385,7 +387,6 @@ export default function Pricing() {
             Read Methodology
           </Link>
         </div>
-
       </div>
     </main>
   );

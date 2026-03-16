@@ -20,10 +20,18 @@ function LandingHeader() {
         <div className="h-14 flex items-center justify-between">
           <div className="text-sm font-semibold">ChainPulse Quant</div>
           <nav className="flex items-center gap-4 text-sm text-zinc-400">
-            <Link href="/" className="hover:text-white">Home</Link>
-            <Link href="/app" className="hover:text-white">Dashboard</Link>
-            <Link href="/pricing" className="hover:text-white">Pricing</Link>
-            <Link href="/methodology" className="hover:text-white">Methodology</Link>
+            <Link href="/" className="hover:text-white">
+              Home
+            </Link>
+            <Link href="/app" className="hover:text-white">
+              Dashboard
+            </Link>
+            <Link href="/pricing" className="hover:text-white">
+              Pricing
+            </Link>
+            <Link href="/methodology" className="hover:text-white">
+              Methodology
+            </Link>
             <Link
               href="/pricing"
               className="ml-3 bg-white text-black px-4 py-2 rounded-lg text-xs font-semibold hover:bg-zinc-100"
@@ -54,10 +62,7 @@ export default function Landing() {
       fetch(`${BACKEND}/statistics?coin=BTC`).then((r) => r.json()),
     ])
       .then(([latest, stats]) => {
-        if (
-          latest && !latest.message &&
-          stats  && !stats.message
-        ) {
+        if (latest && !latest.message && stats && !stats.message) {
           setLiveData({ latest, stats });
         }
       })
@@ -78,15 +83,14 @@ export default function Landing() {
     }
   };
 
-  const label     = liveData?.latest?.label;
+  const label = liveData?.latest?.label;
   // Shift risk is free — exposure is NOT shown on landing
   const shiftRisk = liveData?.stats?.regime_shift_risk_percent;
   const coherence = liveData?.latest?.coherence;
 
   return (
-
     <main className="min-h-screen bg-black text-white">
-<LandingHeader />
+      <LandingHeader />
 
       {/* ── HERO ── */}
       <section className="px-8 py-32 border-b border-zinc-900">
@@ -95,7 +99,9 @@ export default function Landing() {
             Regime-Based Exposure Intelligence
           </div>
           <h1 className="text-5xl md:text-6xl font-semibold leading-tight tracking-tight">
-            Allocate Capital With<br />Regime Awareness
+            Allocate Capital With
+            <br />
+            Regime Awareness
           </h1>
           <p className="text-gray-400 text-xl max-w-3xl mx-auto">
             Statistical survival modeling for swing traders managing real
@@ -144,7 +150,9 @@ export default function Landing() {
                     <div className="text-gray-500 text-xs uppercase tracking-widest">
                       Regime
                     </div>
-                    <div className={`text-2xl font-semibold mt-2 ${getRegimeColor(label)}`}>
+                    <div
+                      className={`text-2xl font-semibold mt-2 ${getRegimeColor(label)}`}
+                    >
                       {label}
                     </div>
                   </div>
@@ -157,8 +165,8 @@ export default function Landing() {
                         shiftRisk > 70
                           ? "text-red-400"
                           : shiftRisk > 45
-                          ? "text-yellow-400"
-                          : "text-green-400"
+                            ? "text-yellow-400"
+                            : "text-green-400"
                       }`}
                     >
                       {shiftRisk}%
@@ -171,7 +179,8 @@ export default function Landing() {
                     <div className="text-3xl font-semibold mt-2">
                       {typeof coherence === "number"
                         ? coherence.toFixed(1)
-                        : "—"}%
+                        : "—"}
+                      %
                     </div>
                   </div>
                 </div>
@@ -389,9 +398,7 @@ export default function Landing() {
       {/* ── EMAIL CAPTURE ── */}
       <section className="px-8 py-24 border-b border-zinc-900">
         <div className="max-w-3xl mx-auto text-center space-y-8">
-          <h2 className="text-3xl font-semibold">
-            Get the Daily Regime Brief
-          </h2>
+          <h2 className="text-3xl font-semibold">Get the Daily Regime Brief</h2>
           <p className="text-gray-400">
             A concise daily summary of current regime conditions, shift risk,
             and deployment guidance — free.
@@ -416,8 +423,10 @@ export default function Landing() {
               </button>
             </div>
           ) : (
-            <div className="border border-emerald-800 bg-emerald-950 text-emerald-400
-                            px-6 py-4 rounded-md text-sm">
+            <div
+              className="border border-emerald-800 bg-emerald-950 text-emerald-400
+                            px-6 py-4 rounded-md text-sm"
+            >
               ✓ Confirmation sent. Check your inbox to activate.
             </div>
           )}
@@ -428,13 +437,13 @@ export default function Landing() {
               rel="noreferrer"
               className="text-gray-600 hover:text-gray-400 text-sm underline transition-colors"
             >
-             <a
-  href="https://drive.google.com/uc?export=download&id=1C0yFNklyRafuADZIEJlo4VLbNu84F5gM"
-  target="_blank"
-  rel="noreferrer"
->
-  Download sample report (PDF) →
-</a>
+              <a
+                href="https://drive.google.com/uc?export=download&id=1C0yFNklyRafuADZIEJlo4VLbNu84F5gM"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Download sample report (PDF) →
+              </a>
             </a>
           </div>
         </div>
@@ -461,27 +470,37 @@ export default function Landing() {
 
       {/* ── FOOTER ── */}
       <footer className="px-8 py-12">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between
-                        items-center gap-6 text-gray-600 text-xs">
+        <div
+          className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between
+                        items-center gap-6 text-gray-600 text-xs"
+        >
           <div className="font-medium text-gray-500">ChainPulse</div>
           <div className="flex gap-8">
             <Link href="/app" className="hover:text-gray-400 transition-colors">
               Dashboard
             </Link>
-            <Link href="/pricing" className="hover:text-gray-400 transition-colors">
+            <Link
+              href="/pricing"
+              className="hover:text-gray-400 transition-colors"
+            >
               Pricing
             </Link>
-            <Link href="/methodology" className="hover:text-gray-400 transition-colors">
+            <Link
+              href="/methodology"
+              className="hover:text-gray-400 transition-colors"
+            >
               Methodology
             </Link>
-            <Link href="/blog" className="hover:text-gray-400 transition-colors">
+            <Link
+              href="/blog"
+              className="hover:text-gray-400 transition-colors"
+            >
               Blog
             </Link>
           </div>
           <div>Not financial advice. Manage your own risk.</div>
         </div>
       </footer>
-
     </main>
   );
 }

@@ -33,7 +33,9 @@ export default function NavBar() {
                 key={link.href}
                 href={link.href}
                 className={`text-sm transition-colors ${
-                  pathname === link.href ? "text-white" : "text-zinc-400 hover:text-white"
+                  pathname === link.href
+                    ? "text-white"
+                    : "text-zinc-400 hover:text-white"
                 }`}
               >
                 {link.label}
@@ -53,7 +55,12 @@ export default function NavBar() {
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Toggle menu"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               {menuOpen ? (
                 <path
                   strokeLinecap="round"
@@ -82,7 +89,9 @@ export default function NavBar() {
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
                 className={`block text-sm px-2 py-1 transition-colors ${
-                  pathname === link.href ? "text-white" : "text-zinc-400 hover:text-white"
+                  pathname === link.href
+                    ? "text-white"
+                    : "text-zinc-400 hover:text-white"
                 }`}
               >
                 {link.label}

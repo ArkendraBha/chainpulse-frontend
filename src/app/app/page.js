@@ -391,7 +391,7 @@ const inner = (
 <div className="grid grid-cols-3 gap-6">
 <div className="text-center space-y-2">
 <div className="text-xs text-gray-500 uppercase tracking-widest">Regime Grade</div>
-<div className={text-6xl font-bold ${gradeColor(quality.grade)}}>{quality.grade}</div>
+<div className={`text-6xl font-bold ${gradeColor(quality.grade)}`}>{quality.grade}</div>
 <Bar value={quality.score} cls={ quality.score >= 80 ? "bg-emerald-500" :
 quality.score >= 65 ? "bg-green-500" :
 quality.score >= 50 ? "bg-yellow-500" :
