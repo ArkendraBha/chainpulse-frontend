@@ -77,7 +77,7 @@ export default function Landing() {
             </Link>
             <Link
               href="/methodology"
-              className="border border-zinc-700 px-8 py-4 rounded-md text-gray-300 hover:border-zinc-500 transition-colors"
+              className="border border-zinc-700 px-8 py-4 rounded-xl text-gray-300 hover:border-zinc-500 transition-colors"
             >
               Read Methodology
             </Link>
@@ -318,7 +318,7 @@ export default function Landing() {
           </div>
           <Link
             href="/pricing"
-            className="inline-block bg-white text-black px-8 py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors"
+            className="inline-block bg-white text-black px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-colors"
           >
             View Pricing
           </Link>
@@ -341,17 +341,17 @@ export default function Landing() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSubscribe()}
-                className="px-4 py-3 bg-zinc-900 border border-zinc-700 text-white rounded-md w-72 focus:outline-none focus:border-zinc-500"
+                className="px-4 py-3 bg-zinc-900 border border-zinc-700 text-white rounded-xl w-72 focus:outline-none focus:border-zinc-500"
               />
               <button
                 onClick={handleSubscribe}
-                className="bg-white text-black px-6 py-3 rounded-md font-semibold hover:bg-gray-100 transition-colors"
+                className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors"
               >
                 Subscribe Free
               </button>
             </div>
           ) : (
-            <div className="border border-emerald-800 bg-emerald-950 text-emerald-400 px-6 py-4 rounded-md text-sm">
+            <div className="border border-emerald-800 bg-emerald-950 text-emerald-400 px-6 py-4 rounded-xl text-sm">
               ✓ Confirmation sent. Check your inbox to activate.
             </div>
           )}
@@ -381,7 +381,7 @@ export default function Landing() {
           </p>
           <Link
             href="/methodology"
-            className="inline-block border border-zinc-700 px-8 py-4 rounded-md text-gray-300 hover:border-zinc-500 transition-colors"
+            className="inline-block border border-zinc-700 px-8 py-4 rounded-xl text-gray-300 hover:border-zinc-500 transition-colors"
           >
             Read Full Methodology
           </Link>

@@ -297,7 +297,7 @@ function TodaysVerdict({ stack, decision, isPro, onUnlock }) {
           ) : (
             <button
               onClick={onUnlock}
-              className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap"
+              className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap"
             >
               Unlock Pro — $39/mo
             </button>
@@ -325,7 +325,7 @@ function FreeTierBanner({ onUnlock }) {
         </div>
         <button
           onClick={onUnlock}
-          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-2.5 rounded-md text-sm font-semibold whitespace-nowrap hover:bg-gray-100 transition-colors shrink-0"
+          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap hover:bg-gray-100 transition-colors shrink-0"
         >
           Unlock Full System — $39/mo
         </button>
@@ -637,7 +637,7 @@ function ExposureTracker({ stack, isPro, onUnlock }) {
               value={val}
               onChange={(e) => set(Number(e.target.value))}
               {...rest}
-              className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+              className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
             />
           </div>
         ))}
@@ -646,7 +646,7 @@ function ExposureTracker({ stack, isPro, onUnlock }) {
           <select
             value={strategyType}
             onChange={(e) => setStrategyType(e.target.value)}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
           >
             <option value="swing">Swing</option>
             <option value="trend">Trend Following</option>
@@ -658,7 +658,7 @@ function ExposureTracker({ stack, isPro, onUnlock }) {
 
       <button
         onClick={analyse}
-        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
+        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors"
       >
         Analyse My Exposure
       </button>
@@ -1333,7 +1333,7 @@ function PortfolioAllocator({ stack, isPro, onUnlock }) {
             type="number"
             value={accountSize}
             onChange={(e) => setAccountSize(Number(e.target.value))}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
           />
         </div>
         <div className="space-y-2">
@@ -1343,7 +1343,7 @@ function PortfolioAllocator({ stack, isPro, onUnlock }) {
               <button
                 key={m}
                 onClick={() => setStrategyMode(m)}
-                className={`flex-1 py-3 rounded-md text-xs font-medium capitalize transition-colors ${
+                className={`flex-1 py-3 rounded-xl text-xs font-medium capitalize transition-colors ${
                   strategyMode === m
                     ? "bg-white text-black"
                     : "bg-zinc-950 text-gray-400 border border-zinc-700 hover:border-zinc-500"
@@ -1358,7 +1358,7 @@ function PortfolioAllocator({ stack, isPro, onUnlock }) {
           <button
             onClick={calculate}
             disabled={loading}
-            className="w-full bg-white text-black py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
+            className="w-full bg-white text-black py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
           >
             {loading ? "Calculating..." : isPro ? "Calculate Allocation" : <><Lock />Pro Only</>}
           </button>
@@ -1858,7 +1858,7 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
             <div className="text-xs text-gray-500 max-w-xs">
               Without survival modeling, you cannot quantify regime decay probability.
             </div>
-            <button className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-4 py-2.5 rounded-md text-xs font-semibold">
+            <button className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-4 py-2.5 rounded-xl text-xs font-semibold">
               Unlock Pro — $39/month
             </button>
           </div>
@@ -2116,13 +2116,13 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
             onChange={(e) => setUserExposure(Number(e.target.value))}
             min={0}
             max={200}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
           />
         </div>
         <button
           onClick={analyse}
           disabled={loading}
-          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
+          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
         >
           {loading ? "Analysing..." : "Show Consequences"}
         </button>
@@ -2291,7 +2291,7 @@ function PnLImpactEstimator({ stack, isPro, onUnlock }) {
             type="number"
             value={portfolioSize}
             onChange={(e) => setPortfolioSize(Number(e.target.value))}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
           />
         </div>
         <div className="space-y-2">
@@ -2302,14 +2302,14 @@ function PnLImpactEstimator({ stack, isPro, onUnlock }) {
             onChange={(e) => setUserExposure(Number(e.target.value))}
             min={0}
             max={200}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
           />
         </div>
       </div>
 
       <button
         onClick={estimate}
-        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
+        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors"
       >
         Estimate PnL Impact
       </button>
@@ -2442,7 +2442,7 @@ function DrawdownSimulator({ stack, isPro, onUnlock }) {
             type="number"
             value={portfolioSize}
             onChange={(e) => setPortfolioSize(Number(e.target.value))}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
           />
         </div>
         <div className="space-y-2">
@@ -2453,14 +2453,14 @@ function DrawdownSimulator({ stack, isPro, onUnlock }) {
             onChange={(e) => setUserExposure(Number(e.target.value))}
             min={0}
             max={200}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
           />
         </div>
       </div>
 
       <button
         onClick={simulate}
-        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
+        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors"
       >
         Run Drawdown Scenarios
       </button>
@@ -2633,7 +2633,7 @@ function RiskProfilePanel({ email, isPro, onUnlock, onProfileSaved }) {
               <button
                 key={id}
                 onClick={() => setIdentity(id)}
-                className={`w-full text-left p-4 rounded-md border transition-colors space-y-1 ${
+                className={`w-full text-left p-4 rounded-xl border transition-colors space-y-1 ${
                   identity === id
                     ? "border-white bg-zinc-800"
                     : "border-white/5 hover:border-zinc-600"
@@ -2649,7 +2649,7 @@ function RiskProfilePanel({ email, isPro, onUnlock, onProfileSaved }) {
       <button
         onClick={save}
         disabled={loading || !email}
-        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
+        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
       >
         {loading ? "Saving..." : "Save Risk Profile"}
       </button>
@@ -2722,7 +2722,7 @@ function ExposureLogger({ stack, email, isPro, onUnlock }) {
             onChange={(e) => setUserExposure(Number(e.target.value))}
             min={0}
             max={200}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-md text-sm focus:outline-none focus:border-zinc-500"
+            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
           />
         </div>
         <div className="space-y-1">
@@ -2734,7 +2734,7 @@ function ExposureLogger({ stack, email, isPro, onUnlock }) {
         <button
           onClick={logIt}
           disabled={loading || !email}
-          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
+          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
         >
           {loading ? "Logging..." : "Log Exposure"}
         </button>
@@ -3714,12 +3714,12 @@ function EmailCapture({ onEmailSet }) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
           placeholder="your@email.com"
-          className="flex-1 bg-zinc-800 border border-zinc-700 text-white px-4 py-2.5 rounded-md text-sm focus:outline-none focus:border-zinc-500 placeholder-zinc-600"
+          className="flex-1 bg-zinc-800 border border-zinc-700 text-white px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-zinc-500 placeholder-zinc-600"
         />
         <button
           onClick={submit}
           disabled={loading}
-          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2.5 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
+          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
         >
           {loading ? "..." : "Get Brief"}
         </button>
@@ -3985,7 +3985,7 @@ function SiteHeader({ coin, onCoinSelect, isPro, onUnlock }) {
 
           {/* Brand */}
           <div className="flex items-center gap-3 shrink-0">
-            <div className="w-6 h-6 rounded-md bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+            <div className="w-6 h-6 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
             </div>
             <span className="text-sm font-semibold text-white tracking-tight">
@@ -4005,7 +4005,7 @@ function SiteHeader({ coin, onCoinSelect, isPro, onUnlock }) {
               <a
                 key={label}
                 href={href}
-                className="px-3 py-1.5 text-sm text-zinc-400 hover:text-white transition-colors rounded-md hover:bg-white/4"
+                className="px-3 py-1.5 text-sm text-zinc-400 hover:text-white transition-colors rounded-xl hover:bg-white/4"
               >
                 {label}
               </a>
@@ -4019,7 +4019,7 @@ function SiteHeader({ coin, onCoinSelect, isPro, onUnlock }) {
               Live
             </div>
             {isPro ? (
-              <span className="text-xs text-emerald-400 border border-emerald-900/60 bg-emerald-950/40 px-3 py-1.5 rounded-md">
+              <span className="text-xs text-emerald-400 border border-emerald-900/60 bg-emerald-950/40 px-3 py-1.5 rounded-xl">
                 Pro Active
               </span>
             ) : (
@@ -4418,7 +4418,7 @@ export default function Dashboard() {
             ].map(({ label, value }) => (
               <div
                 key={label}
-                className="bg-white/2 border border-white/5 rounded-md px-3 py-1.5 flex items-center gap-2"
+                className="bg-white/2 border border-white/5 rounded-xl px-3 py-1.5 flex items-center gap-2"
               >
                 <span className="text-zinc-600">{label}:</span>
                 <span className="text-zinc-300 font-medium">{value}</span>
@@ -4914,7 +4914,7 @@ export default function Dashboard() {
 
             <div className="space-y-2">
               <button
-                className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-10 py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors text-sm"
+                className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-10 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm"
                 onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
               >
                 Start Using Full Regime Intelligence
