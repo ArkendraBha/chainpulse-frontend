@@ -17,7 +17,7 @@ export default function NavBar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-zinc-950/80 backdrop-blur-md border-b border-white/5">
+    <header className="sticky top-0 z-50 bg-zinc-950/70 backdrop-blur-xl border-b border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
       {/* Top row */}
       <div className="px-8 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
