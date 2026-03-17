@@ -4377,12 +4377,7 @@ export default function Dashboard() {
     <main className="min-h-screen bg-black text-white">
       {showModal && <ProModal onClose={() => setShowModal(false)} />}
 
-      <SiteHeader
-        coin={coin}
-        onCoinSelect={setCoin}
-        isPro={isPro}
-        onUnlock={() => setShowModal(true)}
-      />
+      
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-5">
 
