@@ -203,7 +203,7 @@ function StatCard({ label, value, suffix = "%", color, barCls, hint, locked, con
   if (locked)
     return (
       <div
-        className="bg-white/1 border border-white/5 p-5 space-y-2 relative overflow-hidden cursor-pointer group rounded-lg"
+        className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2 relative overflow-hidden cursor-pointer group"
         onClick={onUnlock}
       >
         <Label>{label}</Label>
@@ -218,14 +218,16 @@ function StatCard({ label, value, suffix = "%", color, barCls, hint, locked, con
               <Lock />Pro
             </span>
             {consequence && (
-              <div className="text-xs text-zinc-600 max-w-[140px] text-center leading-relaxed">{consequence}</div>
+              <div className="text-xs text-zinc-600 max-w-[140px] text-center leading-relaxed">
+                {consequence}
+              </div>
             )}
           </div>
         </div>
       </div>
     );
   return (
-    <div className="bg-white/1 border border-white/5 p-5 space-y-2 rounded-lg">
+    <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2">
       <Label>{label}</Label>
       <div className={`text-3xl font-semibold tabular-nums ${color}`}>
         {value}{suffix}
@@ -235,7 +237,6 @@ function StatCard({ label, value, suffix = "%", color, barCls, hint, locked, con
     </div>
   );
 }
-
 // ─────────────────────────────────────────
 // TODAY'S VERDICT
 // ─────────────────────────────────────────
@@ -296,7 +297,7 @@ function TodaysVerdict({ stack, decision, isPro, onUnlock }) {
           ) : (
             <button
               onClick={onUnlock}
-              className="bg-white text-black px-5 py-2 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap"
+              className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap"
             >
               Unlock Pro — $39/mo
             </button>
@@ -324,7 +325,7 @@ function FreeTierBanner({ onUnlock }) {
         </div>
         <button
           onClick={onUnlock}
-          className="bg-white text-black px-6 py-2.5 rounded-md text-sm font-semibold whitespace-nowrap hover:bg-gray-100 transition-colors shrink-0"
+          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-2.5 rounded-md text-sm font-semibold whitespace-nowrap hover:bg-gray-100 transition-colors shrink-0"
         >
           Unlock Full System — $39/mo
         </button>
@@ -657,7 +658,7 @@ function ExposureTracker({ stack, isPro, onUnlock }) {
 
       <button
         onClick={analyse}
-        className="bg-white text-black px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
+        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
       >
         Analyse My Exposure
       </button>
@@ -1857,7 +1858,7 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
             <div className="text-xs text-gray-500 max-w-xs">
               Without survival modeling, you cannot quantify regime decay probability.
             </div>
-            <button className="bg-white text-black px-4 py-2.5 rounded-md text-xs font-semibold">
+            <button className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-4 py-2.5 rounded-md text-xs font-semibold">
               Unlock Pro — $39/month
             </button>
           </div>
@@ -2121,7 +2122,7 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
         <button
           onClick={analyse}
           disabled={loading}
-          className="bg-white text-black px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
+          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
         >
           {loading ? "Analysing..." : "Show Consequences"}
         </button>
@@ -2308,7 +2309,7 @@ function PnLImpactEstimator({ stack, isPro, onUnlock }) {
 
       <button
         onClick={estimate}
-        className="bg-white text-black px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
+        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
       >
         Estimate PnL Impact
       </button>
@@ -2459,7 +2460,7 @@ function DrawdownSimulator({ stack, isPro, onUnlock }) {
 
       <button
         onClick={simulate}
-        className="bg-white text-black px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
+        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors"
       >
         Run Drawdown Scenarios
       </button>
@@ -2648,7 +2649,7 @@ function RiskProfilePanel({ email, isPro, onUnlock, onProfileSaved }) {
       <button
         onClick={save}
         disabled={loading || !email}
-        className="bg-white text-black px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
+        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
       >
         {loading ? "Saving..." : "Save Risk Profile"}
       </button>
@@ -2733,7 +2734,7 @@ function ExposureLogger({ stack, email, isPro, onUnlock }) {
         <button
           onClick={logIt}
           disabled={loading || !email}
-          className="bg-white text-black px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
+          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
         >
           {loading ? "Logging..." : "Log Exposure"}
         </button>
@@ -3718,7 +3719,7 @@ function EmailCapture({ onEmailSet }) {
         <button
           onClick={submit}
           disabled={loading}
-          className="bg-white text-black px-5 py-2.5 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
+          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2.5 rounded-md text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
         >
           {loading ? "..." : "Get Brief"}
         </button>
@@ -3765,26 +3766,19 @@ function AdvancedAnalytics({ children, isPro }) {
 }
 
 // ─────────────────────────────────────────
-// PRO MODAL  — FIX: added Escape key handler
+// PRO MODAL 
 // ─────────────────────────────────────────
 function ProModal({ onClose }) {
-  const [billingCycle, setBillingCycle] = useState("monthly");
+  const [billingCycle, setBillingCycle] = useState("annual");
   const [loading,      setLoading]      = useState(false);
-
-  // FIX: close on Escape key
-  useEffect(() => {
-    const handler = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
 
   const checkout = async () => {
     setLoading(true);
     try {
       const res = await fetch(`${BACKEND}/create-checkout-session`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billing_cycle: billingCycle }),
+        body:    JSON.stringify({ billing_cycle: billingCycle }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
@@ -3795,140 +3789,108 @@ function ProModal({ onClose }) {
     }
   };
 
-  const features = [
-    { category: "Core Decision Engine", items: [
-      "Exposure recommendation % — regime-adjusted",
-      "Shift risk % — composite deterioration signal",
-      "Survival probability — regime persistence model",
-      "Hazard rate — failure risk vs historical norm",
-      "Decision Engine — today's systematic directive",
-      "Consequence Simulator — cost of inaction",
-      "PnL Impact Estimator — expected value modeling",
-      "Drawdown Simulator — 3 scenario loss modeling",
-    ]},
-    { category: "Regime Intelligence", items: [
-      "Regime quality grade (A / B / C / D)",
-      "Regime stress meter — composite breakdown signal",
-      "Regime countdown — statistical time remaining",
-      "Regime playbook — protocol for current conditions",
-      "Confidence trend — 24H conviction trajectory",
-      "Volatility & liquidity environment",
-      "Transition probability matrix",
-      "Full coherence index per timeframe",
-    ]},
-    { category: "Personal Accountability", items: [
-      "Risk profile calibration — personalised exposure",
-      "Exposure logger — track your actual positions",
-      "Discipline streak — consecutive aligned sessions",
-      "Discipline score — model adherence over time",
-      "Mistake replay — deviations during risk events",
-      "Performance comparison — your alpha vs model",
-      "Edge profile — your best and worst regimes",
-      "Weekly performance report",
-    ]},
-    { category: "Portfolio & Alerts", items: [
-      "Portfolio health score — composite risk rating",
-      "Portfolio exposure allocator",
-      "Cross-asset correlation monitor",
-      "Real-time shift alerts via email",
-      "Daily regime brief every morning",
-      "Weekly discipline summary report",
-      "All 7 assets: BTC ETH SOL BNB AVAX LINK ADA",
-    ]},
-  ];
-
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-start justify-center px-4 py-8 overflow-y-auto">
-      <div className="bg-zinc-950 border border-zinc-700 max-w-lg w-full p-10 space-y-7 relative my-auto">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center px-4 py-8 overflow-y-auto">
+      <div className="bg-zinc-950 border border-white/8 rounded-2xl max-w-md w-full p-8 space-y-6 relative shadow-2xl shadow-black/50">
+
+        {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-600 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        <div className="space-y-2">
-          <Label>ChainPulse Pro</Label>
-          <h2 className="text-2xl font-semibold leading-tight">
-            Stop Trading Without a Risk Framework
+        {/* Header */}
+        <div className="space-y-2 pr-6">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <Label>ChainPulse Pro</Label>
+          </div>
+          <h2 className="text-2xl font-semibold leading-tight tracking-tight">
+            Trade with a systematic risk framework
           </h2>
-          <p className="text-gray-400 text-sm leading-relaxed">
-            You can see the regime. But without survival modeling, hazard rate,
-            and a systematic directive, you are making decisions with incomplete information.
+          <p className="text-zinc-500 text-sm leading-relaxed">
+            Survival modeling, hazard rate, and a daily directive — so you always know your exposure.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Billing toggle */}
+        <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => setBillingCycle("monthly")}
-            className={`flex-1 py-2.5 rounded-md text-sm font-medium border transition-colors ${
+            className={`py-3 rounded-xl text-sm font-medium border transition-all ${
               billingCycle === "monthly"
                 ? "bg-white text-black border-white"
-                : "bg-transparent text-gray-400 border-zinc-700 hover:border-zinc-500"
+                : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"
             }`}
           >
-            Monthly — $39/mo
+            <div>Monthly</div>
+            <div className="text-xs font-normal opacity-70">\$39/mo</div>
           </button>
           <button
             onClick={() => setBillingCycle("annual")}
-            className={`flex-1 py-2.5 rounded-md text-sm font-medium border transition-colors relative ${
+            className={`py-3 rounded-xl text-sm font-medium border transition-all relative ${
               billingCycle === "annual"
                 ? "bg-white text-black border-white"
-                : "bg-transparent text-gray-400 border-zinc-700 hover:border-zinc-500"
+                : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"
             }`}
           >
-            Annual — $29/mo
-            <span className="absolute -top-2 -right-2 bg-emerald-500 text-black text-xs px-1.5 py-0.5 rounded-full font-semibold">
-              -26%
-            </span>
+            <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+              SAVE 26%
+            </div>
+            <div>Annual</div>
+            <div className="text-xs font-normal opacity-70">$29/mo · $348/yr</div>
           </button>
         </div>
 
-        <div className="space-y-4 max-h-72 overflow-y-auto pr-1">
-          {features.map(({ category, items }) => (
-            <div key={category} className="space-y-2">
-              <div className="text-xs text-gray-500 uppercase tracking-widest">{category}</div>
-              <ul className="space-y-1.5">
-                {items.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-gray-300">
-                    <span className="text-emerald-400 shrink-0">✓</span>{f}
-                  </li>
-                ))}
-              </ul>
+        {/* Features (short list) */}
+        <div className="bg-white/2 border border-white/5 rounded-xl p-5 space-y-3">
+          {[
+            { icon: "→", text: "Daily Directive — what to do today" },
+            { icon: "→", text: "Exposure % — regime-adjusted sizing" },
+            { icon: "→", text: "Survival + Hazard — persistence modeling" },
+            { icon: "→", text: "Drawdown + PnL simulation" },
+            { icon: "→", text: "Discipline score + mistake replay" },
+            { icon: "→", text: "All 7 assets · Real-time alerts" },
+          ].map(({ icon, text }) => (
+            <div key={text} className="flex items-center gap-3 text-sm text-zinc-300">
+              <span className="text-emerald-400 shrink-0">{icon}</span>
+              {text}
             </div>
           ))}
         </div>
 
-        <div className="space-y-3 pt-1">
+        {/* CTA */}
+        <div className="space-y-3">
           <button
             onClick={checkout}
             disabled={loading}
-            className="w-full bg-white text-black py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 text-sm"
+            className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all disabled:opacity-50 text-sm shadow-lg"
           >
             {loading
               ? "Redirecting..."
               : billingCycle === "annual"
-              ? "Start Using Full Regime Intelligence — $348/year"
-              : "Start Using Full Regime Intelligence — $39/month"}
+              ? "Start Pro — $348/year"
+              : "Start Pro — $39/month"}
           </button>
-          <div className="text-center text-gray-600 text-xs">
+          <div className="text-center text-zinc-600 text-xs">
             7-day risk-free evaluation · Cancel anytime · Instant access
           </div>
         </div>
 
-        <div className="border border-white/5 px-4 py-3 space-y-1">
-          <div className="text-xs text-gray-500">
-            "One avoided breakdown pays for this many times over."
+        {/* Trust */}
+        <div className="border-t border-white/5 pt-4 text-center">
+          <div className="text-xs text-zinc-600">
+            For swing traders managing $5,000+
           </div>
-          <div className="text-xs text-gray-700">For traders managing $5,000+</div>
         </div>
       </div>
     </div>
   );
 }
-
 // ─────────────────────────────────────────
 // LIVE PRICE TICKER
 // ─────────────────────────────────────────
@@ -4083,6 +4045,173 @@ function SiteHeader({ coin, onCoinSelect, isPro, onUnlock }) {
 }
 
 // ─────────────────────────────────────────
+// PRO INTELLIGENCE PREVIEW
+// ─────────────────────────────────────────
+function ProIntelligencePreview({ onUnlock }) {
+  return (
+    <div className="bg-zinc-950/60 border border-white/5 rounded-xl p-8 space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <Label>Pro Intelligence</Label>
+          <h2 className="text-lg font-semibold">
+            8 analytics panels locked
+          </h2>
+          <p className="text-sm text-zinc-500 leading-relaxed">
+            Unlock the full regime intelligence stack
+          </p>
+        </div>
+        <button
+          onClick={onUnlock}
+          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all shrink-0 shadow-sm"
+        >
+          Unlock Pro — \$39/mo
+        </button>
+      </div>
+
+      {/* Blurred preview */}
+      <div className="relative rounded-lg overflow-hidden">
+        <div className="blur-md pointer-events-none opacity-40 space-y-3 p-4 bg-white/2 border border-white/5 rounded-lg">
+          <div className="grid grid-cols-3 gap-4">
+            {["Decision Engine", "Survival Curve", "Stress Meter"].map((l) => (
+              <div key={l} className="bg-white/5 rounded-lg p-4 space-y-2">
+                <div className="text-xs text-zinc-500">{l}</div>
+                <div className="text-2xl font-semibold text-emerald-400">
+                  {l === "Decision Engine" ? "Hold" : l === "Survival Curve" ? "74%" : "32"}
+                </div>
+                <div className="w-full bg-white/5 rounded-full h-1">
+                  <div className="h-1 rounded-full bg-emerald-500" style={{ width: "74%" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {["Regime Countdown", "PnL Impact", "Drawdown Simulator", "Edge Profile"].map((l) => (
+              <div key={l} className="bg-white/5 rounded-lg p-3 flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-sm text-zinc-300">{l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/95 via-zinc-950/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <div className="text-sm text-zinc-400">
+              Full regime intelligence suite
+            </div>
+            <ul className="text-xs text-zinc-500 space-y-1.5">
+              {[
+                "Decision Engine — today's directive",
+                "Survival + Hazard modeling",
+                "Drawdown + PnL simulation",
+                "Discipline score + mistake replay",
+                "Edge profile + weekly reports",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-2 justify-center">
+                  <span className="text-emerald-500">→</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={onUnlock}
+              className="mt-2 bg-white text-black px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-zinc-100 transition-colors"
+            >
+              Unlock Pro — \$39/month
+            </button>
+            <div className="text-xs text-zinc-700">
+              7-day risk-free · Cancel anytime
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// TODAY PANEL
+// ─────────────────────────────────────────
+function TodayPanel({ stack, decision, isPro, onUnlock }) {
+  if (!stack) return null;
+  const execLabel = stack.execution?.label ?? "—";
+  const exposure  = stack.exposure   ?? 0;
+  const shiftRisk = stack.shift_risk ?? 0;
+  const regimeAge = stack.regime_age_hours ?? 0;
+
+  return (
+    <div className="bg-zinc-950/60 border border-white/5 rounded-xl p-6 space-y-5">
+      <div className="flex items-center justify-between">
+        <Label>Today at a glance</Label>
+        <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          Live
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Regime */}
+        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Regime</div>
+          <div className={`text-lg font-semibold ${regimeText(execLabel)}`}>
+            {execLabel}
+          </div>
+          <div className="text-xs text-zinc-600">{regimeAge.toFixed(1)}h active</div>
+        </div>
+
+        {/* Exposure */}
+        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Exposure</div>
+          {isPro ? (
+            <div className={`text-lg font-semibold tabular-nums ${exposureColor(exposure)}`}>
+              {exposure}%
+            </div>
+          ) : (
+            <div className="text-lg font-semibold text-zinc-700 blur-sm select-none">
+              00%
+            </div>
+          )}
+          <div className="text-xs text-zinc-600">recommended</div>
+        </div>
+
+        {/* Shift Risk */}
+        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Shift Risk</div>
+          {isPro ? (
+            <div className={`text-lg font-semibold tabular-nums ${riskColor(shiftRisk)}`}>
+              {shiftRisk}%
+            </div>
+          ) : (
+            <div className="text-lg font-semibold text-zinc-700 blur-sm select-none">
+              00%
+            </div>
+          )}
+          <div className="text-xs text-zinc-600">deterioration signal</div>
+        </div>
+
+        {/* Directive */}
+        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Directive</div>
+          {isPro && decision ? (
+            <div className="text-lg font-semibold text-white">
+              {decision.directive}
+            </div>
+          ) : (
+            <button
+              onClick={onUnlock}
+              className="text-xs text-zinc-500 hover:text-white transition-colors flex items-center gap-1"
+            >
+              <Lock />Unlock
+            </button>
+          )}
+          <div className="text-xs text-zinc-600">today's action</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
 // MAIN DASHBOARD
 // ─────────────────────────────────────────
 export default function Dashboard() {
@@ -4132,59 +4261,51 @@ export default function Dashboard() {
 
     if (successFlag === "true") setProSuccess(true);
   }, []);
+  const safeFetch = async (url, options = {}, fallback = null) => {
+    try {
+      const res = await fetch(url, options);
+      if (!res.ok) return fallback;
+      return await res.json();
+    } catch {
+      return fallback;
+    }
+  };
 
   // ── Data fetch ──
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
     try {
-      const headers = {};
-      if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
+          const headers = {};
+    if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
 
-      const [
-        stackRes, latestRes, curveRes, histRes,
-        overviewRes, confidenceRes, volRes,
-        transRes, corrRes, eventsRes,
-      ] = await Promise.all([
-        fetch(`${BACKEND}/regime-stack?coin=${selectedCoin}`,              { headers }),
-        fetch(`${BACKEND}/latest?coin=${selectedCoin}`,                    { headers }),
-        fetch(`${BACKEND}/survival-curve?coin=${selectedCoin}`,            { headers }),
-        fetch(`${BACKEND}/regime-history?coin=${selectedCoin}&limit=48`,   { headers }),
-        fetch(`${BACKEND}/market-overview`,                                { headers }),
-        fetch(`${BACKEND}/regime-confidence?coin=${selectedCoin}`,         { headers }),
-        fetch(`${BACKEND}/volatility-environment?coin=${selectedCoin}`,    { headers }),
-        fetch(`${BACKEND}/regime-transitions?coin=${selectedCoin}`,        { headers }),
-        fetch(`${BACKEND}/correlation?coins=${SUPPORTED_COINS.join(",")}`, { headers }),
-        fetch(`${BACKEND}/risk-events`,                                    { headers }),
-      ]);
+    const [
+      stackData, latestData, curveRaw, histRaw,
+      overviewRaw, confidenceData, volData,
+      transData, corrData, eventsData,
+    ] = await Promise.all([
+      safeFetch(`${BACKEND}/regime-stack?coin=${selectedCoin}`,             { headers }, null),
+      safeFetch(`${BACKEND}/latest?coin=${selectedCoin}`,                   { headers }, null),
+      safeFetch(`${BACKEND}/survival-curve?coin=${selectedCoin}`,           { headers }, { data: [] }),
+      safeFetch(`${BACKEND}/regime-history?coin=${selectedCoin}&limit=48`,  { headers }, { data: [] }),
+      safeFetch(`${BACKEND}/market-overview`,                               { headers }, { data: [], breadth: null }),
+      safeFetch(`${BACKEND}/regime-confidence?coin=${selectedCoin}`,        { headers }, null),
+      safeFetch(`${BACKEND}/volatility-environment?coin=${selectedCoin}`,   { headers }, null),
+      safeFetch(`${BACKEND}/regime-transitions?coin=${selectedCoin}`,       { headers }, null),
+      safeFetch(`${BACKEND}/correlation?coins=${SUPPORTED_COINS.join(",")}`, { headers }, null),
+      safeFetch(`${BACKEND}/risk-events`,                                   { headers }, { events: [] }),
+    ]);
 
-      const [
-        stackData, latestData, curveRaw, histRaw,
-        overviewRaw, confidenceData, volData,
-        transData, corrData, eventsData,
-      ] = await Promise.all([
-        stackRes.json(),
-        latestRes.json(),
-        curveRes.json(),
-        histRes.json(),
-        overviewRes.json(),
-        confidenceRes.ok ? confidenceRes.json() : Promise.resolve(null),
-        volRes.ok        ? volRes.json()         : Promise.resolve(null),
-        transRes.ok      ? transRes.json()       : Promise.resolve(null),
-        corrRes.ok       ? corrRes.json()        : Promise.resolve(null),
-        eventsRes.ok     ? eventsRes.json()      : Promise.resolve({ events: [] }),
-      ]);
-
-      setStack(stackData);
-      setLatest(latestData);
-      setCurveData(curveRaw.data     || []);
-      setHistoryData(histRaw.data    || []);
-      setOverview(overviewRaw.data   || []);
-      setBreadth(overviewRaw.breadth || null);
-      setConfidence(confidenceData);
-      setVolEnv(volData);
-      setTransitions(transData);
-      setCorrelation(corrData);
-      setRiskEvents(eventsData?.events || []);
-      setLastUpdated(new Date());
+    setStack(stackData);
+    setLatest(latestData);
+    setCurveData(curveRaw?.data    || []);
+    setHistoryData(histRaw?.data   || []);
+    setOverview(overviewRaw?.data  || []);
+    setBreadth(overviewRaw?.breadth || null);
+    setConfidence(confidenceData);
+    setVolEnv(volData);
+    setTransitions(transData);
+    setCorrelation(corrData);
+    setRiskEvents(eventsData?.events || []);
+    setLastUpdated(new Date());
 
       if (stackData?.pro_required && !currentToken) {
         const hasSeenModal = sessionStorage.getItem("cp_modal_shown");
@@ -4288,12 +4409,21 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-4 text-xs text-zinc-600">
-            <span>Data: Binance</span>
-            <span className="w-px h-3 bg-zinc-800" />
-            <span>Model: hourly</span>
-            <span className="w-px h-3 bg-zinc-800" />
-            <span>7 assets</span>
+                    <div className="flex items-center gap-3 text-xs flex-wrap">
+            {[
+              { label: "Data", value: "Binance" },
+              { label: "Refresh", value: "Hourly" },
+              { label: "Assets", value: "7 tracked" },
+              { label: "Model", value: "Survival + Hazard" },
+            ].map(({ label, value }) => (
+              <div
+                key={label}
+                className="bg-white/2 border border-white/5 rounded-md px-3 py-1.5 flex items-center gap-2"
+              >
+                <span className="text-zinc-600">{label}:</span>
+                <span className="text-zinc-300 font-medium">{value}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -4304,6 +4434,15 @@ export default function Dashboard() {
           isPro={isPro}
           onUnlock={() => setShowModal(true)}
         />
+        
+         {/* ── TODAY PANEL ── */}
+        <TodayPanel
+          stack={stack}
+          decision={decision}
+          isPro={isPro}
+          onUnlock={() => setShowModal(true)}
+        />
+
 
         {/* ── Free tier banner ── */}
         {!isPro && (
@@ -4521,6 +4660,11 @@ export default function Dashboard() {
           isPro={isPro}
           onUnlock={() => setShowModal(true)}
         />
+
+        {/* ── PRO INTELLIGENCE PREVIEW (free users only) ── */}
+        {!isPro && (
+          <ProIntelligencePreview onUnlock={() => setShowModal(true)} />
+        )}
 
         {/* ── STRESS + COUNTDOWN ── */}
         <div className="grid md:grid-cols-2 gap-4">
@@ -4770,7 +4914,7 @@ export default function Dashboard() {
 
             <div className="space-y-2">
               <button
-                className="bg-white text-black px-10 py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors text-sm"
+                className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-10 py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors text-sm"
                 onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
               >
                 Start Using Full Regime Intelligence
