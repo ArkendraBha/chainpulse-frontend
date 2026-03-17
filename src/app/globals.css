@@ -71,3 +71,24 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* ── Premium number rendering ── */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ── Scrollbar hide ── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Design tokens ── */
+.card {
+  @apply bg-zinc-950/60 border border-white/5 rounded-xl;
+}
+.card-inner {
+  @apply bg-white/2 border border-white/5 rounded-lg;
+}
+.divider {
+  @apply border-white/5;
+}
