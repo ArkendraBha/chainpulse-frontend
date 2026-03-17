@@ -55,7 +55,7 @@ export default function Landing() {
       {/* ── HERO ── */}
       <section className="px-8 py-32 border-b border-zinc-900">
         <div className="max-w-5xl mx-auto text-center space-y-10">
-          <div className="text-xs text-gray-500 uppercase tracking-widest">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">
             Regime-Based Exposure Intelligence
           </div>
           <h1 className="text-5xl md:text-6xl font-semibold leading-tight tracking-tight">
@@ -87,7 +87,7 @@ export default function Landing() {
 
       {/* ── TRUST BAR ── */}
       <section className="px-8 py-8 border-b border-zinc-900 text-center">
-        <div className="text-gray-600 text-xs uppercase tracking-widest">
+        <div className="text-zinc-500 text-xs uppercase tracking-widest">
           Built on live Binance data · Survival modeling · Real capital focus
         </div>
       </section>
@@ -105,7 +105,7 @@ export default function Landing() {
                 </div>
                 <div className="grid grid-cols-3 gap-8 mt-6">
                   <div>
-                    <div className="text-gray-500 text-xs uppercase tracking-widest">
+                    <div className="text-zinc-400 text-xs uppercase tracking-widest">
                       Regime
                     </div>
                     <div className={`text-2xl font-semibold mt-2 ${getRegimeColor(label)}`}>
@@ -113,7 +113,7 @@ export default function Landing() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-500 text-xs uppercase tracking-widest">
+                    <div className="text-zinc-400 text-xs uppercase tracking-widest">
                       Shift Risk
                     </div>
                     <div className={`text-3xl font-semibold mt-2 ${
@@ -124,7 +124,7 @@ export default function Landing() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-500 text-xs uppercase tracking-widest">
+                    <div className="text-zinc-400 text-xs uppercase tracking-widest">
                       Coherence
                     </div>
                     <div className="text-3xl font-semibold mt-2">
@@ -132,23 +132,23 @@ export default function Landing() {
                     </div>
                   </div>
                 </div>
-                <div className="border border-zinc-800 px-4 py-3 text-xs text-gray-600 mt-2">
+                <div className="border border-zinc-800 px-4 py-3 text-xs text-zinc-500 mt-2">
                   Deployment recommendation and full analytics available in Pro dashboard
                 </div>
-                <div className="text-gray-600 text-xs pt-2">
+                <div className="text-zinc-500 text-xs pt-2">
                   Data refreshes automatically · Full analytics in dashboard
                 </div>
               </>
             ) : (
               <div className="space-y-3 py-4">
-                <div className="text-gray-500">Connecting to regime model...</div>
+                <div className="text-zinc-400">Connecting to regime model...</div>
                 <div className="text-gray-700 text-sm">Live Binance data · Updated hourly</div>
               </div>
             )}
           </div>
           <Link
             href="/app"
-            className="text-sm text-gray-500 hover:text-white underline transition-colors"
+            className="text-sm text-zinc-400 hover:text-white underline transition-colors"
           >
             View full dashboard →
           </Link>
@@ -181,7 +181,7 @@ export default function Landing() {
             ].map(({ title, desc }) => (
               <div key={title} className="border border-zinc-800 p-6 space-y-2">
                 <div className="text-white font-medium">{title}</div>
-                <p className="text-gray-500">{desc}</p>
+                <p className="text-zinc-400">{desc}</p>
               </div>
             ))}
           </div>
@@ -254,7 +254,7 @@ export default function Landing() {
               },
             ].map(({ n, title, desc }) => (
               <div key={n} className="space-y-3">
-                <div className="text-gray-500 text-xs uppercase tracking-widest">{n}</div>
+                <div className="text-zinc-400 text-xs uppercase tracking-widest">{n}</div>
                 <div className="text-white font-medium">{title}</div>
                 <p className="text-gray-400">{desc}</p>
               </div>
@@ -312,7 +312,7 @@ export default function Landing() {
             ].map(({ title, desc }) => (
               <div key={title} className="border border-zinc-800 p-6 space-y-2">
                 <div className="text-white font-medium">{title}</div>
-                <p className="text-gray-500">{desc}</p>
+                <p className="text-zinc-400">{desc}</p>
               </div>
             ))}
           </div>
@@ -362,7 +362,7 @@ export default function Landing() {
               href="https://drive.google.com/uc?export=download&id=1C0yFNklyRafuADZIEJlo4VLbNu84F5gM"
               target="_blank"
               rel="noreferrer"
-              className="text-gray-600 hover:text-gray-400 text-sm underline transition-colors"
+              className="text-zinc-500 hover:text-gray-400 text-sm underline transition-colors"
             >
               Download sample report (PDF) →
             </a>
@@ -390,8 +390,8 @@ export default function Landing() {
 
       {/* ── FOOTER ── */}
       <footer className="px-8 py-12">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-gray-600 text-xs">
-          <div className="font-medium text-gray-500">ChainPulse</div>
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-zinc-500 text-xs">
+          <div className="font-medium text-zinc-400">ChainPulse</div>
           <div className="flex gap-8">
             <Link href="/app"         className="hover:text-gray-400 transition-colors">Dashboard</Link>
             <Link href="/pricing"     className="hover:text-gray-400 transition-colors">Pricing</Link>
