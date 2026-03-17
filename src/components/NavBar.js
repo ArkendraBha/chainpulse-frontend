@@ -107,6 +107,3 @@ export default function NavBar({ activeCoin, onSelect }) {
             </Link>
           </div>
         )}
-      </div>
-
-      
