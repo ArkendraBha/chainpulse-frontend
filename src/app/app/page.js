@@ -3828,7 +3828,7 @@ function ProModal({ onClose }) {
             }`}
           >
             <div>Monthly</div>
-            <div className="text-xs font-normal opacity-70">\$39/mo</div>
+            <div className="text-xs font-normal opacity-70">$39/mo</div>
           </button>
           <button
             onClick={() => setBillingCycle("annual")}
