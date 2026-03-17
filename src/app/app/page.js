@@ -4376,9 +4376,14 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen bg-black text-white">
       {showModal && <ProModal onClose={() => setShowModal(false)} />}
-
-      
-
+{/* Bottom row: ticker */}
+<div className="border-t border-white/5 bg-zinc-950/30 backdrop-blur-md">
+  <div className="max-w-7xl mx-auto px-6 py-3">
+    <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-2">
+      <MarketTicker />
+    </div>
+  </div>
+</div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-5">
 
         {/* ── Pro success banner ── */}

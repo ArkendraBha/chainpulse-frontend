@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import MarketTicker from "@/components/MarketTicker";
 
-export default function NavBar() {
+export default function NavBar({ activeCoin, onSelect }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -92,7 +92,8 @@ export default function NavBar() {
                   pathname === link.href
                     ? "text-white"
                     : "text-zinc-400 hover:text-white"
-                }`}
+ 
+               }`}
               >
                 {link.label}
               </Link>
@@ -108,12 +109,4 @@ export default function NavBar() {
         )}
       </div>
 
-      {/* Bottom row: ticker */}
-      <div className="border-t border-white/5 bg-zinc-950/40">
-        <div className="max-w-7xl mx-auto px-8 py-2">
-          <MarketTicker />
-        </div>
-      </div>
-    </header>
-  );
-}
+      
