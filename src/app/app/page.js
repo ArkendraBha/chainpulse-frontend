@@ -4064,7 +4064,7 @@ function ProIntelligencePreview({ onUnlock }) {
           onClick={onUnlock}
           className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all shrink-0 shadow-sm"
         >
-          Unlock Pro — \$39/mo
+          Unlock Pro — $39/mo
         </button>
       </div>
 
@@ -4117,7 +4117,7 @@ function ProIntelligencePreview({ onUnlock }) {
               onClick={onUnlock}
               className="mt-2 bg-white text-black px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-zinc-100 transition-colors"
             >
-              Unlock Pro — \$39/month
+              Unlock Pro — $39/month
             </button>
             <div className="text-xs text-zinc-700">
               7-day risk-free · Cancel anytime
