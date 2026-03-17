@@ -182,7 +182,7 @@ function ProGate({ label, consequence, children, onUnlock }) {
           <button
             onClick={onUnlock}
             className="
-              w-full bg-white text-black px-4 py-2.5 rounded-lg
+              w-full bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all4 py-2.5 rounded-lg
               text-xs font-semibold hover:bg-zinc-100
               transition-colors shadow-sm
             "
@@ -4115,7 +4115,7 @@ function ProIntelligencePreview({ onUnlock }) {
             </ul>
             <button
               onClick={onUnlock}
-              className="mt-2 bg-white text-black px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-zinc-100 transition-colors"
+              className="mt-2 bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all6 py-2.5 rounded-lg text-sm font-semibold hover:bg-zinc-100 transition-colors"
             >
               Unlock Pro — $39/month
             </button>

@@ -71,7 +71,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
             <Link
               href="/app"
-              className="bg-white text-black px-8 py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors"
+              className="bg-white text-black px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all font-semibold hover:bg-gray-100 transition-colors"
             >
               View Live Regime
             </Link>
