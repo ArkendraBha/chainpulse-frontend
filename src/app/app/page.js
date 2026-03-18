@@ -4212,6 +4212,75 @@ function TodayPanel({ stack, decision, isPro, onUnlock }) {
 }
 
 // ─────────────────────────────────────────
+// MARKET TICKER — was missing, caused crash
+// ─────────────────────────────────────────
+function MarketTicker() {
+  const [prices,  setPrices]  = useState({});
+  const [changes, setChanges] = useState({});
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const symbols = SUPPORTED_COINS.map((c) => `${c}USDT`);
+        const res  = await fetch(
+          `https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`
+        );
+        const data = await res.json();
+        const p = {}, ch = {};
+        data.forEach((item) => {
+          const coin = item.symbol.replace("USDT", "");
+          p[coin]  = parseFloat(item.lastPrice);
+          ch[coin] = parseFloat(item.priceChangePercent);
+        });
+        setPrices(p);
+        setChanges(ch);
+      } catch (err) {
+        console.error("MarketTicker fetch error:", err);
+      }
+    };
+
+    fetchPrices();
+    const iv = setInterval(fetchPrices, 30_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const fmt = (price) => {
+    if (!price) return "—";
+    if (price >= 1000) return price.toLocaleString("en-US", { maximumFractionDigits: 0 });
+    if (price >= 1)    return price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return price.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  };
+
+  return (
+    <div className="flex gap-6 overflow-x-auto scrollbar-hide flex-wrap">
+      {SUPPORTED_COINS.map((coin) => {
+        const price  = prices[coin];
+        const change = changes[coin];
+        const isPos  = (change ?? 0) >= 0;
+
+        return (
+          <div key={coin} className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-semibold text-zinc-300">
+              {coin}
+            </span>
+            <span className="text-xs text-zinc-400 tabular-nums font-mono">
+              ${fmt(price)}
+            </span>
+            {change !== undefined && (
+              <span className={`text-xs font-medium tabular-nums ${
+                isPos ? "text-emerald-400" : "text-red-400"
+              }`}>
+                {isPos ? "+" : ""}{change?.toFixed(2)}%
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
 // MAIN DASHBOARD
 // ─────────────────────────────────────────
 export default function Dashboard() {
