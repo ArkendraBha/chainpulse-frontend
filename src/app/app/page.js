@@ -495,7 +495,7 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
           <div className={`text-2xl font-semibold ${regimeText(execLabel)}`}>{execLabel}</div>
-          <div className="text-xs text-zinc-400 mt-1">{regimeAge.toFixed(1)}h active</div>
+          <div className="text-xs text-zinc-400 mt-1">{regimeAgevalue !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}h active</div>
         </div>
         <div className="flex gap-3 flex-wrap">
           {[
@@ -504,8 +504,8 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
             {
               l: "Est. Remaining",
               v: remaining < 24
-                ? `~${remaining.toFixed(0)}h`
-                : `~${(remaining / 24).toFixed(1)}d`,
+                ? `~${remainingvalue !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"0)}h`
+                : `~${(remaining / 24)value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}d`,
               c: "text-white",
             },
           ].map(({ l, v, c }) => (
@@ -606,14 +606,14 @@ function ExposureTracker({ stack, isPro, onUnlock }) {
       execLabel === "Risk-On"        ?  0.9 :
       execLabel === "Neutral"        ?  0.2 :
       execLabel === "Risk-Off"       ? -0.3 : -0.8;
-    const expectancy = (baseR + (alignment / 100) * 0.4 + ((100 - shiftRisk) / 100) * 0.2).toFixed(2);
+    const expectancy = (baseR + (alignment / 100) * 0.4 + ((100 - shiftRisk) / 100) * 0.2)value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"2);
 
     setResult({
       optimalMid,
       minBand,
       maxBand,
-      effectiveExp: effectiveExp.toFixed(1),
-      delta:        Math.abs(delta).toFixed(1),
+      effectiveExp: effectiveExpvalue !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1),
+      delta:        Math.abs(delta)value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1),
       isOver:       delta > 0,
       overBand:     effectiveExp > maxBand,   // FIX: removed erroneous * leverage
       expectancy,
@@ -878,8 +878,8 @@ function RegimeCountdown({ stack, isPro, onUnlock }) {
       <div className="space-y-3">
         <div className={`text-4xl font-bold ${urgency}`}>
           {remaining < 24
-            ? `~${remaining.toFixed(0)}h`
-            : `~${(remaining / 24).toFixed(1)}d`}
+            ? `~${remainingvalue !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"0)}h`
+            : `~${(remaining / 24)value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}d`}
         </div>
         <div className="text-xs text-zinc-400">Est. remaining in current regime</div>
         <Bar
@@ -891,7 +891,7 @@ function RegimeCountdown({ stack, isPro, onUnlock }) {
           }
         />
         <div className="text-xs text-zinc-500">
-          {regimeAge.toFixed(1)}h elapsed / {avgTotal}h avg total
+          {regimeAgevalue !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}h elapsed / {avgTotal}h avg total
         </div>
       </div>
 
@@ -900,7 +900,7 @@ function RegimeCountdown({ stack, isPro, onUnlock }) {
           {[
             { l: "Current Regime", v: execLabel,               c: regimeText(execLabel) },
             { l: "Avg Duration",   v: `${pb.avg_remaining_days}d`, c: "text-gray-300"   },
-            { l: "Age",            v: `${regimeAge.toFixed(1)}h`,  c: "text-gray-300"   },
+            { l: "Age",            v: `${regimeAgevalue !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}h`,  c: "text-gray-300"   },
           ].map(({ l, v, c }) => (
             <div key={l} className="bg-white/2 border border-white/5 rounded-lg p-3 space-y-1">
               <div className="text-xs text-zinc-400">{l}</div>
@@ -1059,7 +1059,7 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
             </div>
             <div className="text-xs text-right w-28 hidden sm:block">
               {isPro && data
-                ? <span className="text-zinc-400">Coherence {data.coherence?.toFixed(1)}%</span>
+                ? <span className="text-zinc-400">Coherence {data.coherence?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}%</span>
                 : <span className="text-gray-700 flex items-center justify-end cursor-pointer" onClick={onUnlock}><Lock />Pro</span>
               }
             </div>
@@ -1430,7 +1430,7 @@ function CorrelationPanel({ correlation, isPro, onUnlock }) {
               <div className={`text-2xl font-semibold ${
                 abs > 0.8 ? "text-emerald-400" : abs > 0.5 ? "text-yellow-400" : "text-red-400"
               }`}>
-                {Number(corr).toFixed(2)}
+                {Number(corr)value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"2)}
               </div>
               <div className="text-xs text-zinc-500">{label}</div>
               <Bar
@@ -1636,7 +1636,7 @@ function RegimeMaturity({ regimeAge, avgDuration, maturityLabel, isPro, onUnlock
       <div className="flex items-end gap-4">
         <div className={`text-3xl font-semibold ${phaseColor}`}>{maturityLabel ?? "—"}</div>
         <div className="text-sm text-zinc-400 pb-1">
-          {regimeAge.toFixed(1)}h / {(avgDuration || 0).toFixed(0)}h avg
+          {regimeAgevalue !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}h / {(avgDuration || 0)value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"0)}h avg
         </div>
       </div>
       <Bar value={maturityPct} cls={phaseCls} />
@@ -1703,7 +1703,7 @@ function RegimeTimeline({ history, coin }) {
           <Tooltip
             contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }}
             labelStyle={{ color: "#71717a" }}
-            formatter={(v) => [v?.toFixed(2), "Score"]}
+            formatter={(v) => [v?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"2), "Score"]}
           />
           <ReferenceLine y={0}   stroke="#27272a" />
           <ReferenceLine y={35}  stroke="#16a34a" strokeDasharray="3 3" strokeOpacity={0.4} />
@@ -1835,7 +1835,7 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
             <Tooltip
               contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }}
               labelStyle={{ color: "#71717a" }}
-              formatter={(v, n) => [`${v?.toFixed(1)}%`, n]}
+              formatter={(v, n) => [`${v?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}%`, n]}
             />
             <Line type="monotone" dataKey="survival" stroke="#22c55e" strokeWidth={2} dot={false} name="Survival %" />
             <Line type="monotone" dataKey="hazard"   stroke="#f87171" strokeWidth={1.5} strokeDasharray="4 4" dot={false} name="Hazard %" />
@@ -1882,23 +1882,23 @@ function InterpretationPanel({ stack, latest, isPro }) {
     <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-4">
       <Label>Signal Interpretation</Label>
       <div className="grid md:grid-cols-2 gap-3 text-sm text-gray-400">
-        <div>Regime Age: <span className="text-white">{regimeAge.toFixed(1)}h</span></div>
+        <div>Regime Age: <span className="text-white">{regimeAgevalue !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}h</span></div>
         {latest && (
           <>
             <div>
               4H Momentum:{" "}
               <span className={(latest.momentum_4h || 0) >= 0 ? "text-green-400" : "text-red-400"}>
-                {latest.momentum_4h?.toFixed(2) ?? "—"}%
+                {latest.momentum_4h?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"2) ?? "—"}%
               </span>
             </div>
             <div>
               24H Momentum:{" "}
               <span className={(latest.momentum_24h || 0) >= 0 ? "text-green-400" : "text-red-400"}>
-                {latest.momentum_24h?.toFixed(2) ?? "—"}%
+                {latest.momentum_24h?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"2) ?? "—"}%
               </span>
             </div>
             <div>
-              Volatility: <span className="text-white">{latest.volatility?.toFixed(2) ?? "—"}</span>
+              Volatility: <span className="text-white">{latest.volatility?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"2) ?? "—"}</span>
             </div>
           </>
         )}
@@ -2425,9 +2425,9 @@ function DrawdownSimulator({ stack, isPro, onUnlock }) {
         userLoss:   Math.round(userLoss),
         modelLoss:  Math.round(modelLoss),
         saving:     Math.round(saving),
-        userPct:    ((userLoss  / portfolioSize) * 100).toFixed(1),
-        modelPct:   ((modelLoss / portfolioSize) * 100).toFixed(1),
-        savingPct:  ((saving    / portfolioSize) * 100).toFixed(1),
+        userPct:    ((userLoss  / portfolioSize) * 100)value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1),
+        modelPct:   ((modelLoss / portfolioSize) * 100)value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1),
+        savingPct:  ((saving    / portfolioSize) * 100)value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1),
       };
     });
     setResult({ scenarios: results, modelExposure });
@@ -3118,21 +3118,21 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock }) {
           {
             label: "Your Return",
             value: data.user_total_return !== null
-              ? `${(data.user_total_return ?? 0) > 0 ? "+" : ""}${data.user_total_return?.toFixed(1)}%`
+              ? `${(data.user_total_return ?? 0) > 0 ? "+" : ""}${data.user_total_return?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}%`
               : "—",
             color: (data.user_total_return ?? 0) >= 0 ? "text-emerald-400" : "text-red-400",
           },
           {
             label: "Model Return",
             value: data.model_total_return !== null
-              ? `${(data.model_total_return ?? 0) > 0 ? "+" : ""}${data.model_total_return?.toFixed(1)}%`
+              ? `${(data.model_total_return ?? 0) > 0 ? "+" : ""}${data.model_total_return?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}%`
               : "—",
             color: (data.model_total_return ?? 0) >= 0 ? "text-blue-400" : "text-red-400",
           },
           {
             label: "Alpha vs Model",
             value: data.alpha !== null
-              ? `${(data.alpha ?? 0) > 0 ? "+" : ""}${data.alpha?.toFixed(1)}%`
+              ? `${(data.alpha ?? 0) > 0 ? "+" : ""}${data.alpha?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}%`
               : "—",
             color: (data.alpha ?? 0) >= 0 ? "text-emerald-400" : "text-red-400",
           },
@@ -3168,7 +3168,7 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock }) {
               <Tooltip
                 contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }}
                 labelStyle={{ color: "#71717a" }}
-                formatter={(v, n) => [`${v?.toFixed(1)}%`, n]}
+                formatter={(v, n) => [`${v?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}%`, n]}
               />
               <ReferenceLine y={0} stroke="#27272a" />
               <Line type="monotone" dataKey="user_cum"  stroke="#22c55e" strokeWidth={2} dot={false} name="Your Return"  />
@@ -3193,13 +3193,13 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock }) {
                   <span>
                     You:{" "}
                     <span className={stats.user_avg >= 0 ? "text-emerald-400" : "text-red-400"}>
-                      {stats.user_avg > 0 ? "+" : ""}{stats.user_avg?.toFixed(1)}%
+                      {stats.user_avg > 0 ? "+" : ""}{stats.user_avg?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}%
                     </span>
                   </span>
                   <span>
                     Model:{" "}
                     <span className={stats.model_avg >= 0 ? "text-blue-400" : "text-red-400"}>
-                      {stats.model_avg > 0 ? "+" : ""}{stats.model_avg?.toFixed(1)}%
+                      {stats.model_avg > 0 ? "+" : ""}{stats.model_avg?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}%
                     </span>
                   </span>
                   <span className="text-zinc-500">{stats.count} periods</span>
@@ -3438,7 +3438,7 @@ function WeeklyReportPanel({ email, coin, isPro, onUnlock }) {
           {
             label: "Your Return",
             value: data.performance?.user_total_return !== null
-              ? `${(data.performance?.user_total_return ?? 0) > 0 ? "+" : ""}${data.performance?.user_total_return?.toFixed(1)}`
+              ? `${(data.performance?.user_total_return ?? 0) > 0 ? "+" : ""}${data.performance?.user_total_return?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}`
               : "—",
             suffix: data.performance?.user_total_return !== null ? "%" : "",
             color:  (data.performance?.user_total_return ?? 0) >= 0 ? "text-emerald-400" : "text-red-400",
@@ -3447,7 +3447,7 @@ function WeeklyReportPanel({ email, coin, isPro, onUnlock }) {
           {
             label: "Model Return",
             value: data.performance?.model_total_return !== null
-              ? `${(data.performance?.model_total_return ?? 0) > 0 ? "+" : ""}${data.performance?.model_total_return?.toFixed(1)}`
+              ? `${(data.performance?.model_total_return ?? 0) > 0 ? "+" : ""}${data.performance?.model_total_return?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}`
               : "—",
             suffix: data.performance?.model_total_return !== null ? "%" : "",
             color:  "text-blue-400",
@@ -3456,7 +3456,7 @@ function WeeklyReportPanel({ email, coin, isPro, onUnlock }) {
           {
             label: "Alpha",
             value: data.performance?.alpha !== null
-              ? `${(data.performance?.alpha ?? 0) > 0 ? "+" : ""}${data.performance?.alpha?.toFixed(1)}`
+              ? `${(data.performance?.alpha ?? 0) > 0 ? "+" : ""}${data.performance?.alpha?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}`
               : "—",
             suffix: data.performance?.alpha !== null ? "%" : "",
             color:  (data.performance?.alpha ?? 0) >= 0 ? "text-emerald-400" : "text-red-400",
@@ -3963,7 +3963,7 @@ function LivePriceTicker({ activeCoin, onCoinSelect }) {
             </span>
             {change !== undefined && (
               <span className={`text-xs font-medium tabular-nums ${isPos ? "text-emerald-400" : "text-red-400"}`}>
-                {isPos ? "+" : ""}{change?.toFixed(2)}%
+                {isPos ? "+" : ""}{change?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"2)}%
               </span>
             )}
           </button>
@@ -4156,7 +4156,7 @@ function TodayPanel({ stack, decision, isPro, onUnlock }) {
           <div className={`text-lg font-semibold ${regimeText(execLabel)}`}>
             {execLabel}
           </div>
-          <div className="text-xs text-zinc-600">{regimeAge.toFixed(1)}h active</div>
+          <div className="text-xs text-zinc-600">{regimeAgevalue !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}h active</div>
         </div>
 
         {/* Exposure */}
@@ -4270,7 +4270,7 @@ function MarketTicker() {
               <span className={`text-xs font-medium tabular-nums ${
                 isPos ? "text-emerald-400" : "text-red-400"
               }`}>
-                {isPos ? "+" : ""}{change?.toFixed(2)}%
+                {isPos ? "+" : ""}{change?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"2)}%
               </span>
             )}
           </div>
@@ -4331,14 +4331,18 @@ export default function Dashboard() {
     if (successFlag === "true") setProSuccess(true);
   }, []);
   const safeFetch = async (url, options = {}, fallback = null) => {
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) return fallback;
     try {
-      const res = await fetch(url, options);
-      if (!res.ok) return fallback;
       return await res.json();
     } catch {
       return fallback;
     }
-  };
+  } catch {
+    return fallback;
+  }
+};
 
   // ── Data fetch ──
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
@@ -4376,7 +4380,7 @@ export default function Dashboard() {
     setRiskEvents(eventsData?.events || []);
     setLastUpdated(new Date());
 
-      if (stackData?.pro_required && !currentToken) {
+      if (stackData && stackData.pro_required === true && !currentToken) {
         const hasSeenModal = sessionStorage.getItem("cp_modal_shown");
         if (!hasSeenModal) {
           setTimeout(() => {
@@ -4424,7 +4428,7 @@ export default function Dashboard() {
   }
 
   // ── Derived state ──
-  const isPro       = !stack.pro_required;
+  const isPro       = stack && stack.pro_required === false;
   const exposure    = stack.exposure          ?? 0;
   const shiftRisk   = stack.shift_risk        ?? 0;
   const alignment   = stack.alignment         ?? 0;
@@ -4577,7 +4581,7 @@ export default function Dashboard() {
                   {execLabel ?? "—"}
                 </div>
                 <div className="text-xs text-zinc-400 mt-1">
-                  Execution (1H) · Active {regimeAge.toFixed(1)}h
+                  Execution (1H) · Active {regimeAgevalue !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}h
                 </div>
               </div>
               <span className={`text-xs font-medium px-3 py-1 rounded-full border ${dirBadge(direction)}`}>
@@ -4665,7 +4669,7 @@ export default function Dashboard() {
           />
           <StatCard
             label="Macro Coherence"
-            value={isPro ? stack.macro_coherence?.toFixed(1) : null}
+            value={isPro ? stack.macro_coherence?value !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1) : null}
             color={isPro ? ((stack.macro_coherence || 0) > 60 ? "text-emerald-400" : "text-yellow-400") : ""}
             barCls={isPro ? ((stack.macro_coherence || 0) > 60 ? "bg-emerald-500" : "bg-yellow-500") : ""}
             hint="1D timeframe signal strength"
@@ -4685,7 +4689,11 @@ export default function Dashboard() {
           />
           <StatCard
             label="Execution Score"
-            value={stack.execution?.score?.toFixed(1) ?? "—"}
+            value={
+  stack?.execution?.score !== undefined
+    ? stack.execution.scorevalue !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)
+    : "—"
+}
             suffix=""
             color={regimeText(execLabel)}
             hint="Raw 1H momentum-vol composite"
