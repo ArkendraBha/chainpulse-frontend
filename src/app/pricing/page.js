@@ -34,10 +34,10 @@ export default function Pricing() {
       alert("Checkout error. Please try again.");
     }
   }
+;
 <div className="text-xs text-zinc-500">
   Secure checkout via Stripe · Instant access
-</div>;
-
+</div>
   return (
     <main className="min-h-screen bg-black text-white px-8 py-24">
       <div className="max-w-5xl mx-auto space-y-16">
