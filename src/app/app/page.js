@@ -4426,7 +4426,8 @@ export default function Dashboard() {
       </div>
     );
   }
-
+// Safety guard — prevent crash if stack is null
+if (!stack) return null;
   // ── Derived state ──
   const isPro       = stack && stack.pro_required === false;
   const exposure    = stack.exposure          ?? 0;

@@ -161,7 +161,7 @@ export default function Landing() {
           <h2 className="text-3xl font-semibold">Who This Is For</h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
             ChainPulse is built for swing traders actively managing between
-            \$5,000 and \$250,000. If you are allocating real capital and making
+            $5,000 and $250,000. If you are allocating real capital and making
             sizing decisions based on market conditions, this is your framework.
           </p>
           <div className="grid md:grid-cols-3 gap-6 text-sm text-left">
@@ -291,8 +291,8 @@ export default function Landing() {
             One Poorly Timed Position Costs More Than a Year of Pro
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            ChainPulse Pro is \$39/month. For traders managing \$5,000+, one
-            avoided late-stage overexposure event of 3% saves \$150 — more than
+            ChainPulse Pro is \$39/month. For traders managing $5,000+, one
+            avoided late-stage overexposure event of 3% saves $150 — more than
             five months of Pro.
           </p>
           <div className="grid md:grid-cols-3 gap-6 text-sm mt-4">
