@@ -495,7 +495,9 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
           <div className={`text-2xl font-semibold ${regimeText(execLabel)}`}>{execLabel}</div>
-          <div className="text-xs text-zinc-400 mt-1">{regimeAgevalue !== undefined ? valuevalue !== undefined ? value.toFixed(1) : "—"1) : "—"1)}h active</div>
+          <div className="text-xs text-zinc-400 mt-1">
+  {regimeAge !== undefined ? regimeAge.toFixed(1) : "—"}h active
+</div>
         </div>
         <div className="flex gap-3 flex-wrap">
           {[
