@@ -4888,7 +4888,7 @@ export default function Dashboard() {
         />
 
         {/* ── SURVIVAL CURVE ── */}
-        <SurvivalCurve
+        #<SurvivalCurve
           curve={curveData}
           regimeAge={regimeAge}
           isPro={isPro}
