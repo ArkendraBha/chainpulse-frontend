@@ -12,6 +12,10 @@ export default function Pricing() {
   const annualPrice = 29;
   const annualTotal = annualPrice * 12;
 
+<div className="text-xs text-emerald-400 font-medium pt-2">
+  Less than 1% risk misallocation can cost more.
+</div>
+
   const handleCheckout = async () => {
     try {
       const res = await fetch(`${BACKEND}/create-checkout-session`, {
@@ -29,19 +33,25 @@ export default function Pricing() {
       console.error(err);
       alert("Checkout error. Please try again.");
     }
-  };
+  }
+<div className="text-xs text-zinc-500">
+  Secure checkout via Stripe · Instant access
+</div>;
 
   return (
     <main className="min-h-screen bg-black text-white px-8 py-24">
       <div className="max-w-5xl mx-auto space-y-16">
         {/* HEADER */}
         <div className="text-center space-y-4">
-          <div className="text-xs text-gray-500 uppercase tracking-widest">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">
             Pricing
           </div>
-          <h1 className="text-5xl font-semibold">
-            Simple, Transparent Pricing
-          </h1>
+          <h1 className="text-5xl font-semibold tracking-tight">
+  Avoid One Late-Cycle Breakdown
+</h1>
+<p className="text-zinc-400 text-lg max-w-xl mx-auto">
+  One poorly timed exposure increase can cost more than a year of Pro.
+</p>
           <p className="text-gray-400 text-lg max-w-xl mx-auto">
             One plan. Everything included. For traders allocating real capital.
           </p>
@@ -49,7 +59,7 @@ export default function Pricing() {
           {/* BILLING TOGGLE */}
           <div className="flex items-center justify-center gap-4 pt-4">
             <span
-              className={`text-sm ${!annual ? "text-white" : "text-gray-500"}`}
+              className={`text-sm ${!annual ? "text-white" : "text-zinc-400"}`}
             >
               Monthly
             </span>
@@ -66,7 +76,7 @@ export default function Pricing() {
               />
             </button>
             <span
-              className={`text-sm ${annual ? "text-white" : "text-gray-500"}`}
+              className={`text-sm ${annual ? "text-white" : "text-zinc-400"}`}
             >
               Annual
               <span className="ml-2 text-xs text-emerald-400 font-medium">
@@ -77,9 +87,9 @@ export default function Pricing() {
         </div>
 
         {/* PRICING CARD */}
-        <div className="max-w-lg mx-auto border border-zinc-700 p-12 space-y-8">
+        <div className="max-w-lg mx-auto bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl p-12 space-y-8 shadow-[0_10px_40px_rgba(0,0,0,0.4)]">
           <div className="space-y-2">
-            <div className="text-sm text-gray-500 uppercase tracking-widest">
+            <div className="text-sm text-zinc-400 uppercase tracking-widest">
               ChainPulse Pro
             </div>
             <div className="flex items-end gap-2">
@@ -89,7 +99,7 @@ export default function Pricing() {
               <div className="text-gray-400 pb-2">/ month</div>
             </div>
             {annual && (
-              <div className="text-gray-500 text-sm">
+              <div className="text-zinc-400 text-sm">
                 Billed annually — ${annualTotal}/year
               </div>
             )}
@@ -100,12 +110,12 @@ export default function Pricing() {
             )}
           </div>
 
-          <div className="text-gray-500 text-xs border-t border-zinc-800 pt-6">
+          <div className="text-zinc-400 text-xs border-t border-zinc-800 pt-6">
             7-day risk-free evaluation · Cancel anytime
           </div>
 
-          <ul className="space-y-4 text-sm text-gray-300">
-            <li className="text-xs text-gray-500 uppercase tracking-widest pt-1">
+          <ul className="space-y-3 text-sm text-zinc-300 leading-relaxed">
+            <li className="text-xs text-zinc-400 uppercase tracking-widest pt-1">
               Core Decision Engine
             </li>
             <li className="flex items-start gap-3">
@@ -143,7 +153,7 @@ export default function Pricing() {
               <span>Drawdown Simulator — 3 scenario loss modeling</span>
             </li>
 
-            <li className="text-xs text-gray-500 uppercase tracking-widest pt-3">
+            <li className="text-xs text-zinc-400 uppercase tracking-widest pt-3">
               Regime Intelligence
             </li>
             <li className="flex items-start gap-3">
@@ -179,7 +189,7 @@ export default function Pricing() {
               <span>Full coherence index per timeframe</span>
             </li>
 
-            <li className="text-xs text-gray-500 uppercase tracking-widest pt-3">
+            <li className="text-xs text-zinc-400 uppercase tracking-widest pt-3">
               Personal Accountability
             </li>
             <li className="flex items-start gap-3">
@@ -215,7 +225,7 @@ export default function Pricing() {
               <span>Weekly performance report</span>
             </li>
 
-            <li className="text-xs text-gray-500 uppercase tracking-widest pt-3">
+            <li className="text-xs text-zinc-400 uppercase tracking-widest pt-3">
               Portfolio & Alerts
             </li>
             <li className="flex items-start gap-3">
@@ -250,7 +260,7 @@ export default function Pricing() {
 
           <button
             onClick={handleCheckout}
-            className="w-full bg-white text-black py-4 rounded-md font-semibold hover:bg-gray-100 transition-colors"
+            className="w-full bg-white text-black py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl hover:-translate-y-[1px] transition-all"
           >
             Start Using Full Regime Intelligence — $
             {annual ? annualPrice : monthlyPrice}/month
@@ -263,7 +273,7 @@ export default function Pricing() {
         </div>
 
         {/* PSYCHOLOGY ANCHOR */}
-        <div className="border border-zinc-800 p-8 space-y-4 text-sm text-gray-400">
+        <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 space-y-4 text-sm text-zinc-400 shadow-[0_10p>
           <div className="text-white font-medium">
             The Real Cost of Getting It Wrong
           </div>
