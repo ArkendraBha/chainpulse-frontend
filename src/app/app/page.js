@@ -31,7 +31,7 @@ function regimeBorder(label) {
   if (!label) return "border-white/5 bg-zinc-950/40";
   if (label === "Strong Risk-On") return "border-emerald-800 bg-emerald-900/20";
   if (label === "Risk-On") return "border-green-900 bg-green-900/10";
-  if (label === "Strong Risk-Off") return "border-red-800 bg-red-900/20 border border-red-700/40/30";
+  if (label === "Strong Risk-Off") return "border-red-800 bg-red-900/20 border border-red-700/40";
   if (label === "Risk-Off") return "border-red-900 bg-red-900/20 border border-red-700/40/15";
   return "border-yellow-900 bg-yellow-900/10";
 }
@@ -40,7 +40,7 @@ function exposureColor(v) { return v > 60 ? "text-emerald-400" : v > 35 ? "text-
 function alignColor(v) { return v >= 80 ? "text-emerald-400" : v >= 50 ? "text-yellow-400" : "text-red-400"; }
 function dirBadge(d) {
   if (d === "bullish") return "text-green-400 border-green-900 bg-green-900/20";
-  if (d === "bearish") return "text-red-400 border-red-900 bg-red-900/20 border border-red-700/40/20";
+  if (d === "bearish") return "text-red-400 border-red-900 bg-red-900/20 border border-red-700/40";
   return "text-yellow-400 border-yellow-900 bg-yellow-900/20";
 }
 function confColor(v) { return v >= 75 ? "text-emerald-400" : v >= 50 ? "text-yellow-400" : "text-red-400"; }
@@ -182,7 +182,7 @@ function ProGate({ label, consequence, children, onUnlock }) {
           <button
             onClick={onUnlock}
             className="
-              w-full bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all4 py-2.5 rounded-lg
+              w-full bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all4 py-2.5 rounded-lg
               text-xs font-semibold hover:bg-zinc-100
               transition-colors shadow-sm
             "
@@ -1478,7 +1478,7 @@ function RegimeHeatmap({ overview, isPro, onUnlock }) {
     if (label === "Strong Risk-On")  return "bg-emerald-900/40 text-emerald-400 border-emerald-900/50";
     if (label === "Risk-On")         return "bg-green-900/30 text-green-400 border-green-900/40";
     if (label === "Strong Risk-Off") return "bg-red-900/20 border border-red-700/40/40 text-red-400 border-red-900/50";
-    if (label === "Risk-Off")        return "bg-red-900/20 border border-red-700/40/20 text-red-400 border-red-900/30";
+    if (label === "Risk-Off")        return "bg-red-900/20 border border-red-700/40 text-red-400 border-red-900/30";
     if (label === "Neutral")         return "bg-yellow-900/20 text-yellow-400 border-yellow-900/30";
     return "bg-zinc-950/40 text-zinc-500 border-white/5";
   }
@@ -1542,7 +1542,7 @@ function RegimeHeatmap({ overview, isPro, onUnlock }) {
           { label: "S.R+", cls: "bg-emerald-900/40 text-emerald-400 border-emerald-900/50" },
           { label: "R+",   cls: "bg-green-900/30 text-green-400 border-green-900/40"       },
           { label: "NEU",  cls: "bg-yellow-900/20 text-yellow-400 border-yellow-900/30"    },
-          { label: "R-",   cls: "bg-red-900/20 border border-red-700/40/20 text-red-400 border-red-900/30"             },
+          { label: "R-",   cls: "bg-red-900/20 border border-red-700/40 text-red-400 border-red-900/30"             },
           { label: "S.R-", cls: "bg-red-900/20 border border-red-700/40/40 text-red-400 border-red-900/50"             },
         ].map(({ label, cls }) => (
           <span key={label} className={`text-xs px-2 py-0.5 rounded-sm border ${cls}`}>{label}</span>
@@ -4115,7 +4115,7 @@ function ProIntelligencePreview({ onUnlock }) {
             </ul>
             <button
               onClick={onUnlock}
-              className="mt-2 bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all6 py-2.5 rounded-lg text-sm font-semibold hover:bg-zinc-100 transition-colors"
+              className="mt-2 bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all py-2.5 rounded-lg text-sm font-semibold hover:bg-zinc-100 transition-colors"
             >
               Unlock Pro — $39/month
             </button>
