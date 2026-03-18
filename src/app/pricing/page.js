@@ -273,13 +273,13 @@ export default function Pricing() {
         </div>
 
         {/* PSYCHOLOGY ANCHOR */}
-        <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 space-y-4 text-sm text-zinc-400 shadow-[0_10p>
+        <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 space-y-4 text-sm text-zinc-400 shadow-[0_10p_40px_rgba(0,0,0,0.4)]>
           <div className="text-white font-medium">
             The Real Cost of Getting It Wrong
           </div>
           <p>
-            Designed for traders managing \$5,000 or more. At that size, one
-            avoided late-stage overexposure event of 3% saves \$150 — nearly
+            Designed for traders managing $5,000 or more. At that size, one
+            avoided late-stage overexposure event of 3% saves $150 — nearly
             four months of Pro.
           </p>
           <p>
