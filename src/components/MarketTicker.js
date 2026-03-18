@@ -17,9 +17,7 @@ export default function MarketTicker({ activeCoin, onSelect }) {
     const fetchPrices = async () => {
       try {
         const symbols = SUPPORTED_COINS.map(c => `${c}USDT`);
-        const res = await fetch(
-          `https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`
-        );
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/ticker`);
         const json = await res.json();
         setData(json);
       } catch {}
@@ -30,10 +28,12 @@ export default function MarketTicker({ activeCoin, onSelect }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto scroll
+    // Auto scroll
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+
+    let frameId;
 
     const animate = () => {
       if (!paused.current && !dragging.current) {
@@ -43,11 +43,13 @@ export default function MarketTicker({ activeCoin, onSelect }) {
         }
         el.scrollLeft = scrollPos.current;
       }
-      requestAnimationFrame(animate);
+      frameId = requestAnimationFrame(animate);
     };
 
-    animate();
-  }, [data]);
+    frameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frameId);
+  }, []);
 
   if (!data.length) return null;
 
@@ -68,7 +70,7 @@ export default function MarketTicker({ activeCoin, onSelect }) {
 
       <div
         ref={scrollRef}
-        className="flex gap-3 whitespace-nowrap overflow-hidden py-1.5 cursor-grab active:cursor-grabbing"
+        className="flex gap-3 whitespace-nowrap overflow-hidden py-1.5"
         onMouseEnter={() => (paused.current = true)}
         onMouseLeave={() => (paused.current = false)}
         onMouseDown={() => (dragging.current = true)}
