@@ -4341,7 +4341,7 @@ export default function Dashboard() {
   };
 
   // ── Data fetch ──
-  const fetchData = useCallback(async (selectedCoin, currentToken) => {
+const fetchData = useCallback(async (selectedCoin, currentToken) => {
   try {
     const headers = {};
     if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
