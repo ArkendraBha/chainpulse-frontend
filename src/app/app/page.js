@@ -4341,57 +4341,33 @@ export default function Dashboard() {
   };
 
   // ── Data fetch ──
-// ── Data fetch ──
-const fetchData = useCallback(async (selectedCoin, currentToken) => {
-  try {
-    const headers = {};
+  const fetchData = useCallback(async (selectedCoin, currentToken) => {
+    try {
+          const headers = {};
     if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
 
-    // ── Always fetch free endpoints ──
     const [
-      stackData,
-      latestData,
-      histRaw,
-      overviewRaw,
-      eventsData,
+      stackData, latestData, curveRaw, histRaw,
+      overviewRaw, confidenceData, volData,
+      transData, corrData, eventsData,
     ] = await Promise.all([
-      safeFetch(`${BACKEND}/regime-stack?coin=${selectedCoin}`, { headers }, null),
-      safeFetch(`${BACKEND}/latest?coin=${selectedCoin}`, { headers }, null),
-      safeFetch(`${BACKEND}/regime-history?coin=${selectedCoin}&limit=48`, { headers }, { data: [] }),
-      safeFetch(`${BACKEND}/market-overview`, { headers }, { data: [], breadth: null }),
-      safeFetch(`${BACKEND}/risk-events`, { headers }, { events: [] }),
+      safeFetch(`${BACKEND}/regime-stack?coin=${selectedCoin}`,             { headers }, null),
+      safeFetch(`${BACKEND}/latest?coin=${selectedCoin}`,                   { headers }, null),
+      safeFetch(`${BACKEND}/survival-curve?coin=${selectedCoin}`,           { headers }, { data: [] }),
+      safeFetch(`${BACKEND}/regime-history?coin=${selectedCoin}&limit=48`,  { headers }, { data: [] }),
+      safeFetch(`${BACKEND}/market-overview`,                               { headers }, { data: [], breadth: null }),
+      safeFetch(`${BACKEND}/regime-confidence?coin=${selectedCoin}`,        { headers }, null),
+      safeFetch(`${BACKEND}/volatility-environment?coin=${selectedCoin}`,   { headers }, null),
+      safeFetch(`${BACKEND}/regime-transitions?coin=${selectedCoin}`,       { headers }, null),
+      safeFetch(`${BACKEND}/correlation?coins=${SUPPORTED_COINS.join(",")}`, { headers }, null),
+      safeFetch(`${BACKEND}/risk-events`,                                   { headers }, { events: [] }),
     ]);
 
-    // ── Default Pro values (safe fallback) ──
-    let confidenceData = null;
-    let volData = null;
-    let transData = null;
-    let corrData = null;
-    let curveRaw = { data: [] };
-
-    // ── ONLY fetch Pro endpoints if user is Pro ──
-    if (!stackData?.pro_required) {
-      [
-        confidenceData,
-        volData,
-        transData,
-        corrData,
-        curveRaw,
-      ] = await Promise.all([
-        safeFetch(`${BACKEND}/regime-confidence?coin=${selectedCoin}`, { headers }, null),
-        safeFetch(`${BACKEND}/volatility-environment?coin=${selectedCoin}`, { headers }, null),
-        safeFetch(`${BACKEND}/regime-transitions?coin=${selectedCoin}`, { headers }, null),
-        safeFetch(`${BACKEND}/correlation?coins=${SUPPORTED_COINS.join(",")}`, { headers }, null),
-        safeFetch(`${BACKEND}/survival-curve?coin=${selectedCoin}`, { headers }, { data: [] }),
-      ]);
-    }
-
-    // ── Set state ──
     setStack(stackData);
     setLatest(latestData);
-    setCurveData(curveRaw?.data || []);
-    setHistoryData(histRaw?.data || []);
-    setOverview(overviewRaw?.data || []);
+    setCurveData(curveRaw?.data    || []);
+    setHistoryData(histRaw?.data   || []);
+    setOverview(overviewRaw?.data  || []);
     setBreadth(overviewRaw?.breadth || null);
     setConfidence(confidenceData);
     setVolEnv(volData);
@@ -4400,23 +4376,28 @@ const fetchData = useCallback(async (selectedCoin, currentToken) => {
     setRiskEvents(eventsData?.events || []);
     setLastUpdated(new Date());
 
-    // ── Pro modal logic ──
-    if (stackData?.pro_required && !currentToken) {
-      const hasSeenModal = sessionStorage.getItem("cp_modal_shown");
-      if (!hasSeenModal) {
-        setTimeout(() => {
-          setShowModal(true);
-          sessionStorage.setItem("cp_modal_shown", "true");
-        }, 3000);
+      if (stackData?.pro_required && !currentToken) {
+        const hasSeenModal = sessionStorage.getItem("cp_modal_shown");
+        if (!hasSeenModal) {
+          setTimeout(() => {
+            setShowModal(true);
+            sessionStorage.setItem("cp_modal_shown", "true");
+          }, 3000);
+        }
       }
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-  } catch (err) {
-    console.error("Fetch error:", err);
-  } finally {
-    setLoading(false);
-  }
-}, []);
+  useEffect(() => {
+    setLoading(true);
+    fetchData(coin, token);
+    const iv = setInterval(() => fetchData(coin, token), REFRESH_MS);
+    return () => clearInterval(iv);
+  }, [coin, token, fetchData]);
 
   // ── Loading state ──
   if (loading) {
