@@ -1995,7 +1995,7 @@ function DecisionEnginePanel({ stack, isPro, onUnlock, onDecisionLoaded }) {
         <div className="space-y-3">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Recommended Actions</div>
           <ul className="space-y-2">
-            {decision.actions.map((a, i) => (
+            {(decision?.actions || []).map((a, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
                 <span className="text-white mt-0.5 shrink-0 font-bold">→</span>{a}
               </li>
@@ -2005,7 +2005,7 @@ function DecisionEnginePanel({ stack, isPro, onUnlock, onDecisionLoaded }) {
         <div className="space-y-3">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Signal Breakdown</div>
           <div className="space-y-2">
-            {Object.entries(decision.components).map(([key, val]) => (
+            {Object.entries(decision?.components || {}).map(([key, val]) => (
               <div key={key} className="flex items-center gap-3">
                 <div className="text-xs text-zinc-500 w-20 capitalize shrink-0">{key}</div>
                 <div className="flex-1 bg-zinc-800 rounded-full h-1.5">
