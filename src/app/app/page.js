@@ -4342,10 +4342,35 @@ export default function Dashboard() {
 
   // ── Data fetch ──
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
-   console.log("FETCH START", selectedCoin);
   try {
     const headers = {};
     if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
+
+    const stackData = await safeFetch(
+      `${BACKEND}/regime-stack?coin=${selectedCoin}`,
+      { headers },
+      null
+    );
+
+    setStack(stackData);
+    setLatest(null);
+    setCurveData([]);
+    setHistoryData([]);
+    setOverview([]);
+    setBreadth(null);
+    setConfidence(null);
+    setVolEnv(null);
+    setTransitions(null);
+    setCorrelation(null);
+    setRiskEvents([]);
+    setLastUpdated(new Date());
+
+  } catch (err) {
+    console.error("FETCH ERROR:", err);
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
     // ── Free endpoints (always safe) ──
     const [
