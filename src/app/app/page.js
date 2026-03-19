@@ -4343,6 +4343,7 @@ export default function Dashboard() {
   // ── Data fetch ──
 console.log("FETCH START", selectedCoin);
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
+   console.log("FETCH START", selectedCoin);
   try {
     const headers = {};
     if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
