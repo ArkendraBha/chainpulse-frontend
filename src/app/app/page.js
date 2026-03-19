@@ -4373,38 +4373,6 @@ const fetchData = useCallback(async (selectedCoin, currentToken) => {
 }, []);
 
    
-    // ── Set state (unchanged logic) ──   
-setStack(stackData);
-    setLatest(latestData);
-    setCurveData(curveRaw?.data || []);
-    setHistoryData(histRaw?.data || []);
-    setOverview(overviewRaw?.data || []);
-    setBreadth(overviewRaw?.breadth || null);
-    setConfidence(confidenceData);
-    setVolEnv(volData);
-    setTransitions(transData);
-    setCorrelation(corrData);
-    setRiskEvents(eventsData?.events || []);
-    setLastUpdated(new Date());
-
-    if (stackData?.pro_required && !currentToken) {
-      const hasSeenModal = sessionStorage.getItem("cp_modal_shown");
-      if (!hasSeenModal) {
-        setTimeout(() => {
-          setShowModal(true);
-          sessionStorage.setItem("cp_modal_shown", "true");
-        }, 3000);
-      }
-    }
-
-  } catch (err) {
-    console.error("FETCH CRASH:", err);
-  } finally {
-  console.log("FETCH FINISHED");
-  setLoading(false);
-}
-}, []);
-
   // ── Loading state ──
   if (loading) {
     return (
