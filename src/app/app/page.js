@@ -4372,47 +4372,8 @@ export default function Dashboard() {
   }
 }, []);
 
-    // ── Free endpoints (always safe) ──
-    const [
-      stackData,
-      latestData,
-      histRaw,
-      overviewRaw,
-      eventsData,
-    ] = await Promise.all([
-      safeFetch(`${BACKEND}/regime-stack?coin=${selectedCoin}`, { headers }, null),
-      safeFetch(`${BACKEND}/latest?coin=${selectedCoin}`, { headers }, null),
-      safeFetch(`${BACKEND}/regime-history?coin=${selectedCoin}&limit=48`, { headers }, { data: [] }),
-      safeFetch(`${BACKEND}/market-overview`, { headers }, { data: [], breadth: null }),
-      safeFetch(`${BACKEND}/risk-events`, { headers }, { events: [] }),
-    ]);
-
-    // ── Default values for Pro-only data ──
-    let confidenceData = null;
-    let volData = null;
-    let transData = null;
-    let corrData = null;
-    let curveRaw = { data: [] };
-
-    // ── Only fetch Pro endpoints if token exists ──
-    if (currentToken) {
-      [
-        confidenceData,
-        volData,
-        transData,
-        corrData,
-        curveRaw,
-      ] = await Promise.all([
-        safeFetch(`${BACKEND}/regime-confidence?coin=${selectedCoin}`, { headers }, null),
-        safeFetch(`${BACKEND}/volatility-environment?coin=${selectedCoin}`, { headers }, null),
-        safeFetch(`${BACKEND}/regime-transitions?coin=${selectedCoin}`, { headers }, null),
-        safeFetch(`${BACKEND}/correlation?coins=${SUPPORTED_COINS.join(",")}`, { headers }, null),
-        safeFetch(`${BACKEND}/survival-curve?coin=${selectedCoin}`, { headers }, { data: [] }),
-      ]);
-    }
-
-    // ── Set state (unchanged logic) ──
-console.log("STACK DATA", stackData);    
+   
+    // ── Set state (unchanged logic) ──   
 setStack(stackData);
     setLatest(latestData);
     setCurveData(curveRaw?.data || []);
