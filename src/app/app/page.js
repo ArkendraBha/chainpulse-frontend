@@ -4341,6 +4341,7 @@ export default function Dashboard() {
   };
 
   // ── Data fetch ──
+console.log("FETCH START", selectedCoin);
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
   try {
     const headers = {};
@@ -4386,7 +4387,8 @@ export default function Dashboard() {
     }
 
     // ── Set state (unchanged logic) ──
-    setStack(stackData);
+console.log("STACK DATA", stackData);    
+setStack(stackData);
     setLatest(latestData);
     setCurveData(curveRaw?.data || []);
     setHistoryData(histRaw?.data || []);
@@ -4410,10 +4412,11 @@ export default function Dashboard() {
     }
 
   } catch (err) {
-    console.error("Fetch error:", err);
+    console.error("FETCH CRASH:", err);
   } finally {
-    setLoading(false);
-  }
+  console.log("FETCH FINISHED");
+  setLoading(false);
+}
 }, []);
 
   // ── Loading state ──
@@ -4888,7 +4891,7 @@ export default function Dashboard() {
         />
 
         {/* ── SURVIVAL CURVE ── */}
-        #<SurvivalCurve
+        <SurvivalCurve
           curve={curveData}
           regimeAge={regimeAge}
           isPro={isPro}
