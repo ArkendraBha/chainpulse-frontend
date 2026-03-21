@@ -4449,7 +4449,10 @@ export default function Dashboard() {
 <div className="border-t border-white/5 bg-zinc-950/30 backdrop-blur-md">
   <div className="max-w-7xl mx-auto px-6 py-3">
     <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-2">
-      <MarketTicker />
+      <LivePriceTicker
+  activeCoin={coin}
+  onCoinSelect={setCoin}
+/>
     </div>
   </div>
 </div>
