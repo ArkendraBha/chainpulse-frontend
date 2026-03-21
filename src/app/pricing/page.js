@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
+import { trackEvent } from "@/lib/analytics";
 import { useState } from "react";
 import Link from "next/link";
+import PricingAnalytics from "@/components/PricingAnalytics";
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -42,6 +45,7 @@ export default function Pricing() {
     <main className="min-h-screen bg-black text-white px-8 py-24">
       <div className="max-w-5xl mx-auto space-y-16">
         {/* HEADER */}
+        <PricingAnalytics />
         <div className="text-center space-y-4">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">
             Pricing
@@ -259,12 +263,17 @@ export default function Pricing() {
           </ul>
 
           <button
-            onClick={handleCheckout}
-            className="w-full bg-white text-black py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl hover:-translate-y-[1px] transition-all"
-          >
-            Start Using Full Regime Intelligence — $
-            {annual ? annualPrice : monthlyPrice}/month
-          </button>
+  onClick={() => {
+    trackEvent("checkout_clicked", {
+      billing_cycle: annual ? "annual" : "monthly"
+    });
+    handleCheckout();
+  }}
+  className="w-full bg-white text-black py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl hover:-translate-y-[1px] transition-all"
+>
+  Start Using Full Regime Intelligence — $
+  {annual ? annualPrice : monthlyPrice}/month
+</button>
 
           <div className="text-center text-gray-600 text-xs space-y-1">
             <div>7-day risk-free evaluation · Cancel anytime</div>
