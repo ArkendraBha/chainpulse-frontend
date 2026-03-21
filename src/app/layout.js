@@ -2,15 +2,15 @@ import "./globals.css";
 import NavBar from "@/components/NavBar";
 
 export const metadata = {
-  title: "ChainPulse Quant — Regime-Based Exposure Intelligence",
+  title: "Bitcoin Regime Indicator — Crypto Market Risk Model | ChainPulse",
   description:
-    "Quantitative regime survival modeling for disciplined swing traders. Allocate capital with statistical persistence awareness.",
+    "ChainPulse is a Bitcoin regime indicator using survival modeling to quantify crypto market risk, shift probability, hazard rate, and optimal exposure for swing traders.",
   openGraph: {
-    title: "ChainPulse Quant — Regime-Based Exposure Intelligence",
+    title: "Bitcoin Regime Indicator — Crypto Market Risk Model | ChainPulse",
     description:
-      "Statistical survival modeling for swing traders. Press size when persistence is strong.",
+      "Survival-based crypto market risk model. Quantify regime persistence, shift risk, and optimal exposure.",
     url: "https://chainpulse.pro",
-    siteName: "ChainPulse Quant",
+    siteName: "ChainPulse",
     type: "website",
   },
 };
