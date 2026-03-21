@@ -3,6 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+export const metadata = {
+  title: "Bitcoin Regime Indicator — Crypto Market Risk Model | ChainPulse",
+  description:
+    "ChainPulse is a Bitcoin regime indicator using survival modeling to quantify crypto market risk, shift probability, and optimal exposure for swing traders.",
+};
+
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 function getRegimeColor(label) {
