@@ -291,7 +291,7 @@ export default function Landing() {
             One Poorly Timed Position Costs More Than a Year of Pro
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            ChainPulse Pro is \$39/month. For traders managing $5,000+, one
+            ChainPulse Pro is $39/month. For traders managing $5,000+, one
             avoided late-stage overexposure event of 3% saves $150 — more than
             five months of Pro.
           </p>
