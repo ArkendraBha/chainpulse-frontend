@@ -4333,7 +4333,10 @@ export default function Dashboard() {
   const safeFetch = async (url, options = {}, fallback = null) => {
     try {
       const res = await fetch(url, options);
-      if (!res.ok) return fallback;
+      if (!res.ok) {
+  console.error("Fetch failed:", url, res.status);
+  throw new Error("Fetch failed");
+}
       return await res.json();
     } catch {
       return fallback;
