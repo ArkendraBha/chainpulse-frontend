@@ -4345,55 +4345,44 @@ export default function Dashboard() {
 
   // ── Data fetch ──
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
-    try {
-          const headers = {};
-    if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
+  try {
+    const headers = {};
+    if (currentToken) {
+      headers["Authorization"] = `Bearer ${currentToken}`;
+    }
 
-    const [
-      stackData, latestData, curveRaw, histRaw,
-      overviewRaw, confidenceData, volData,
-      transData, corrData, eventsData,
-    ] = await Promise.all([
-      safeFetch(`${BACKEND}/regime-stack?coin=${selectedCoin}`,             { headers }, null),
-      safeFetch(`${BACKEND}/latest?coin=${selectedCoin}`,                   { headers }, null),
-      safeFetch(`${BACKEND}/survival-curve?coin=${selectedCoin}`,           { headers }, { data: [] }),
-      safeFetch(`${BACKEND}/regime-history?coin=${selectedCoin}&limit=48`,  { headers }, { data: [] }),
-      safeFetch(`${BACKEND}/market-overview`,                               { headers }, { data: [], breadth: null }),
-      safeFetch(`${BACKEND}/regime-confidence?coin=${selectedCoin}`,        { headers }, null),
-      safeFetch(`${BACKEND}/volatility-environment?coin=${selectedCoin}`,   { headers }, null),
-      safeFetch(`${BACKEND}/regime-transitions?coin=${selectedCoin}`,       { headers }, null),
-      safeFetch(`${BACKEND}/correlation?coins=${SUPPORTED_COINS.join(",")}`, { headers }, null),
-      safeFetch(`${BACKEND}/risk-events`,                                   { headers }, { events: [] }),
-    ]);
+    const res = await fetch(
+      `${BACKEND}/dashboard?coin=${selectedCoin}`,
+      { headers }
+    );
 
-    setStack(stackData);
-    setLatest(latestData);
-    setCurveData(curveRaw?.data    || []);
-    setHistoryData(histRaw?.data   || []);
-    setOverview(overviewRaw?.data  || []);
-    setBreadth(overviewRaw?.breadth || null);
-    setConfidence(confidenceData);
-    setVolEnv(volData);
-    setTransitions(transData);
-    setCorrelation(corrData);
-    setRiskEvents(eventsData?.events || []);
+    if (!res.ok) {
+      console.error("Dashboard fetch failed:", res.status);
+      throw new Error("Fetch failed");
+    }
+
+    const data = await res.json();
+
+    setStack(data.stack || null);
+    setLatest(data.latest || null);
+    setCurveData(data.curve || []);
+    setHistoryData(data.history || []);
+    setOverview(data.overview || []);
+    setBreadth(data.breadth || null);
+    setConfidence(data.confidence || null);
+    setVolEnv(data.volEnv || null);
+    setTransitions(data.transitions || null);
+    setCorrelation(data.correlation || null);
+    setRiskEvents(data.events || []);
+
     setLastUpdated(new Date());
 
-      if (stackData?.pro_required && !currentToken) {
-        const hasSeenModal = sessionStorage.getItem("cp_modal_shown");
-        if (!hasSeenModal) {
-          setTimeout(() => {
-            setShowModal(true);
-            sessionStorage.setItem("cp_modal_shown", "true");
-          }, 3000);
-        }
-      }
-    } catch (err) {
-      console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  } catch (err) {
+    console.error("Dashboard fetch error:", err);
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   useEffect(() => {
     setLoading(true);
