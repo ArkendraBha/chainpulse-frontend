@@ -1,5 +1,6 @@
 import "./globals.css";
 import NavBar from "@/components/NavBar";
+import Script from "next/script";
 
 export const metadata = {
   title: "Bitcoin Regime Indicator — Crypto Market Risk Model | ChainPulse",
