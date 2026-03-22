@@ -1,0 +1,52 @@
+<svg width="1500" height="500" viewBox="0 0 1500 500" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background -->
+  <rect width="1500" height="500" fill="#000000"/>
+
+  <!-- Left Brand -->
+  <text x="150" y="220" font-family="Arial, sans-serif" font-size="72" fill="#F5F5F5" font-weight="700">
+    CHAINPULSE
+  </text>
+
+  <text x="150" y="270" font-family="Arial, sans-serif" font-size="28" fill="#777777">
+    Quant Regime Intelligence for Crypto Traders
+  </text>
+
+  <!-- Divider Line -->
+  <line x1="750" y1="140" x2="750" y2="360" stroke="#111111" stroke-width="2"/>
+
+  <!-- Model Header -->
+  <text x="900" y="190" font-family="Arial, sans-serif" font-size="22" fill="#888888">
+    CURRENT MODEL
+  </text>
+
+  <!-- Stats -->
+  <text x="900" y="240" font-family="Arial, sans-serif" font-size="28" fill="#F5F5F5">
+    Regime:
+  </text>
+  <text x="1100" y="240" font-family="Arial, sans-serif" font-size="28" fill="#3B82F6">
+    Risk-On
+  </text>
+
+  <text x="900" y="285" font-family="Arial, sans-serif" font-size="28" fill="#F5F5F5">
+    Exposure:
+  </text>
+  <text x="1100" y="285" font-family="Arial, sans-serif" font-size="28" fill="#3B82F6">
+    65%
+  </text>
+
+  <text x="900" y="330" font-family="Arial, sans-serif" font-size="28" fill="#F5F5F5">
+    Shift Risk:
+  </text>
+  <text x="1100" y="330" font-family="Arial, sans-serif" font-size="28" fill="#3B82F6">
+    22%
+  </text>
+
+  <text x="900" y="375" font-family="Arial, sans-serif" font-size="28" fill="#F5F5F5">
+    Survival:
+  </text>
+  <text x="1100" y="375" font-family="Arial, sans-serif" font-size="28" fill="#3B82F6">
+    78%
+  </text>
+
+</svg>

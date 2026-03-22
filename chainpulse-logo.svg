@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" fill="#000000"/>
+  
+  <!-- Clean C shape -->
+  <path d="M340 150 
+           C240 150, 170 210, 170 256 
+           C170 302, 240 362, 340 362" 
+        stroke="#F5F5F5" 
+        stroke-width="14" 
+        fill="none" 
+        stroke-linecap="round"/>
+  
+  <!-- Sharper Pulse -->
+  <polyline points="230,260 260,210 285,300 310,240"
+            fill="none"
+            stroke="#3B82F6"
+            stroke-width="8"
+            stroke-linecap="round"
+            stroke-linejoin="miter"/>
+</svg>

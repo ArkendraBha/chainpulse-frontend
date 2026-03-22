@@ -109,7 +109,7 @@ export default function Pricing() {
             )}
             {!annual && (
               <div className="text-gray-600 text-xs">
-                Or ${annualPrice}/mo billed annually — save \$120/year
+                Or ${annualPrice}/mo billed annually — save $120/year
               </div>
             )}
           </div>
