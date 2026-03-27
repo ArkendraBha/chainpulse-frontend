@@ -4212,7 +4212,1093 @@ function TodayPanel({ stack, decision, isPro, onUnlock }) {
 }
 
 // ─────────────────────────────────────────
-// MARKET TICKER — was missing, caused crash
+// SETUP QUALITY PANEL
+// ─────────────────────────────────────────
+function SetupQualityPanel({ coin, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPro || !coin) return;
+    setLoading(true);
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    fetch(`${BACKEND}/setup-quality?coin=${coin}`, { headers })
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [coin, isPro, token]);
+
+  function qualityColor(score) {
+    if (score >= 80) return "text-emerald-400";
+    if (score >= 65) return "text-green-400";
+    if (score >= 50) return "text-yellow-400";
+    if (score >= 35) return "text-orange-400";
+    return "text-red-400";
+  }
+
+  function chaseColor(v) {
+    if (v > 75) return "text-red-400";
+    if (v > 50) return "text-yellow-400";
+    return "text-green-400";
+  }
+
+  const inner = data ? (
+    <div className="space-y-6">
+      {/* Hero metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2 text-center">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Setup Quality</div>
+          <div className={`text-5xl font-bold ${qualityColor(data.setup_quality_score)}`}>
+            {data.setup_quality_score}
+          </div>
+          <div className={`text-sm font-medium ${qualityColor(data.setup_quality_score)}`}>
+            {data.setup_label}
+          </div>
+          <Bar
+            value={data.setup_quality_score}
+            cls={data.setup_quality_score >= 65 ? "bg-emerald-500" : data.setup_quality_score >= 40 ? "bg-yellow-500" : "bg-red-500"}
+          />
+        </div>
+
+        <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2">
+          <div className="text-xs text-zinc-400">Entry Mode</div>
+          <div className="text-xl font-semibold text-white">{data.entry_mode}</div>
+          <div className="text-xs text-zinc-500">Current recommendation</div>
+        </div>
+
+        <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2">
+          <div className="text-xs text-zinc-400">Chase Risk</div>
+          <div className={`text-3xl font-semibold ${chaseColor(data.chase_risk)}`}>
+            {data.chase_risk}%
+          </div>
+          <Bar
+            value={data.chase_risk}
+            cls={data.chase_risk > 75 ? "bg-red-500" : data.chase_risk > 50 ? "bg-yellow-500" : "bg-green-500"}
+          />
+          <div className="text-xs text-zinc-500">
+            {data.chase_risk > 75 ? "⚠ High — wait for pullback" : data.chase_risk > 50 ? "Moderate" : "Low — entry conditions favorable"}
+          </div>
+        </div>
+
+        <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2">
+          <div className="text-xs text-zinc-400">Trend Exhaustion</div>
+          <div className={`text-3xl font-semibold ${data.trend_exhaustion > 65 ? "text-red-400" : data.trend_exhaustion > 40 ? "text-yellow-400" : "text-green-400"}`}>
+            {data.trend_exhaustion}%
+          </div>
+          <Bar
+            value={data.trend_exhaustion}
+            cls={data.trend_exhaustion > 65 ? "bg-red-500" : data.trend_exhaustion > 40 ? "bg-yellow-500" : "bg-green-500"}
+          />
+          <div className="text-xs text-zinc-500">
+            {data.trend_exhaustion > 65 ? "Momentum fading" : "Trend has room"}
+          </div>
+        </div>
+      </div>
+
+      {/* Sub-scores */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { l: "Pullback Quality", v: data.pullback_quality, hint: "Quality of current pullback for entry" },
+          { l: "Breakout Quality", v: data.breakout_quality, hint: "Strength of potential breakout" },
+          { l: "Volume Confirmation", v: data.volume_confirmation, hint: "Recent volume vs prior" },
+          { l: "Range Position", v: data.range_position, hint: `${data.range_position}% through recent range` },
+        ].map(({ l, v, hint }) => (
+          <div key={l} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+            <div className="text-xs text-zinc-400">{l}</div>
+            <div className={`text-xl font-semibold ${v >= 65 ? "text-emerald-400" : v >= 40 ? "text-yellow-400" : "text-red-400"}`}>
+              {v?.toFixed(1)}%
+            </div>
+            <Bar value={v} cls={v >= 65 ? "bg-emerald-500" : v >= 40 ? "bg-yellow-500" : "bg-red-500"} />
+            <div className="text-xs text-zinc-500">{hint}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Entry zone + stops */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-3">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Optimal Entry Zone</div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="text-xs text-zinc-500">Entry Low</div>
+              <div className="text-lg font-semibold text-white">${data.optimal_entry_zone?.low?.toLocaleString()}</div>
+            </div>
+            <div>
+              <div className="text-xs text-zinc-500">Entry High</div>
+              <div className="text-lg font-semibold text-white">${data.optimal_entry_zone?.high?.toLocaleString()}</div>
+            </div>
+          </div>
+          <div className="border-t border-white/5 pt-3">
+            <div className="text-xs text-zinc-500">Invalidation Level</div>
+            <div className="text-lg font-semibold text-red-400">${data.invalidation_level?.toLocaleString()}</div>
+          </div>
+          {data.take_profit_zones?.length > 0 && (
+            <div className="border-t border-white/5 pt-3">
+              <div className="text-xs text-zinc-500 mb-2">Take Profit Zones</div>
+              <div className="flex gap-3">
+                {data.take_profit_zones.map((tp, i) => (
+                  <div key={i} className="text-sm font-semibold text-emerald-400">${tp?.toLocaleString()}</div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-3">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Stop Guidance</div>
+          <div className="space-y-3">
+            {[
+              { l: "Tight Stop", v: data.stop_guidance?.tight, desc: "Aggressive — for strong setups" },
+              { l: "Normal Stop", v: data.stop_guidance?.normal, desc: "Recommended default" },
+              { l: "Wide Stop", v: data.stop_guidance?.wide, desc: "For high-conviction holds" },
+            ].map(({ l, v, desc }) => (
+              <div key={l} className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-white font-medium">{l}</div>
+                  <div className="text-xs text-zinc-500">{desc}</div>
+                </div>
+                <div className="text-sm font-semibold text-gray-300">${v?.toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-white/5 pt-3 text-xs text-zinc-500">
+            Normal stop = {data.stop_guidance?.normal_pct}% of current price · ATR-based
+          </div>
+        </div>
+      </div>
+
+      {/* Extension info */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { l: "Extension from 20MA", v: `${data.extension_from_mean_pct}%`, c: Math.abs(data.extension_from_mean_pct) > 3 ? "text-yellow-400" : "text-green-400" },
+          { l: "Momentum Slope 1H", v: data.momentum_slope_1h?.toFixed(3), c: data.momentum_slope_1h > 0 ? "text-green-400" : "text-red-400" },
+          { l: "Momentum Slope 4H", v: data.momentum_slope_4h?.toFixed(3), c: data.momentum_slope_4h > 0 ? "text-green-400" : "text-red-400" },
+        ].map(({ l, v, c }) => (
+          <div key={l} className="bg-white/2 border border-white/5 rounded-lg p-3 space-y-1">
+            <div className="text-xs text-zinc-400">{l}</div>
+            <div className={`text-lg font-semibold ${c}`}>{v}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : loading ? (
+    <div className="text-sm text-zinc-400">Analysing setup quality...</div>
+  ) : (
+    <div className="text-sm text-zinc-400">No setup data available</div>
+  );
+
+  if (!isPro) return (
+    <ProGate
+      label="Setup Quality Engine"
+      consequence="Without setup quality, you cannot distinguish good entries from chasing extended moves."
+      onUnlock={onUnlock}
+    >
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>Setup Quality Engine</Label>
+      <p className="text-xs text-zinc-400 mb-4">
+        Entry timing, chase risk, exhaustion, and optimal entry zones
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// OPPORTUNITY RANKING PANEL
+// ─────────────────────────────────────────
+function OpportunityRankingPanel({ token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPro) return;
+    setLoading(true);
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    fetch(`${BACKEND}/opportunity-ranking`, { headers })
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [isPro, token]);
+
+  function oppColor(score) {
+    if (score >= 70) return "text-emerald-400";
+    if (score >= 50) return "text-yellow-400";
+    if (score >= 30) return "text-orange-400";
+    return "text-red-400";
+  }
+
+  const inner = data ? (
+    <div className="space-y-6">
+      {/* Summary badges */}
+      <div className="flex gap-4 flex-wrap">
+        {data.best_long && (
+          <div className="border border-emerald-900 bg-emerald-950 px-4 py-2 rounded-lg">
+            <div className="text-xs text-zinc-400">Best Long</div>
+            <div className="text-lg font-semibold text-emerald-400">{data.best_long}</div>
+          </div>
+        )}
+        {data.most_defensive && (
+          <div className="border border-blue-900 bg-blue-950 px-4 py-2 rounded-lg">
+            <div className="text-xs text-zinc-400">Most Defensive</div>
+            <div className="text-lg font-semibold text-blue-400">{data.most_defensive}</div>
+          </div>
+        )}
+        {data.avoid?.length > 0 && (
+          <div className="border border-red-900 bg-red-950 px-4 py-2 rounded-lg">
+            <div className="text-xs text-zinc-400">Avoid</div>
+            <div className="text-lg font-semibold text-red-400">{data.avoid.join(", ")}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Rankings table */}
+      <div className="space-y-2">
+        {(data.rankings || []).map((r, i) => (
+          <div key={r.coin} className="border border-white/5 rounded-lg p-4 flex items-center gap-4">
+            <div className="text-lg font-bold text-zinc-500 w-8 text-center">#{i + 1}</div>
+            <div className="w-16 shrink-0">
+              <div className="text-base font-semibold text-white">{r.coin}</div>
+              <div className={`text-xs ${r.direction === "bullish" ? "text-green-400" : r.direction === "bearish" ? "text-red-400" : "text-yellow-400"}`}>
+                {r.direction}
+              </div>
+            </div>
+            <div className="flex-1 space-y-1">
+              <div className="flex items-center gap-3">
+                <div className={`text-2xl font-bold ${oppColor(r.opportunity_score)}`}>
+                  {r.opportunity_score}
+                </div>
+                <div className="flex-1">
+                  <div className="w-full bg-zinc-800 rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full transition-all ${
+                        r.opportunity_score >= 70 ? "bg-emerald-500" :
+                        r.opportunity_score >= 50 ? "bg-yellow-500" :
+                        r.opportunity_score >= 30 ? "bg-orange-500" : "bg-red-500"
+                      }`}
+                      style={{ width: `${r.opportunity_score}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="text-xs text-zinc-500">{r.reason}</div>
+            </div>
+            <div className="grid grid-cols-3 gap-3 text-xs text-center shrink-0">
+              <div>
+                <div className="text-zinc-500">Setup</div>
+                <div className={`font-semibold ${r.setup_quality_score >= 60 ? "text-green-400" : "text-yellow-400"}`}>
+                  {r.setup_quality_score}
+                </div>
+              </div>
+              <div>
+                <div className="text-zinc-500">Grade</div>
+                <div className={`font-semibold ${gradeColor(r.regime_quality_grade)}`}>
+                  {r.regime_quality_grade}
+                </div>
+              </div>
+              <div>
+                <div className="text-zinc-500">Chase</div>
+                <div className={`font-semibold ${r.chase_risk > 70 ? "text-red-400" : r.chase_risk > 50 ? "text-yellow-400" : "text-green-400"}`}>
+                  {r.chase_risk}%
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Rotation signals */}
+      {data.rotation_signals?.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Rotation Signals</div>
+          {data.rotation_signals.map((sig, i) => (
+            <div key={i} className="border border-blue-900 bg-blue-950 px-4 py-3 text-blue-300 text-sm">
+              → {sig}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  ) : loading ? (
+    <div className="text-sm text-zinc-400">Ranking opportunities across all assets...</div>
+  ) : null;
+
+  if (!isPro) return (
+    <ProGate
+      label="Opportunity Ranking"
+      consequence="Without opportunity ranking, you cannot identify the best risk-adjusted entry across all assets."
+      onUnlock={onUnlock}
+    >
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>Opportunity Ranking</Label>
+      <p className="text-xs text-zinc-400 mb-4">
+        Cross-asset opportunity ranking — where is the best entry right now?
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// SCENARIOS PANEL
+// ─────────────────────────────────────────
+function ScenariosPanel({ coin, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPro || !coin) return;
+    setLoading(true);
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    fetch(`${BACKEND}/scenarios?coin=${coin}`, { headers })
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [coin, isPro, token]);
+
+  const scenarioStyle = (name) => {
+    if (name === "Bull Case") return { border: "border-emerald-800", bg: "bg-emerald-950", text: "text-emerald-300", bar: "bg-emerald-500" };
+    if (name === "Bear Case") return { border: "border-red-800", bg: "bg-red-950", text: "text-red-300", bar: "bg-red-500" };
+    return { border: "border-blue-800", bg: "bg-blue-950", text: "text-blue-300", bar: "bg-blue-500" };
+  };
+
+  const inner = data ? (
+    <div className="space-y-6">
+      {/* Scenario cards */}
+      <div className="grid md:grid-cols-3 gap-4">
+        {(data.scenarios || []).map((s) => {
+          const st = scenarioStyle(s.name);
+          return (
+            <div key={s.name} className={`border ${st.border} ${st.bg} rounded-lg p-5 space-y-4`}>
+              <div className="flex justify-between items-start">
+                <div className={`text-lg font-semibold ${st.text}`}>{s.name}</div>
+                <div className={`text-3xl font-bold ${st.text}`}>{s.probability}%</div>
+              </div>
+              <div className="w-full bg-zinc-800 rounded-full h-2">
+                <div className={`h-2 rounded-full ${st.bar}`} style={{ width: `${s.probability}%` }} />
+              </div>
+              <div className="text-sm text-gray-300">{s.outcome}</div>
+              <div className="border-t border-white/10 pt-3 space-y-2">
+                <div className="text-xs text-zinc-400">Exposure</div>
+                <div className="text-sm font-medium text-white">{s.exposure}</div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="text-xs text-zinc-400">Actions</div>
+                {s.actions?.map((a, i) => (
+                  <div key={i} className="text-xs text-gray-400 flex items-start gap-1.5">
+                    <span className={`${st.text} shrink-0`}>→</span>{a}
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-white/10 pt-2">
+                <div className="text-xs text-zinc-500">Invalidation: {s.invalidation}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Expected path */}
+      {data.expected_path && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+            <div className="text-xs text-zinc-400">Expected Path — Next 24H</div>
+            <div className="text-sm text-gray-300">{data.expected_path["24h"]}</div>
+          </div>
+          <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+            <div className="text-xs text-zinc-400">Expected Path — Next 7D</div>
+            <div className="text-sm text-gray-300">{data.expected_path["7d"]}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Invalidation triggers */}
+      {data.invalidation_triggers?.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">What Invalidates Base Case</div>
+          {data.invalidation_triggers.map((t, i) => (
+            <div key={i} className="border border-yellow-900 bg-yellow-950 px-4 py-2 text-yellow-300 text-sm">
+              ⚠ {t}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  ) : loading ? (
+    <div className="text-sm text-zinc-400">Computing probabilistic scenarios...</div>
+  ) : null;
+
+  if (!isPro) return (
+    <ProGate
+      label="Probabilistic Scenarios"
+      consequence="Without scenario analysis, you have no framework for multiple outcomes."
+      onUnlock={onUnlock}
+    >
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>Probabilistic Scenarios</Label>
+      <p className="text-xs text-zinc-400 mb-4">
+        Base / Bull / Bear case with probability-weighted outcomes
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// INTERNAL DAMAGE PANEL
+// ─────────────────────────────────────────
+function InternalDamagePanel({ coin, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPro || !coin) return;
+    setLoading(true);
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    fetch(`${BACKEND}/internal-damage?coin=${coin}`, { headers })
+      .then((r) => r.json())
+      .then((d) => { if (!d.error && d.internal_damage_score !== null) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [coin, isPro, token]);
+
+  function damageColor(score) {
+    if (score >= 70) return "text-red-400";
+    if (score >= 50) return "text-orange-400";
+    if (score >= 30) return "text-yellow-400";
+    return "text-green-400";
+  }
+
+  const inner = data ? (
+    <div className="space-y-6">
+      {/* Hero */}
+      <div className="flex items-center gap-8">
+        <div className="text-center space-y-2 shrink-0">
+          <div className={`text-6xl font-bold ${damageColor(data.internal_damage_score)}`}>
+            {data.internal_damage_score}
+          </div>
+          <div className={`text-sm font-medium ${damageColor(data.internal_damage_score)}`}>
+            {data.damage_label}
+          </div>
+          <Bar
+            value={data.internal_damage_score}
+            cls={data.internal_damage_score >= 70 ? "bg-red-500" : data.internal_damage_score >= 50 ? "bg-orange-500" : data.internal_damage_score >= 30 ? "bg-yellow-500" : "bg-green-500"}
+          />
+        </div>
+        <div className="flex-1 space-y-3">
+          <div className="text-sm text-gray-400">{data.damage_message}</div>
+          {/* Component bars */}
+          {Object.entries(data.components || {}).map(([key, val]) => (
+            <div key={key} className="flex items-center gap-3">
+              <div className="text-xs text-zinc-500 w-40 shrink-0 capitalize">
+                {key.replace(/_/g, " ")}
+              </div>
+              <div className="flex-1 bg-zinc-800 rounded-full h-1.5">
+                <div
+                  className={`h-1.5 rounded-full transition-all ${
+                    val >= 60 ? "bg-red-500" : val >= 35 ? "bg-yellow-500" : "bg-green-500"
+                  }`}
+                  style={{ width: `${Math.min(100, val)}%` }}
+                />
+              </div>
+              <div className="text-xs text-zinc-400 w-8 text-right">{Math.round(val)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Signals */}
+      {data.signals?.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">
+            Damage Signals ({data.high_severity_count} high severity)
+          </div>
+          {data.signals.map((sig, i) => (
+            <div
+              key={i}
+              className={`border px-4 py-3 text-sm ${
+                sig.severity === "high" ? "border-red-800 bg-red-950 text-red-300" :
+                sig.severity === "medium" ? "border-orange-800 bg-orange-950 text-orange-300" :
+                "border-yellow-800 bg-yellow-950 text-yellow-300"
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <span>{sig.message}</span>
+                <span className="text-xs opacity-60 capitalize shrink-0 ml-3">{sig.severity}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {data.signals?.length === 0 && (
+        <div className="border border-emerald-900 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm">
+          ✓ No internal damage signals detected. Structure intact.
+        </div>
+      )}
+    </div>
+  ) : loading ? (
+    <div className="text-sm text-zinc-400">Scanning internal structure...</div>
+  ) : null;
+
+  if (!isPro) return (
+    <ProGate
+      label="Internal Damage Monitor"
+      consequence="Internal damage often precedes visible regime shifts. Without it, you're blindsided."
+      onUnlock={onUnlock}
+    >
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>Internal Damage Monitor</Label>
+      <p className="text-xs text-zinc-400 mb-4">
+        Detects structural weakening before it appears in price
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// BEHAVIORAL ALPHA PANEL
+// ─────────────────────────────────────────
+function BehavioralAlphaPanel({ email, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPro || !email) return;
+    setLoading(true);
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    fetch(`${BACKEND}/behavioral-alpha?email=${encodeURIComponent(email)}&lookback_days=30`, { headers })
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [email, isPro, token]);
+
+  function gradeStyle(grade) {
+    if (grade === "A") return "text-emerald-400";
+    if (grade === "B+" || grade === "B") return "text-green-400";
+    if (grade === "C") return "text-yellow-400";
+    return "text-red-400";
+  }
+
+  const inner = data?.ready ? (
+    <div className="space-y-6">
+      {/* Hero */}
+      <div className="flex items-start gap-8">
+        <div className="text-center space-y-2 shrink-0">
+          <div className={`text-6xl font-bold ${gradeStyle(data.behavior_grade)}`}>
+            {data.behavior_grade}
+          </div>
+          <div className={`text-sm font-medium ${gradeStyle(data.behavior_grade)}`}>
+            {data.behavior_label}
+          </div>
+        </div>
+        <div className="flex-1 space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white/2 border border-white/5 rounded-lg p-3 text-center">
+              <div className="text-xs text-zinc-500">Alpha Drag</div>
+              <div className="text-xl font-semibold text-red-400">-{data.total_estimated_alpha_drag_pct}%</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-3 text-center">
+              <div className="text-xs text-zinc-500">Follow Rate</div>
+              <div className="text-xl font-semibold text-white">{data.follow_rate}%</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-3 text-center">
+              <div className="text-xs text-zinc-500">Active Leaks</div>
+              <div className="text-xl font-semibold text-orange-400">{data.leaks?.length ?? 0}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Leaks */}
+      {data.leaks?.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Behavioral Leaks Detected</div>
+          {data.leaks.map((leak, i) => (
+            <div key={i} className="border border-red-900 bg-red-950/50 rounded-lg p-4 space-y-2">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="text-sm font-semibold text-red-300">{leak.label}</div>
+                  <div className="text-xs text-zinc-400 mt-0.5">{leak.description}</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-lg font-bold text-red-400">-{leak.estimated_alpha_drag_pct}%</div>
+                  <div className="text-xs text-zinc-500">{leak.frequency}x</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Strengths */}
+      {data.strengths?.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Strengths</div>
+          {data.strengths.map((s, i) => (
+            <div key={i} className="border border-emerald-900 bg-emerald-950/50 px-4 py-3 text-emerald-300 text-sm flex items-center gap-2">
+              <span className="shrink-0">✓</span>{s}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Recommendations */}
+      {data.recommendations?.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Recommendations</div>
+          {data.recommendations.map((r, i) => (
+            <div key={i} className="border border-white/5 px-4 py-3 text-sm text-gray-300 flex items-start gap-2">
+              <span className="text-blue-400 shrink-0 mt-0.5">→</span>{r}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  ) : data && !data.ready ? (
+    <div className="space-y-3">
+      <div className="text-sm text-zinc-400">{data.message}</div>
+      <div className="w-full bg-zinc-800 rounded-full h-1">
+        <div className="h-1 bg-blue-500 rounded-full" style={{ width: `${((data.log_count || 0) / 3) * 100}%` }} />
+      </div>
+    </div>
+  ) : loading ? (
+    <div className="text-sm text-zinc-400">Building behavioral alpha report...</div>
+  ) : (
+    <div className="text-sm text-zinc-400">Log exposure to start building your behavioral profile.</div>
+  );
+
+  if (!isPro) return (
+    <ProGate
+      label="Behavioral Alpha Report"
+      consequence="Without behavioral analysis, you cannot identify the specific patterns costing you money."
+      onUnlock={onUnlock}
+    >
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>Behavioral Alpha Report</Label>
+      <p className="text-xs text-zinc-400 mb-4">
+        Identifies specific behavioral leaks and their estimated cost
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// EVENT RISK OVERLAY PANEL
+// ─────────────────────────────────────────
+function EventRiskOverlayPanel({ coin, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPro || !coin) return;
+    setLoading(true);
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    fetch(`${BACKEND}/event-risk-overlay?coin=${coin}`, { headers })
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [coin, isPro, token]);
+
+  const inner = data ? (
+    <div className="space-y-6">
+      {/* Adjustment banner */}
+      <div className={`border p-5 rounded-lg space-y-2 ${
+        data.exposure_adjustment < -15 ? "border-red-800 bg-red-950" :
+        data.exposure_adjustment < 0 ? "border-yellow-800 bg-yellow-950" :
+        "border-emerald-800 bg-emerald-950"
+      }`}>
+        <div className="flex justify-between items-start">
+          <div>
+            <div className={`text-lg font-semibold ${
+              data.exposure_adjustment < -15 ? "text-red-300" :
+              data.exposure_adjustment < 0 ? "text-yellow-300" : "text-emerald-300"
+            }`}>{data.adjustment_label}</div>
+            <div className="text-sm text-gray-300 mt-1">{data.adjustment_message}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-zinc-400">Risk Multiplier</div>
+            <div className="text-2xl font-bold text-white">{data.event_risk_multiplier}x</div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 mt-3">
+          <div>
+            <div className="text-xs text-zinc-500">Exposure Before</div>
+            <div className="text-lg font-semibold text-white">{data.exposure_before_event}%</div>
+          </div>
+          <div>
+            <div className="text-xs text-zinc-500">Adjusted Exposure</div>
+            <div className={`text-lg font-semibold ${
+              data.exposure_adjusted < data.exposure_before_event ? "text-yellow-400" : "text-emerald-400"
+            }`}>{data.exposure_adjusted}%</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Imminent events */}
+      {data.imminent_events?.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Imminent Events (within 48h)</div>
+          <div className="grid md:grid-cols-2 gap-3">
+            {data.imminent_events.map((e, i) => (
+              <div key={i} className={`border rounded-lg p-4 space-y-2 ${
+                e.impact === "High" ? "border-red-900 bg-red-950/50" : "border-yellow-900 bg-yellow-950/50"
+              }`}>
+                <div className="flex justify-between items-start">
+                  <div className="text-sm font-semibold text-white">{e.name}</div>
+                  <div className={`text-xs px-2 py-0.5 rounded-full border ${
+                    e.impact === "High" ? "border-red-700 text-red-300" : "border-yellow-700 text-yellow-300"
+                  }`}>{e.impact}</div>
+                </div>
+                <div className="text-xs text-zinc-400">~{e.hours_until}h away · Vol mult: {e.vol_multiplier}x</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Event guidance */}
+      {data.event_guidance?.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Event-Specific Guidance</div>
+          {data.event_guidance.map((g, i) => (
+            <div key={i} className="border border-white/5 px-4 py-3 text-sm text-gray-300 space-y-1">
+              <div className="font-medium text-white">{g.event}</div>
+              <div>{g.action}</div>
+              <div className="text-xs text-zinc-500">{g.stop_guidance}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  ) : loading ? (
+    <div className="text-sm text-zinc-400">Computing event risk overlay...</div>
+  ) : null;
+
+  if (!isPro) return (
+    <ProGate
+      label="Event Risk Overlay"
+      consequence="Without event-aware sizing, you risk being caught by macro volatility."
+      onUnlock={onUnlock}
+    >
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>Event Risk Overlay</Label>
+      <p className="text-xs text-zinc-400 mb-4">
+        Dynamic position adjustments based on upcoming macro events
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// TRADE PLAN PANEL
+// ─────────────────────────────────────────
+function TradePlanPanel({ coin, email, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [accountSize, setAccountSize] = useState(10000);
+  const [archetype, setArchetype] = useState("swing");
+
+  const generate = async () => {
+    if (!isPro) { onUnlock(); return; }
+    setLoading(true);
+    try {
+      const headers = token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
+      const res = await fetch(`${BACKEND}/trade-plan`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          email: email || "",
+          coin,
+          account_size: accountSize,
+          strategy_mode: archetype,
+        }),
+      });
+      const d = await res.json();
+      if (!d.error) setData(d);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inner = (
+    <div className="space-y-6">
+      <div className="grid md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400">Account Size (USD)</div>
+          <input
+            type="number" value={accountSize}
+            onChange={(e) => setAccountSize(Number(e.target.value))}
+            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
+          />
+        </div>
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400">Trader Archetype</div>
+          <select
+            value={archetype} onChange={(e) => setArchetype(e.target.value)}
+            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
+          >
+            <option value="swing">Swing Trader</option>
+            <option value="position">Position Trader</option>
+            <option value="spot_allocator">Spot Allocator</option>
+            <option value="tactical">Tactical De-risker</option>
+            <option value="leverage">Leverage Trader</option>
+          </select>
+        </div>
+        <div className="flex items-end">
+          <button onClick={generate} disabled={loading}
+            className="w-full bg-white text-black py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
+          >
+            {loading ? "Generating..." : "Generate Trade Plan"}
+          </button>
+        </div>
+      </div>
+
+      {data && (
+        <div className="space-y-5">
+          {/* Bias + overview */}
+          <div className={`border p-5 rounded-lg space-y-3 ${
+            data.bias === "Long" ? "border-emerald-800 bg-emerald-950" :
+            data.bias === "Short / Cash" ? "border-red-800 bg-red-950" :
+            "border-yellow-800 bg-yellow-950"
+          }`}>
+            <div className="flex justify-between items-start">
+              <div>
+                <div className={`text-2xl font-bold ${
+                  data.bias === "Long" ? "text-emerald-300" :
+                  data.bias === "Short / Cash" ? "text-red-300" : "text-yellow-300"
+                }`}>{data.bias}</div>
+                <div className="text-xs text-zinc-400 mt-1">{data.archetype} · {data.entry_style}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-zinc-400">Allocation Band</div>
+                <div className="text-xl font-bold text-white">{data.allocation_band}</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div><span className="text-zinc-500">Setup Quality: </span><span className="text-white">{data.setup_quality}</span></div>
+              <div><span className="text-zinc-500">Chase Risk: </span><span className={data.chase_risk > 70 ? "text-red-400" : "text-white"}>{data.chase_risk}%</span></div>
+              <div><span className="text-zinc-500">Hold: </span><span className="text-white">~{data.time_horizon_days}d</span></div>
+            </div>
+          </div>
+
+          {/* Tranches */}
+          <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-3">
+            <div className="text-xs text-zinc-400 uppercase tracking-widest">Entry Tranches</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {data.tranches?.amounts?.map((amt, i) => (
+                <div key={i} className="bg-white/3 border border-white/5 rounded-lg p-3 text-center">
+                  <div className="text-xs text-zinc-500">Tranche {i + 1} ({data.tranches.percentages[i]}%)</div>
+                  <div className="text-lg font-semibold text-white">${amt?.toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+            <div className="text-xs text-zinc-500">
+              Total deployed: ${data.tranches?.deployed_total?.toLocaleString()} · Adj exposure: {data.adjusted_exposure}%
+            </div>
+          </div>
+
+          {/* Stop + Risk */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+              <div className="text-xs text-zinc-400 uppercase tracking-widest">Stop Loss</div>
+              <div className="text-xl font-semibold text-red-400">${data.stop?.price?.toLocaleString()}</div>
+              <div className="text-xs text-zinc-500">{data.stop?.distance_pct}% away · {data.stop?.type}</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+              <div className="text-xs text-zinc-400 uppercase tracking-widest">Risk Per Trade</div>
+              <div className="text-xl font-semibold text-white">${data.risk_per_trade?.usd?.toLocaleString()}</div>
+              <div className="text-xs text-zinc-500">{data.risk_per_trade?.pct_of_account}% of account</div>
+            </div>
+          </div>
+
+          {/* Profit taking */}
+          <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+            <div className="text-xs text-zinc-400 uppercase tracking-widest">Profit Taking Rules</div>
+            {data.profit_taking?.map((r, i) => (
+              <div key={i} className="text-sm text-gray-300 flex items-start gap-2">
+                <span className="text-emerald-400 shrink-0">→</span>{r}
+              </div>
+            ))}
+          </div>
+
+          {/* Conditional actions */}
+          <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+            <div className="text-xs text-zinc-400 uppercase tracking-widest">If-Then Actions</div>
+            {data.conditional_actions?.map((ca, i) => (
+              <div key={i} className="grid grid-cols-2 gap-3 text-sm border-b border-white/5 pb-2 last:border-0 last:pb-0">
+                <div className="text-yellow-400">If: {ca.condition}</div>
+                <div className="text-white">Then: {ca.action}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Invalidation */}
+          <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+            <div className="text-xs text-zinc-400 uppercase tracking-widest">Invalidation Conditions</div>
+            {data.invalidation?.map((inv, i) => (
+              <div key={i} className="text-sm text-red-300 flex items-start gap-2">
+                <span className="text-red-400 shrink-0">✕</span>{inv}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  if (!isPro) return (
+    <ProGate
+      label="Trade Plan Generator"
+      consequence="Without a trade plan, you're entering positions without defined risk parameters."
+      onUnlock={onUnlock}
+    >
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>Trade Plan Generator</Label>
+      <p className="text-xs text-zinc-400 mb-4">
+        Complete trade plan with tranches, stops, targets, and if-then actions
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// WHAT CHANGED PANEL
+// ─────────────────────────────────────────
+function WhatChangedPanel({ token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPro) return;
+    setLoading(true);
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    fetch(`${BACKEND}/what-changed?lookback_hours=24`, { headers })
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [isPro, token]);
+
+  const toneColor = {
+    improving: "text-emerald-400",
+    deteriorating: "text-red-400",
+    mixed: "text-yellow-400",
+    stable: "text-zinc-400",
+  };
+
+  const inner = data ? (
+    <div className="space-y-5">
+      <div className={`text-lg font-semibold ${toneColor[data.tone] || "text-zinc-400"}`}>
+        {data.headline}
+      </div>
+
+      <div className="flex gap-3 text-xs">
+        <span className="text-emerald-400">{data.upgrades} upgrades</span>
+        <span className="text-red-400">{data.downgrades} downgrades</span>
+        <span className="text-zinc-500">{data.change_count} total changes</span>
+      </div>
+
+      {data.changes?.length > 0 && (
+        <div className="space-y-2">
+          {data.changes.map((c, i) => (
+            <div key={i} className={`border px-4 py-3 flex items-center justify-between ${
+              c.severity === "positive" ? "border-emerald-900 bg-emerald-950/50" : "border-red-900 bg-red-950/50"
+            }`}>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-white">{c.coin}</span>
+                <span className="text-xs text-zinc-500">{c.timeframe_label}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className={regimeText(c.previous)}>{c.previous}</span>
+                <span className="text-zinc-500">→</span>
+                <span className={regimeText(c.current)}>{c.current}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {data.changes?.length === 0 && (
+        <div className="text-sm text-zinc-400">No regime changes in the last 24 hours.</div>
+      )}
+
+      {data.takeaways?.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Key Takeaways</div>
+          {data.takeaways.map((t, i) => (
+            <div key={i} className="text-sm text-gray-300 flex items-start gap-2">
+              <span className="text-blue-400 shrink-0">→</span>{t}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  ) : loading ? (
+    <div className="text-sm text-zinc-400">Loading intelligence brief...</div>
+  ) : null;
+
+  if (!isPro) return (
+    <ProGate
+      label="What Changed (24H)"
+      consequence="Without change tracking, you start each session without knowing what shifted."
+      onUnlock={onUnlock}
+    >
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>What Changed — Last 24 Hours</Label>
+      <p className="text-xs text-zinc-400 mb-4">
+        Regime shifts, upgrades, and downgrades across all assets
+      </p>
+      {inner}
+    </div>
+  );
+}
+
+
+// ─────────────────────────────────────────
+// MARKET TICKER 
 // ─────────────────────────────────────────
 function MarketTicker() {
   const [prices,  setPrices]  = useState({});
