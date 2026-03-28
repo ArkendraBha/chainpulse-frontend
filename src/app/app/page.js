@@ -24,11 +24,15 @@ function authHeaders(token) {
   if (token) h["Authorization"] = `Bearer ${token}`;
   return h;
 }
+
 async function apiFetch(path, token, opts = {}) {
   const url = path.startsWith("http") ? path : `${BACKEND}${path}`;
   const res = await fetch(url, {
     ...opts,
-    headers: { ...authHeaders(token), ...(opts.headers || {}) },
+    headers: {
+      ...authHeaders(token),
+      ...(opts.headers || {}),
+    },
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
@@ -49,8 +53,8 @@ function regimeBorder(label) {
   if (!label) return "border-white/5 bg-zinc-950/40";
   if (label === "Strong Risk-On") return "border-emerald-800 bg-emerald-900/20";
   if (label === "Risk-On") return "border-green-900 bg-green-900/10";
-  if (label === "Strong Risk-Off") return "border-red-800 bg-red-900/20 border border-red-700/40/30";
-  if (label === "Risk-Off") return "border-red-900 bg-red-900/20 border border-red-700/40/15";
+  if (label === "Strong Risk-Off") return "border-red-800 bg-red-900/30";
+  if (label === "Risk-Off") return "border-red-900 bg-red-900/15";
   return "border-yellow-900 bg-yellow-900/10";
 }
 function riskColor(v) { return v > 70 ? "text-red-400" : v > 45 ? "text-yellow-400" : "text-green-400"; }
@@ -58,7 +62,7 @@ function exposureColor(v) { return v > 60 ? "text-emerald-400" : v > 35 ? "text-
 function alignColor(v) { return v >= 80 ? "text-emerald-400" : v >= 50 ? "text-yellow-400" : "text-red-400"; }
 function dirBadge(d) {
   if (d === "bullish") return "text-green-400 border-green-900 bg-green-900/20";
-  if (d === "bearish") return "text-red-400 border-red-900 bg-red-900/20 border border-red-700/40/20";
+  if (d === "bearish") return "text-red-400 border-red-900 bg-red-900/20";
   return "text-yellow-400 border-yellow-900 bg-yellow-900/20";
 }
 function confColor(v) { return v >= 75 ? "text-emerald-400" : v >= 50 ? "text-yellow-400" : "text-red-400"; }
@@ -69,7 +73,6 @@ function gradeColor(g) {
   if (g.startsWith("C")) return "text-yellow-400";
   return "text-red-400";
 }
-
 function damageColor(score) {
   if (score >= 70) return "text-red-400";
   if (score >= 50) return "text-orange-400";
@@ -149,14 +152,30 @@ const PLAYBOOKS = {
   },
 };
 
-
-const ARCHETYPES = {
-  swing: { label: "Swing Trader", description: "Holds positions for days to weeks." },
-  position: { label: "Position Trader", description: "Longer-term conviction trades. Macro regime driven." },
-  spot_allocator: { label: "Spot Allocator", description: "DCA-oriented. Uses regime data for timing." },
-  tactical: { label: "Tactical De-risker", description: "Active risk management. Quick exposure adjustments." },
-  leverage: { label: "Leverage Trader", description: "Uses leverage. Tightest risk controls needed." },
+// ─────────────────────────────────────────
+// ARCHETYPE CONFIG (complete — replaces ARCHETYPES for selector)
+// ─────────────────────────────────────────
+const ARCHETYPE_CONFIG = {
+  swing:          { label: "Swing Trader",       description: "Holds positions for days to weeks." },
+  position:       { label: "Position Trader",    description: "Longer-term conviction trades. Macro regime driven." },
+  spot_allocator: { label: "Spot Allocator",     description: "DCA-oriented. Uses regime data for timing." },
+  tactical:       { label: "Tactical De-risker", description: "Active risk management. Quick exposure adjustments." },
+  leverage:       { label: "Leverage Trader",    description: "Uses leverage. Tightest risk controls needed." },
 };
+
+// Keep ARCHETYPES as alias so existing ArchetypeOverlayPanel still works
+const ARCHETYPES = ARCHETYPE_CONFIG;
+
+// ─────────────────────────────────────────
+// CardShell — shared card wrapper (was missing)
+// ─────────────────────────────────────────
+function CardShell({ children }) {
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-4">
+      {children}
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────
 // PRIMITIVES
@@ -193,20 +212,13 @@ function Lock() {
 // ─────────────────────────────────────────
 function ProGate({ label, consequence, children, onUnlock }) {
   return (
-    // FIX: removed overflow-hidden, added min-h so overlay has room
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 p-8 space-y-4 relative rounded-lg min-h-[160px]">
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-4 relative min-h-[160px]">
       <Label>{label}</Label>
       <div className="blur-sm select-none pointer-events-none opacity-30 max-h-32 overflow-hidden">
         {children}
       </div>
-      {/* FIX: use fixed positioning so it's never clipped by parent */}
-      <div className="absolute inset-0 flex items-center justify-center z-10 rounded-lg overflow-hidden">
-        <div className="
-          bg-zinc-950/98 border border-white/10
-          px-8 py-6 text-center space-y-3 w-full mx-4
-          rounded-xl shadow-2xl shadow-black/50
-          backdrop-blur-sm
-        ">
+      <div className="absolute inset-0 flex items-center justify-center z-10 rounded-2xl overflow-hidden">
+        <div className="bg-zinc-950/98 border border-white/10 px-8 py-6 text-center space-y-3 w-full mx-4 rounded-xl shadow-2xl shadow-black/50 backdrop-blur-sm">
           <div className="text-sm font-semibold text-white flex items-center justify-center gap-1.5">
             <Lock />{label}
           </div>
@@ -215,13 +227,9 @@ function ProGate({ label, consequence, children, onUnlock }) {
           )}
           <button
             onClick={onUnlock}
-            className="
-              w-full bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all4 py-2.5 rounded-lg
-              text-xs font-semibold hover:bg-zinc-100
-              transition-colors shadow-sm
-            "
+            className="w-full bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all text-xs font-semibold hover:bg-zinc-100"
           >
-            Unlock — $39/month
+            Unlock — \$39/month
           </button>
           <div className="text-xs text-zinc-700">7-day risk-free · Cancel anytime</div>
         </div>
@@ -241,9 +249,7 @@ function StatCard({ label, value, suffix = "%", color, barCls, hint, locked, con
         onClick={onUnlock}
       >
         <Label>{label}</Label>
-        <div className="text-3xl font-semibold text-zinc-800 blur-sm select-none tabular-nums">
-          00.0
-        </div>
+        <div className="text-3xl font-semibold text-zinc-800 blur-sm select-none tabular-nums">00.0</div>
         <Bar value={50} cls="bg-zinc-800" />
         {hint && <div className="text-xs text-zinc-800 blur-sm select-none">{hint}</div>}
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
@@ -271,28 +277,27 @@ function StatCard({ label, value, suffix = "%", color, barCls, hint, locked, con
     </div>
   );
 }
+
 // ─────────────────────────────────────────
 // TODAY'S VERDICT
 // ─────────────────────────────────────────
 function TodaysVerdict({ stack, decision, isPro, onUnlock }) {
-  const execLabel = stack?.execution?.label ?? "Neutral";
   const shiftRisk = stack?.shift_risk ?? 0;
-  const alignment = stack?.alignment ?? 0;
-  const exposure  = stack?.exposure  ?? 0;
+  const exposure = stack?.exposure ?? 0;
 
   const verdictStyle = () => {
     if (!isPro) return { border: "border-zinc-700", bg: "bg-zinc-950/50", text: "text-gray-300", dot: "bg-gray-500" };
     if (decision?.action === "aggressive") return { border: "border-emerald-800", bg: "bg-emerald-950/60", text: "text-emerald-300", dot: "bg-emerald-400" };
-    if (decision?.action === "hold")       return { border: "border-green-800",   bg: "bg-green-950/60",   text: "text-green-300",   dot: "bg-green-400"   };
-    if (decision?.action === "trim")       return { border: "border-yellow-800",  bg: "bg-yellow-950/60",  text: "text-yellow-300",  dot: "bg-yellow-400"  };
-    if (decision?.action === "defensive")  return { border: "border-orange-800",  bg: "bg-orange-950/60",  text: "text-orange-300",  dot: "bg-orange-400"  };
+    if (decision?.action === "hold") return { border: "border-green-800", bg: "bg-green-950/60", text: "text-green-300", dot: "bg-green-400" };
+    if (decision?.action === "trim") return { border: "border-yellow-800", bg: "bg-yellow-950/60", text: "text-yellow-300", dot: "bg-yellow-400" };
+    if (decision?.action === "defensive") return { border: "border-orange-800", bg: "bg-orange-950/60", text: "text-orange-300", dot: "bg-orange-400" };
     return { border: "border-red-800", bg: "bg-red-950/60", text: "text-red-300", dot: "bg-red-400" };
   };
 
   const s = verdictStyle();
 
   return (
-    <div className={`border ${s.border} ${s.bg} px-6 py-5`}>
+    <div className={`border ${s.border} ${s.bg} px-6 py-5 rounded-2xl`}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
           <div className={`w-2 h-2 rounded-full ${s.dot} animate-pulse shrink-0`} />
@@ -331,9 +336,9 @@ function TodaysVerdict({ stack, decision, isPro, onUnlock }) {
           ) : (
             <button
               onClick={onUnlock}
-              className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap"
+              className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2 rounded-xl text-sm font-semibold hover:bg-gray-100 whitespace-nowrap"
             >
-              Unlock Pro — $39/mo
+              Unlock Pro — \$39/mo
             </button>
           )}
         </div>
@@ -347,7 +352,7 @@ function TodaysVerdict({ stack, decision, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 function FreeTierBanner({ onUnlock }) {
   return (
-    <div className="border border-zinc-700 bg-zinc-950/80 px-6 py-5">
+    <div className="border border-zinc-700 bg-zinc-950/80 px-6 py-5 rounded-2xl">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1">
           <div className="text-sm text-white font-medium">
@@ -359,9 +364,9 @@ function FreeTierBanner({ onUnlock }) {
         </div>
         <button
           onClick={onUnlock}
-          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap hover:bg-gray-100 transition-colors shrink-0"
+          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap hover:bg-gray-100 shrink-0"
         >
-          Unlock Full System — $39/mo
+          Unlock Full System — \$39/mo
         </button>
       </div>
     </div>
@@ -371,22 +376,23 @@ function FreeTierBanner({ onUnlock }) {
 // ─────────────────────────────────────────
 // SHIFT RISK ALERT
 // ─────────────────────────────────────────
-function ShiftRiskAlert({ shiftRisk, coin, isPro, onUnlock }) {
+function ShiftRiskAlert({ shiftRisk, coin, isPro }) {
   if (!isPro) return null;
   if (shiftRisk <= 60) return null;
 
   const severity = shiftRisk > 80 ? "critical" : shiftRisk > 70 ? "elevated" : "moderate";
   const style =
-    severity === "critical" ? "border-red-600 bg-red-950 text-red-200"   :
-    severity === "elevated" ? "border-red-800 bg-red-950 text-red-300"   :
-                              "border-orange-800 bg-orange-950 text-orange-300";
+    severity === "critical" ? "border-red-600 bg-red-950 text-red-200" :
+    severity === "elevated" ? "border-red-800 bg-red-950 text-red-300" :
+    "border-orange-800 bg-orange-950 text-orange-300";
 
   return (
-    <div className={`border ${style} px-6 py-5 space-y-1`}>
+    <div className={`border ${style} px-6 py-5 rounded-2xl space-y-1`}>
       <div className="font-semibold text-sm flex items-center gap-2">
         <span>⚠</span>
         <span>
-          {severity === "critical" ? "Critical" : severity === "elevated" ? "Elevated" : "Moderate"} Regime Deterioration — {coin}
+          {severity === "critical" ? "Critical" : severity === "elevated" ? "Elevated" : "Moderate"}{" "}
+          Regime Deterioration — {coin}
         </span>
         <span className="ml-auto text-lg font-bold">{shiftRisk}%</span>
       </div>
@@ -406,24 +412,24 @@ function ShiftRiskAlert({ shiftRisk, coin, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 function deriveQuality(stack) {
   if (!stack) return null;
-  const alignment  = stack.alignment        ?? 0;
-  const survival   = stack.survival         ?? 50;
-  const hazard     = stack.hazard           ?? 50;
-  const shiftRisk  = stack.shift_risk       ?? 50;
-  const coherence  = stack.macro?.coherence ?? 50;
+  const alignment = stack.alignment ?? 0;
+  const survival = stack.survival ?? 50;
+  const hazard = stack.hazard ?? 50;
+  const shiftRisk = stack.shift_risk ?? 50;
+  const coherence = stack.macro?.coherence ?? 50;
   const score = Math.round(
-    alignment  * 0.30 +
-    survival   * 0.25 +
-    (100 - hazard)     * 0.20 +
-    (100 - shiftRisk)  * 0.15 +
-    coherence  * 0.10
+    alignment * 0.30 +
+    survival * 0.25 +
+    (100 - hazard) * 0.20 +
+    (100 - shiftRisk) * 0.15 +
+    coherence * 0.10
   );
   let grade, structural, breakdown;
-  if (score >= 80) { grade = "A";  structural = "Excellent";  breakdown = "Low";           }
-  else if (score >= 65) { grade = "B+"; structural = "Strong";     breakdown = "Low-Moderate"; }
-  else if (score >= 50) { grade = "B";  structural = "Healthy";    breakdown = "Moderate";     }
-  else if (score >= 35) { grade = "C";  structural = "Weakening";  breakdown = "Elevated";     }
-  else                  { grade = "D";  structural = "Fragile";     breakdown = "High";         }
+  if (score >= 80) { grade = "A"; structural = "Excellent"; breakdown = "Low"; }
+  else if (score >= 65) { grade = "B+"; structural = "Strong"; breakdown = "Low-Moderate"; }
+  else if (score >= 50) { grade = "B"; structural = "Healthy"; breakdown = "Moderate"; }
+  else if (score >= 35) { grade = "C"; structural = "Weakening"; breakdown = "Elevated"; }
+  else { grade = "D"; structural = "Fragile"; breakdown = "High"; }
   return { grade, score, structural, breakdown };
 }
 
@@ -440,9 +446,9 @@ function RegimeQualityCard({ stack, isPro, onUnlock }) {
           value={quality.score}
           cls={
             quality.score >= 80 ? "bg-emerald-500" :
-            quality.score >= 65 ? "bg-green-500"   :
-            quality.score >= 50 ? "bg-yellow-500"  :
-            quality.score >= 35 ? "bg-orange-500"  : "bg-red-500"
+            quality.score >= 65 ? "bg-green-500" :
+            quality.score >= 50 ? "bg-yellow-500" :
+            quality.score >= 35 ? "bg-orange-500" : "bg-red-500"
           }
         />
         <div className="text-xs text-zinc-500">{quality.score}/100</div>
@@ -453,20 +459,19 @@ function RegimeQualityCard({ stack, isPro, onUnlock }) {
           <div className="text-xs text-zinc-400">Structural Health</div>
           <div className={`text-xl font-semibold mt-1 ${
             ["Excellent","Strong"].includes(quality.structural) ? "text-emerald-400" :
-            quality.structural === "Healthy"   ? "text-green-400"  :
+            quality.structural === "Healthy" ? "text-green-400" :
             quality.structural === "Weakening" ? "text-yellow-400" : "text-red-400"
           }`}>
             {quality.structural}
           </div>
         </div>
         <div>
-          {/* FIX: was incorrectly showing quality.structural for both fields */}
           <div className="text-xs text-zinc-400">Breakdown Risk</div>
           <div className={`text-xl font-semibold mt-1 ${
-            quality.breakdown === "Low"          ? "text-emerald-400" :
-            quality.breakdown === "Low-Moderate" ? "text-green-400"   :
-            quality.breakdown === "Moderate"     ? "text-yellow-400"  :
-            quality.breakdown === "Elevated"     ? "text-orange-400"  : "text-red-400"
+            quality.breakdown === "Low" ? "text-emerald-400" :
+            quality.breakdown === "Low-Moderate" ? "text-green-400" :
+            quality.breakdown === "Moderate" ? "text-yellow-400" :
+            quality.breakdown === "Elevated" ? "text-orange-400" : "text-red-400"
           }`}>
             {quality.breakdown}
           </div>
@@ -475,9 +480,9 @@ function RegimeQualityCard({ stack, isPro, onUnlock }) {
 
       <div className="space-y-3">
         {[
-          { l: "Alignment",  v: stack.alignment  ?? 0 },
-          { l: "Survival",   v: stack.survival   ?? 0 },
-          { l: "Hazard",     v: stack.hazard     ?? 0, inv: true },
+          { l: "Alignment", v: stack.alignment ?? 0 },
+          { l: "Survival", v: stack.survival ?? 0 },
+          { l: "Hazard", v: stack.hazard ?? 0, inv: true },
           { l: "Shift Risk", v: stack.shift_risk ?? 0, inv: true },
         ].map(({ l, v, inv }) => (
           <div key={l} className="flex items-center gap-3">
@@ -486,7 +491,7 @@ function RegimeQualityCard({ stack, isPro, onUnlock }) {
               <div
                 className={`h-1 rounded-full transition-all ${
                   (inv ? 100 - v : v) >= 70 ? "bg-emerald-500" :
-                  (inv ? 100 - v : v) >= 50 ? "bg-yellow-500"  : "bg-red-500"
+                  (inv ? 100 - v : v) >= 50 ? "bg-yellow-500" : "bg-red-500"
                 }`}
                 style={{ width: `${v}%` }}
               />
@@ -498,26 +503,27 @@ function RegimeQualityCard({ stack, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Regime Quality Rating"
-      consequence="Without quality scoring, you cannot distinguish a strong regime from a fragile one."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate
+        label="Regime Quality Rating"
+        consequence="Without quality scoring, you cannot distinguish a strong regime from a fragile one."
+        onUnlock={onUnlock}
+      >
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-5">
+    <CardShell>
       <Label>Regime Quality Rating</Label>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
-/* ═══════════════════════════════════════
-   HISTORICAL ANALOGS PANEL (🆕 NEW)
-   ═══════════════════════════════════════ */
+// ─────────────────────────────────────────
+// HISTORICAL ANALOGS PANEL
+// ─────────────────────────────────────────
 function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -525,8 +531,7 @@ function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock }) {
   useEffect(() => {
     if (!isPro || !coin) return;
     setLoading(true);
-    fetch(`${BACKEND}/historical-analogs?coin=${coin}`, { headers: authHeaders(token) })
-      .then((r) => r.json())
+    apiFetch(`/historical-analogs?coin=${coin}`, token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -535,12 +540,11 @@ function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock }) {
   const inner = data ? (
     <div className="space-y-6">
       {!data.data_sufficient && (
-        <div className="border border-yellow-900 bg-yellow-950 px-4 py-3 text-yellow-300 text-sm">{data.message}</div>
+        <div className="border border-yellow-900 bg-yellow-950 px-4 py-3 text-yellow-300 text-sm rounded-lg">{data.message}</div>
       )}
 
       {data.data_sufficient && (
         <>
-          {/* Continuation stats */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[
               { l: "Sample Size", v: data.sample_size, s: "" },
@@ -556,7 +560,6 @@ function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock }) {
             ))}
           </div>
 
-          {/* Forward returns */}
           <div className="space-y-2">
             <div className="text-xs text-zinc-400 uppercase tracking-widest">Forward Return Distribution</div>
             <div className="grid grid-cols-3 gap-4">
@@ -580,7 +583,6 @@ function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock }) {
             </div>
           </div>
 
-          {/* Max adverse excursion */}
           <div className="grid md:grid-cols-2 gap-4">
             <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
               <div className="text-xs text-zinc-400 uppercase tracking-widest">Max Adverse Excursion</div>
@@ -598,13 +600,12 @@ function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock }) {
             </div>
           </div>
 
-          {/* Matching periods preview */}
           {data.matching_periods?.length > 0 && (
             <div className="space-y-2">
               <div className="text-xs text-zinc-400 uppercase tracking-widest">Recent Matching Periods (top 5)</div>
               <div className="space-y-1">
                 {data.matching_periods.slice(0, 5).map((mp, i) => (
-                  <div key={i} className="flex items-center justify-between border border-white/5 px-4 py-2 text-xs">
+                  <div key={i} className="flex items-center justify-between border border-white/5 px-4 py-2 text-xs rounded-lg">
                     <span className="text-zinc-400">{mp.date}</span>
                     <span className={regimeText(mp.label)}>{mp.label}</span>
                     <span className="text-white">Score: {mp.score?.toFixed(1)}</span>
@@ -623,116 +624,19 @@ function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock }) {
     <div className="text-sm text-zinc-400">No analog data available</div>
   );
 
-  if (!isPro) return <ProGate label="Historical Analogs" consequence="Without historical analogs, you have no statistical context for current regime conditions." onUnlock={onUnlock}>{inner}</ProGate>;
-  return <CardShell><Label>Historical Analogs</Label><p className="text-xs text-zinc-400 mb-4">Forward return statistics from similar historical regime conditions</p>{inner}</CardShell>;
-}
-
-/* ═══════════════════════════════════════
-   ARCHETYPE SELECTOR PANEL (🆕 NEW)
-   ═══════════════════════════════════════ */
-function ArchetypeSelectorPanel({ coin, email, token, isPro, onUnlock }) {
-  const [selectedArchetype, setSelectedArchetype] = useState("swing");
-  const [overlay, setOverlay] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const fetchOverlay = useCallback(async (arch) => {
-    if (!isPro) return;
-    setLoading(true);
-    try {
-      const emailParam = email ? `&email=${encodeURIComponent(email)}` : "";
-      const res = await fetch(`${BACKEND}/archetype-overlay?coin=${coin}&archetype=${arch}${emailParam}`, { headers: authHeaders(token) });
-      const d = await res.json();
-      if (!d.error) setOverlay(d);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }, [coin, email, token, isPro]);
-
-  useEffect(() => { fetchOverlay(selectedArchetype); }, [selectedArchetype, fetchOverlay]);
-
-  const saveArchetype = async () => {
-    if (!email || !isPro) return;
-    setSaving(true);
-    try {
-      await fetch(`${BACKEND}/save-archetype`, {
-        method: "POST",
-        headers: authHeaders(token),
-        body: JSON.stringify({ email, archetype: selectedArchetype }),
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch (e) { console.error(e); }
-    finally { setSaving(false); }
-  };
-
-  const inner = (
-    <div className="space-y-6">
-      {/* Archetype selector */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-        {Object.entries(ARCHETYPE_CONFIG).map(([key, cfg]) => (
-          <button key={key} onClick={() => setSelectedArchetype(key)}
-            className={`border p-3 rounded-xl text-left space-y-1 transition-all ${selectedArchetype === key ? "border-white bg-white/5" : "border-white/5 hover:border-zinc-600"}`}>
-            <div className="text-sm font-semibold text-white">{cfg.label}</div>
-            <div className="text-xs text-zinc-500 line-clamp-2">{cfg.description}</div>
-          </button>
-        ))}
-      </div>
-
-      {saved && <div className="border border-emerald-800 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm">✓ Archetype saved. Exposure recommendations personalised.</div>}
-
-      {/* Overlay data */}
-      {loading ? (
-        <div className="text-sm text-zinc-400">Loading archetype overlay...</div>
-      ) : overlay ? (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
-              <div className="text-xs text-zinc-400">Base Exposure</div>
-              <div className={`text-xl font-semibold ${exposureColor(overlay.base_exposure)}`}>{overlay.base_exposure}%</div>
-            </div>
-            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
-              <div className="text-xs text-zinc-400">Adjusted Exposure</div>
-              <div className={`text-xl font-semibold ${exposureColor(overlay.adjusted_exposure)}`}>{overlay.adjusted_exposure}%</div>
-            </div>
-            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
-              <div className="text-xs text-zinc-400">Alert Sensitivity</div>
-              <div className="text-xl font-semibold text-white capitalize">{overlay.alert_sensitivity}</div>
-            </div>
-            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
-              <div className="text-xs text-zinc-400">Should Alert?</div>
-              <div className={`text-xl font-semibold ${overlay.should_alert_now ? "text-red-400" : "text-emerald-400"}`}>{overlay.should_alert_now ? "Yes ⚠" : "No"}</div>
-            </div>
-          </div>
-
-          {overlay.archetype_actions?.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-xs text-zinc-400 uppercase tracking-widest">Archetype-Specific Actions</div>
-              {overlay.archetype_actions.map((a, i) => (
-                <div key={i} className="text-sm text-gray-300 flex items-start gap-2"><span className="text-blue-400 shrink-0">→</span>{a}</div>
-              ))}
-            </div>
-          )}
-
-          <div className="flex gap-3 text-xs text-zinc-500">
-            <span>Preferred TF: {overlay.preferred_timeframe}</span>
-            <span>Max Hold: {overlay.max_hold_days}d</span>
-            <span>Stop Width: {overlay.stop_width_multiplier}x</span>
-            <span>Playbook: {overlay.playbook_bias}</span>
-          </div>
-
-          {email && (
-            <button onClick={saveArchetype} disabled={saving} className="bg-white text-black px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50">
-              {saving ? "Saving..." : `Save ${ARCHETYPE_CONFIG[selectedArchetype]?.label} as My Archetype`}
-            </button>
-          )}
-        </div>
-      ) : null}
-    </div>
+  if (!isPro)
+    return (
+      <ProGate label="Historical Analogs" consequence="Without historical analogs, you have no statistical context for current regime conditions." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
+  return (
+    <CardShell>
+      <Label>Historical Analogs</Label>
+      <p className="text-xs text-zinc-400 mb-4">Forward return statistics from similar historical regime conditions</p>
+      {inner}
+    </CardShell>
   );
-
-  if (!isPro) return <ProGate label="Trader Archetype" consequence="Without archetype personalisation, exposure recommendations are generic." onUnlock={onUnlock}>{inner}</ProGate>;
-  return <CardShell><Label>Trader Archetype</Label><p className="text-xs text-zinc-400 mb-4">Personalise your experience — exposure, alerts, and actions adapted to your trading style</p>{inner}</CardShell>;
 }
 
 // ─────────────────────────────────────────
@@ -740,7 +644,7 @@ function ArchetypeSelectorPanel({ coin, email, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 function RegimePlaybook({ stack, isPro, onUnlock }) {
   const execLabel = stack?.execution?.label ?? "Neutral";
-  const pb        = PLAYBOOKS[execLabel] || PLAYBOOKS["Neutral"];
+  const pb = PLAYBOOKS[execLabel] || PLAYBOOKS["Neutral"];
   const regimeAge = stack?.regime_age_hours ?? 0;
   const remaining = Math.max(0, pb.avg_remaining_days * 24 - regimeAge);
 
@@ -753,17 +657,11 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
         </div>
         <div className="flex gap-3 flex-wrap">
           {[
-            { l: "Strategy Mode",   v: pb.strategy_mode, c: pb.strategy_color },
-            { l: "Exposure Band",   v: pb.exposure_band, c: "text-white"       },
-            {
-              l: "Est. Remaining",
-              v: remaining < 24
-                ? `~${remaining.toFixed(0)}h`
-                : `~${(remaining / 24).toFixed(1)}d`,
-              c: "text-white",
-            },
+            { l: "Strategy Mode", v: pb.strategy_mode, c: pb.strategy_color },
+            { l: "Exposure Band", v: pb.exposure_band, c: "text-white" },
+            { l: "Est. Remaining", v: remaining < 24 ? `~${remaining.toFixed(0)}h` : `~${(remaining / 24).toFixed(1)}d`, c: "text-white" },
           ].map(({ l, v, c }) => (
-            <div key={l} className="border border-white/5 px-4 py-2 text-center space-y-0.5">
+            <div key={l} className="border border-white/5 px-4 py-2 text-center space-y-0.5 rounded-lg">
               <div className="text-xs text-zinc-400">{l}</div>
               <div className={`text-sm font-semibold ${c}`}>{v}</div>
             </div>
@@ -774,13 +672,11 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
       <div className="grid grid-cols-2 gap-4">
         {[
           { l: "Trend-Following Win Rate", v: pb.trend_follow_wr },
-          { l: "Mean Reversion Win Rate",  v: pb.mean_revert_wr  },
+          { l: "Mean Reversion Win Rate", v: pb.mean_revert_wr },
         ].map(({ l, v }) => (
           <div key={l} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-3">
             <div className="text-xs text-zinc-400 uppercase tracking-widest">{l}</div>
-            <div className={`text-3xl font-semibold ${
-              v >= 60 ? "text-emerald-400" : v >= 50 ? "text-yellow-400" : "text-red-400"
-            }`}>{v}%</div>
+            <div className={`text-3xl font-semibold ${v >= 60 ? "text-emerald-400" : v >= 50 ? "text-yellow-400" : "text-red-400"}`}>{v}%</div>
             <Bar value={v} cls={v >= 60 ? "bg-emerald-500" : v >= 50 ? "bg-yellow-500" : "bg-red-500"} />
             <div className="text-xs text-zinc-500">Historical in {execLabel} regimes</div>
           </div>
@@ -807,7 +703,7 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
               </li>
             ))}
           </ul>
-          <div className="border border-white/5/60 p-3 mt-3">
+          <div className="border border-white/5 p-3 mt-3 rounded-lg">
             <div className="text-xs text-zinc-500">{pb.context}</div>
           </div>
         </div>
@@ -815,23 +711,18 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Regime Playbook Engine"
-      consequence="Without a playbook, you are applying the same strategy regardless of regime conditions."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Regime Playbook Engine" consequence="Without a playbook, you are applying the same strategy regardless of regime conditions." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Regime Playbook Engine</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Actionable protocol based on current regime and historical edge
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Actionable protocol based on current regime and historical edge</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -839,41 +730,39 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
 // PERSONALIZED EXPOSURE TRACKER
 // ─────────────────────────────────────────
 function ExposureTracker({ stack, isPro, onUnlock }) {
-  const [portfolioSize,    setPortfolioSize]    = useState(10000);
-  const [currentExposure,  setCurrentExposure]  = useState(50);
-  const [leverage,         setLeverage]         = useState(1);
-  const [strategyType,     setStrategyType]     = useState("swing");
-  const [result,           setResult]           = useState(null);
+  const [portfolioSize, setPortfolioSize] = useState(10000);
+  const [currentExposure, setCurrentExposure] = useState(50);
+  const [leverage, setLeverage] = useState(1);
+  const [strategyType, setStrategyType] = useState("swing");
+  const [result, setResult] = useState(null);
 
   const analyse = () => {
     if (!stack) return;
-    const execLabel   = stack.execution?.label ?? "Neutral";
-    const pb          = PLAYBOOKS[execLabel] || PLAYBOOKS["Neutral"];
-    const alignment   = stack.alignment  ?? 50;
-    const shiftRisk   = stack.shift_risk ?? 50;
+    const execLabel = stack.execution?.label ?? "Neutral";
+    const pb = PLAYBOOKS[execLabel] || PLAYBOOKS["Neutral"];
+    const alignment = stack.alignment ?? 50;
+    const shiftRisk = stack.shift_risk ?? 50;
     const [minBand, maxBand] = pb.exposure_band.replace(/%/g, "").split("–").map(Number);
-    const optimalMid  = (minBand + maxBand) / 2;
+    const optimalMid = (minBand + maxBand) / 2;
     const effectiveExp = currentExposure * leverage;
-    const delta       = effectiveExp - optimalMid;
+    const delta = effectiveExp - optimalMid;
     const baseR =
-      execLabel === "Strong Risk-On" ?  1.2 :
-      execLabel === "Risk-On"        ?  0.9 :
-      execLabel === "Neutral"        ?  0.2 :
-      execLabel === "Risk-Off"       ? -0.3 : -0.8;
+      execLabel === "Strong Risk-On" ? 1.2 :
+      execLabel === "Risk-On" ? 0.9 :
+      execLabel === "Neutral" ? 0.2 :
+      execLabel === "Risk-Off" ? -0.3 : -0.8;
     const expectancy = (baseR + (alignment / 100) * 0.4 + ((100 - shiftRisk) / 100) * 0.2).toFixed(2);
 
     setResult({
-      optimalMid,
-      minBand,
-      maxBand,
+      optimalMid, minBand, maxBand,
       effectiveExp: effectiveExp.toFixed(1),
-      delta:        Math.abs(delta).toFixed(1),
-      isOver:       delta > 0,
-      overBand:     effectiveExp > maxBand,   // FIX: removed erroneous * leverage
+      delta: Math.abs(delta).toFixed(1),
+      isOver: delta > 0,
+      overBand: effectiveExp > maxBand,
       expectancy,
       deployedCapital: ((currentExposure / 100) * portfolioSize).toLocaleString(),
-      optimalCapital:  ((optimalMid      / 100) * portfolioSize).toLocaleString(),
-      regimeLabel:     execLabel,
+      optimalCapital: ((optimalMid / 100) * portfolioSize).toLocaleString(),
+      regimeLabel: execLabel,
     });
   };
 
@@ -881,9 +770,9 @@ function ExposureTracker({ stack, isPro, onUnlock }) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { l: "Portfolio Size (USD)",  val: portfolioSize,   set: setPortfolioSize,   type: "number", min: 100                       },
-          { l: "Current Exposure %",    val: currentExposure, set: setCurrentExposure, type: "number", min: 0,   max: 200              },
-          { l: "Leverage (1x = spot)",  val: leverage,        set: setLeverage,        type: "number", min: 1,   max: 20,   step: 0.5  },
+          { l: "Portfolio Size (USD)", val: portfolioSize, set: setPortfolioSize, type: "number", min: 100 },
+          { l: "Current Exposure %", val: currentExposure, set: setCurrentExposure, type: "number", min: 0, max: 200 },
+          { l: "Leverage (1x = spot)", val: leverage, set: setLeverage, type: "number", min: 1, max: 20, step: 0.5 },
         ].map(({ l, val, set, ...rest }) => (
           <div key={l} className="space-y-2">
             <div className="text-xs text-zinc-400">{l}</div>
@@ -912,17 +801,17 @@ function ExposureTracker({ stack, isPro, onUnlock }) {
 
       <button
         onClick={analyse}
-        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors"
+        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100"
       >
         Analyse My Exposure
       </button>
 
       {result && (
         <div className="space-y-4">
-          <div className={`border px-5 py-4 space-y-1 ${
-            result.overBand ? "border-red-900 bg-red-950 text-red-300"        :
-            result.isOver   ? "border-yellow-900 bg-yellow-950 text-yellow-300" :
-                              "border-emerald-900 bg-emerald-950 text-emerald-300"
+          <div className={`border px-5 py-4 space-y-1 rounded-lg ${
+            result.overBand ? "border-red-900 bg-red-950 text-red-300" :
+            result.isOver ? "border-yellow-900 bg-yellow-950 text-yellow-300" :
+            "border-emerald-900 bg-emerald-950 text-emerald-300"
           }`}>
             <div className="font-semibold text-sm">
               {result.overBand
@@ -938,19 +827,14 @@ function ExposureTracker({ stack, isPro, onUnlock }) {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { l: "Deployed Capital",  v: `
+              { l: "Deployed Capital", v: `
 $$
 {result.deployedCapital}`, c: exposureColor(currentExposure) },
-              { l: "Optimal Capital",   v: `
+              { l: "Optimal Capital", v: `
 $$
-{result.optimalCapital}`,  c: "text-blue-400"                },
-              {
-                l: "R Expectancy",
-                v: `${result.expectancy}R`,
-                c: Number(result.expectancy) >= 0.5 ? "text-emerald-400" :
-                   Number(result.expectancy) >= 0   ? "text-yellow-400"  : "text-red-400",
-              },
-              { l: "Regime Tolerance",  v: `${result.minBand}–${result.maxBand}%`, c: "text-gray-300" },
+{result.optimalCapital}`, c: "text-blue-400" },
+              { l: "R Expectancy", v: `${result.expectancy}R`, c: Number(result.expectancy) >= 0.5 ? "text-emerald-400" : Number(result.expectancy) >= 0 ? "text-yellow-400" : "text-red-400" },
+              { l: "Regime Tolerance", v: `${result.minBand}–${result.maxBand}%`, c: "text-gray-300" },
             ].map(({ l, v, c }) => (
               <div key={l} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
                 <div className="text-xs text-zinc-400">{l}</div>
@@ -962,15 +846,10 @@ $$
           <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
             <div className="text-xs text-zinc-400">Exposure vs Regime Band</div>
             <div className="relative h-3 bg-zinc-800 rounded-full overflow-hidden">
-              {/* optimal band highlight */}
               <div
                 className="absolute h-full bg-emerald-900/40"
-                style={{
-                  left:  `${result.minBand}%`,
-                  width: `${result.maxBand - result.minBand}%`,
-                }}
+                style={{ left: `${result.minBand}%`, width: `${result.maxBand - result.minBand}%` }}
               />
-              {/* current exposure marker — FIX: cast effectiveExp to Number */}
               <div
                 className={`absolute h-full w-1 ${
                   result.overBand ? "bg-red-400" : result.isOver ? "bg-yellow-400" : "bg-emerald-400"
@@ -989,23 +868,18 @@ $$
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Exposure Calibration Engine"
-      consequence="Without exposure calibration, you cannot know if your position size is regime-appropriate."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Exposure Calibration Engine" consequence="Without exposure calibration, you cannot know if your position size is regime-appropriate." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Exposure Calibration Engine</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Compare your current position size against regime-optimal allocation
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Compare your current position size against regime-optimal allocation</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -1014,47 +888,24 @@ $$
 // ─────────────────────────────────────────
 function StressMeter({ stack, isPro, onUnlock }) {
   if (!stack) return null;
-  const hazard    = stack.hazard    ?? 0;
+  const hazard = stack.hazard ?? 0;
   const shiftRisk = stack.shift_risk ?? 0;
   const alignment = stack.alignment ?? 100;
-  const survival  = stack.survival  ?? 100;
+  const survival = stack.survival ?? 100;
 
   const stress = Math.round(
-    hazard     * 0.30 +
-    shiftRisk  * 0.35 +
-    (100 - alignment) * 0.20 +
-    (100 - survival)  * 0.15
+    hazard * 0.30 + shiftRisk * 0.35 + (100 - alignment) * 0.20 + (100 - survival) * 0.15
   );
 
-  const stressLabel =
-    stress >= 80 ? "Critical" :
-    stress >= 60 ? "Elevated" :
-    stress >= 40 ? "Moderate" :
-    stress >= 20 ? "Low"      : "Minimal";
-
-  const stressColor =
-    stress >= 80 ? "text-red-400"     :
-    stress >= 60 ? "text-orange-400"  :
-    stress >= 40 ? "text-yellow-400"  :
-    stress >= 20 ? "text-green-400"   : "text-emerald-400";
-
-  const arcColor =
-    stress >= 80 ? "#f87171" :
-    stress >= 60 ? "#fb923c" :
-    stress >= 40 ? "#facc15" :
-    stress >= 20 ? "#4ade80" : "#34d399";
+  const stressLabel = stress >= 80 ? "Critical" : stress >= 60 ? "Elevated" : stress >= 40 ? "Moderate" : stress >= 20 ? "Low" : "Minimal";
+  const stressColor = stress >= 80 ? "text-red-400" : stress >= 60 ? "text-orange-400" : stress >= 40 ? "text-yellow-400" : stress >= 20 ? "text-green-400" : "text-emerald-400";
+  const arcColor = stress >= 80 ? "#f87171" : stress >= 60 ? "#fb923c" : stress >= 40 ? "#facc15" : stress >= 20 ? "#4ade80" : "#34d399";
 
   const inner = (
     <div className="flex flex-col md:flex-row items-center gap-8">
       <div className="relative w-48 h-48 flex items-center justify-center shrink-0">
         <ResponsiveContainer width={192} height={192}>
-          <RadialBarChart
-            cx="50%" cy="50%"
-            innerRadius="65%" outerRadius="90%"
-            startAngle={225} endAngle={-45}
-            data={[{ value: 100, fill: "#27272a" }, { value: stress, fill: arcColor }]}
-            barSize={14}
-          >
+          <RadialBarChart cx="50%" cy="50%" innerRadius="65%" outerRadius="90%" startAngle={225} endAngle={-45} data={[{ value: 100, fill: "#27272a" }, { value: stress, fill: arcColor }]} barSize={14}>
             <RadialBar dataKey="value" cornerRadius={6} background={false} />
           </RadialBarChart>
         </ResponsiveContainer>
@@ -1065,23 +916,19 @@ function StressMeter({ stack, isPro, onUnlock }) {
       </div>
 
       <div className="flex-1 space-y-4 w-full">
-        <div className="text-sm text-gray-400">
-          Composite stress from hazard rate, shift risk, alignment breakdown, and survival decay.
-        </div>
+        <div className="text-sm text-gray-400">Composite stress from hazard rate, shift risk, alignment breakdown, and survival decay.</div>
         <div className="space-y-3">
           {[
-            { l: "Hazard Rate",           v: hazard,              w: "30%" },
-            { l: "Shift Risk",            v: shiftRisk,           w: "35%" },
-            { l: "Alignment Breakdown",   v: 100 - alignment,     w: "20%" },
-            { l: "Survival Decay",        v: 100 - survival,      w: "15%" },
+            { l: "Hazard Rate", v: hazard, w: "30%" },
+            { l: "Shift Risk", v: shiftRisk, w: "35%" },
+            { l: "Alignment Breakdown", v: 100 - alignment, w: "20%" },
+            { l: "Survival Decay", v: 100 - survival, w: "15%" },
           ].map(({ l, v, w }) => (
             <div key={l} className="flex items-center gap-3">
               <div className="text-xs text-zinc-500 w-36 shrink-0">{l}</div>
               <div className="flex-1 bg-zinc-800 rounded-full h-1.5">
                 <div
-                  className={`h-1.5 rounded-full transition-all ${
-                    v >= 70 ? "bg-red-500" : v >= 45 ? "bg-yellow-500" : "bg-green-500"
-                  }`}
+                  className={`h-1.5 rounded-full transition-all ${v >= 70 ? "bg-red-500" : v >= 45 ? "bg-yellow-500" : "bg-green-500"}`}
                   style={{ width: `${Math.round(v)}%` }}
                 />
               </div>
@@ -1094,20 +941,17 @@ function StressMeter({ stack, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Regime Stress Meter"
-      consequence="Stress meter identifies regime breakdown before it appears in price."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Regime Stress Meter" consequence="Stress meter identifies regime breakdown before it appears in price." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-5">
+    <CardShell>
       <Label>Regime Stress Meter</Label>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -1117,44 +961,31 @@ function StressMeter({ stack, isPro, onUnlock }) {
 function RegimeCountdown({ stack, isPro, onUnlock }) {
   if (!stack) return null;
   const execLabel = stack.execution?.label ?? "Neutral";
-  const pb        = PLAYBOOKS[execLabel] || PLAYBOOKS["Neutral"];
+  const pb = PLAYBOOKS[execLabel] || PLAYBOOKS["Neutral"];
   const regimeAge = stack.regime_age_hours ?? 0;
-  const avgTotal  = pb.avg_remaining_days * 24;
+  const avgTotal = pb.avg_remaining_days * 24;
   const remaining = Math.max(0, avgTotal - regimeAge);
-  const pct       = Math.min(100, (regimeAge / avgTotal) * 100);
+  const pct = Math.min(100, (regimeAge / avgTotal) * 100);
 
-  const urgency =
-    remaining < 12 ? "text-red-400"     :
-    remaining < 48 ? "text-yellow-400"  : "text-emerald-400";
+  const urgency = remaining < 12 ? "text-red-400" : remaining < 48 ? "text-yellow-400" : "text-emerald-400";
 
   const inner = (
     <div className="grid md:grid-cols-3 gap-6 items-center">
       <div className="space-y-3">
         <div className={`text-4xl font-bold ${urgency}`}>
-          {remaining < 24
-            ? `~${remaining.toFixed(0)}h`
-            : `~${(remaining / 24).toFixed(1)}d`}
+          {remaining < 24 ? `~${remaining.toFixed(0)}h` : `~${(remaining / 24).toFixed(1)}d`}
         </div>
         <div className="text-xs text-zinc-400">Est. remaining in current regime</div>
-        <Bar
-          value={pct}
-          cls={
-            pct >= 85 ? "bg-red-500"     :
-            pct >= 65 ? "bg-orange-500"  :
-            pct >= 40 ? "bg-yellow-500"  : "bg-emerald-500"
-          }
-        />
-        <div className="text-xs text-zinc-500">
-          {regimeAge.toFixed(1)}h elapsed / {avgTotal}h avg total
-        </div>
+        <Bar value={pct} cls={pct >= 85 ? "bg-red-500" : pct >= 65 ? "bg-orange-500" : pct >= 40 ? "bg-yellow-500" : "bg-emerald-500"} />
+        <div className="text-xs text-zinc-500">{regimeAge.toFixed(1)}h elapsed / {avgTotal}h avg total</div>
       </div>
 
       <div className="md:col-span-2 space-y-3">
         <div className="grid grid-cols-3 gap-3">
           {[
-            { l: "Current Regime", v: execLabel,               c: regimeText(execLabel) },
-            { l: "Avg Duration",   v: `${pb.avg_remaining_days}d`, c: "text-gray-300"   },
-            { l: "Age",            v: `${regimeAge.toFixed(1)}h`,  c: "text-gray-300"   },
+            { l: "Current Regime", v: execLabel, c: regimeText(execLabel) },
+            { l: "Avg Duration", v: `${pb.avg_remaining_days}d`, c: "text-gray-300" },
+            { l: "Age", v: `${regimeAge.toFixed(1)}h`, c: "text-gray-300" },
           ].map(({ l, v, c }) => (
             <div key={l} className="bg-white/2 border border-white/5 rounded-lg p-3 space-y-1">
               <div className="text-xs text-zinc-400">{l}</div>
@@ -1163,12 +994,12 @@ function RegimeCountdown({ stack, isPro, onUnlock }) {
           ))}
         </div>
         {remaining < 24 && (
-          <div className="border border-red-900 bg-red-950 px-4 py-3 text-red-300 text-sm">
+          <div className="border border-red-900 bg-red-950 px-4 py-3 text-red-300 text-sm rounded-lg">
             ⚠ Regime statistically overdue for transition. Monitor closely.
           </div>
         )}
         {remaining >= 24 && remaining < 48 && (
-          <div className="border border-yellow-900 bg-yellow-950 px-4 py-3 text-yellow-300 text-sm">
+          <div className="border border-yellow-900 bg-yellow-950 px-4 py-3 text-yellow-300 text-sm rounded-lg">
             ⚡ Entering late phase — reduce new entries, tighten stops.
           </div>
         )}
@@ -1176,21 +1007,18 @@ function RegimeCountdown({ stack, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Regime Countdown Timer"
-      consequence="Without regime duration modeling, you cannot anticipate transition windows."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Regime Countdown Timer" consequence="Without regime duration modeling, you cannot anticipate transition windows." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-5">
+    <CardShell>
       <Label>Regime Countdown Timer</Label>
       <p className="text-xs text-zinc-400">Statistical estimate based on historical regime durations</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -1201,15 +1029,13 @@ function ConfidenceTrend({ history, confidence, isPro, onUnlock }) {
   const baseConf = confidence?.score ?? 60;
   const trendData = history.slice(-24).map((h, i) => ({
     hour: h.hour,
-    conf: Math.min(100, Math.max(0, Math.round(
-      baseConf + Math.sin(i * 0.8) * 8 + (h.score / 100) * 15
-    ))),
+    conf: Math.min(100, Math.max(0, Math.round(baseConf + Math.sin(i * 0.8) * 8 + (h.score / 100) * 15))),
   }));
-  const latest   = trendData[trendData.length - 1]?.conf ?? baseConf;
+  const latest = trendData[trendData.length - 1]?.conf ?? baseConf;
   const earliest = trendData[0]?.conf ?? baseConf;
-  const delta    = latest - earliest;
+  const delta = latest - earliest;
   const trending = delta > 3 ? "↑ Rising" : delta < -3 ? "↓ Falling" : "→ Stable";
-  const tColor   = delta > 3 ? "text-emerald-400" : delta < -3 ? "text-red-400" : "text-yellow-400";
+  const tColor = delta > 3 ? "text-emerald-400" : delta < -3 ? "text-red-400" : "text-yellow-400";
 
   const inner = (
     <div className="space-y-4">
@@ -1225,8 +1051,8 @@ function ConfidenceTrend({ history, confidence, isPro, onUnlock }) {
         <AreaChart data={trendData}>
           <defs>
             <linearGradient id="confGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.2} />
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}   />
+              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
             </linearGradient>
           </defs>
           <XAxis dataKey="hour" hide />
@@ -1249,20 +1075,17 @@ function ConfidenceTrend({ history, confidence, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Confidence Trend (24H)"
-      consequence="Confidence trend shows whether regime conviction is building or deteriorating."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Confidence Trend (24H)" consequence="Confidence trend shows whether regime conviction is building or deteriorating." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-6 space-y-2">
+    <CardShell>
       <Label>Confidence Trend (24H)</Label>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -1272,17 +1095,17 @@ function ConfidenceTrend({ history, confidence, isPro, onUnlock }) {
 function RegimeStackCard({ stack, isPro, onUnlock }) {
   if (!stack) return null;
   const layers = [
-    { label: "Macro",     tf: "1D", data: stack.macro     },
-    { label: "Trend",     tf: "4H", data: stack.trend     },
+    { label: "Macro", tf: "1D", data: stack.macro },
+    { label: "Trend", tf: "4H", data: stack.trend },
     { label: "Execution", tf: "1H", data: stack.execution },
   ];
   const alignDesc =
-    (stack.alignment || 0) >= 80 ? "All timeframes agree — high conviction"       :
-    (stack.alignment || 0) >= 50 ? "Partial alignment — moderate conviction"       :
-                                   "Conflicting timeframes — reduce size";
+    (stack.alignment || 0) >= 80 ? "All timeframes agree — high conviction" :
+    (stack.alignment || 0) >= 50 ? "Partial alignment — moderate conviction" :
+    "Conflicting timeframes — reduce size";
 
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-6">
+    <CardShell>
       <div className="flex justify-between items-start">
         <div>
           <Label>Regime Stack</Label>
@@ -1290,8 +1113,7 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
         </div>
         {stack.direction && (
           <span className={`text-xs px-3 py-1 rounded-full border ${dirBadge(stack.direction)}`}>
-            {stack.direction === "bullish" ? "↑ Bullish" :
-             stack.direction === "bearish" ? "↓ Bearish" : "→ Mixed"}
+            {stack.direction === "bullish" ? "↑ Bullish" : stack.direction === "bearish" ? "↓ Bearish" : "→ Mixed"}
           </span>
         )}
       </div>
@@ -1300,7 +1122,7 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
         {layers.map(({ label, tf, data }) => (
           <div
             key={label}
-            className={`flex items-center justify-between px-5 py-4 border rounded-sm ${
+            className={`flex items-center justify-between px-5 py-4 border rounded-lg ${
               data ? regimeBorder(data.label) : "border-white/5"
             }`}
           >
@@ -1312,10 +1134,13 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
               {data?.label ?? "—"}
             </div>
             <div className="text-xs text-right w-28 hidden sm:block">
-              {isPro && data
-                ? <span className="text-zinc-400">Coherence {data.coherence?.toFixed(1)}%</span>
-                : <span className="text-gray-700 flex items-center justify-end cursor-pointer" onClick={onUnlock}><Lock />Pro</span>
-              }
+              {isPro && data ? (
+                <span className="text-zinc-400">Coherence {data.coherence?.toFixed(1)}%</span>
+              ) : (
+                <span className="text-gray-700 flex items-center justify-end cursor-pointer" onClick={onUnlock}>
+                  <Lock />Pro
+                </span>
+              )}
             </div>
           </div>
         ))}
@@ -1329,10 +1154,7 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
           </div>
           <Bar
             value={stack.alignment || 0}
-            cls={
-              (stack.alignment || 0) >= 80 ? "bg-emerald-500" :
-              (stack.alignment || 0) >= 50 ? "bg-yellow-500"  : "bg-red-500"
-            }
+            cls={(stack.alignment || 0) >= 80 ? "bg-emerald-500" : (stack.alignment || 0) >= 50 ? "bg-yellow-500" : "bg-red-500"}
           />
           <div className="text-xs text-zinc-500">{alignDesc}</div>
         </div>
@@ -1346,10 +1168,7 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
               </div>
               <Bar
                 value={stack.exposure || 0}
-                cls={
-                  (stack.exposure || 0) > 60 ? "bg-emerald-500" :
-                  (stack.exposure || 0) > 35 ? "bg-yellow-500"  : "bg-red-500"
-                }
+                cls={(stack.exposure || 0) > 60 ? "bg-emerald-500" : (stack.exposure || 0) > 35 ? "bg-yellow-500" : "bg-red-500"}
               />
               <div className="text-xs text-zinc-500">Alignment-adjusted recommendation</div>
             </>
@@ -1365,9 +1184,9 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
       {isPro && (
         <div className="grid grid-cols-3 gap-3">
           {[
-            { l: "Survival",   v: stack.survival,   fn: (v) => riskColor(100 - v) },
-            { l: "Hazard",     v: stack.hazard,     fn: riskColor                 },
-            { l: "Shift Risk", v: stack.shift_risk, fn: riskColor                 },
+            { l: "Survival", v: stack.survival, fn: (v) => riskColor(100 - v) },
+            { l: "Hazard", v: stack.hazard, fn: riskColor },
+            { l: "Shift Risk", v: stack.shift_risk, fn: riskColor },
           ].map(({ l, v, fn }) => (
             <div key={l} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
               <Label>{l}</Label>
@@ -1380,12 +1199,12 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
       {!isPro && (
         <button
           onClick={onUnlock}
-          className="w-full border border-zinc-700 py-3 text-sm text-zinc-400 hover:border-zinc-500 hover:text-white transition-colors rounded-sm"
+          className="w-full border border-zinc-700 py-3 text-sm text-zinc-400 hover:border-zinc-500 hover:text-white transition-colors rounded-lg"
         >
           <Lock />Unlock coherence, survival, hazard & exposure — Pro
         </button>
       )}
-    </div>
+    </CardShell>
   );
 }
 
@@ -1418,21 +1237,18 @@ function ConfidencePanel({ confidence, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Regime Confidence Score"
-      consequence="Confidence score determines appropriate position sizing for this regime."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Regime Confidence Score" consequence="Confidence score determines appropriate position sizing for this regime." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   if (!confidence) return null;
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Regime Confidence Score</Label>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -1441,17 +1257,17 @@ function ConfidencePanel({ confidence, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 function VolEnvironment({ env, isPro, onUnlock }) {
   function envColor(label) {
-    if (["Low","Strong","Normal"].includes(label))                        return "text-green-400";
-    if (["Moderate","Weak"].includes(label))                              return "text-yellow-400";
-    if (["High","Elevated","Extreme","Thin","Deteriorating"].includes(label)) return "text-red-400";
+    if (["Low", "Strong", "Normal"].includes(label)) return "text-green-400";
+    if (["Moderate", "Weak"].includes(label)) return "text-yellow-400";
+    if (["High", "Elevated", "Extreme", "Thin", "Deteriorating"].includes(label)) return "text-red-400";
     return "text-gray-400";
   }
 
   const items = [
-    { label: "Volatility",      value: env?.volatility_label, score: env?.volatility_score },
-    { label: "Trend Stability", value: env?.stability_label,  score: env?.stability_score  },
-    { label: "Market Stress",   value: env?.stress_label,     score: env?.stress_score     },
-    { label: "Liquidity",       value: env?.liquidity_label,  score: null                  },
+    { label: "Volatility", value: env?.volatility_label, score: env?.volatility_score },
+    { label: "Trend Stability", value: env?.stability_label, score: env?.stability_score },
+    { label: "Market Stress", value: env?.stress_label, score: env?.stress_score },
+    { label: "Liquidity", value: env?.liquidity_label, score: null },
   ];
 
   const inner = (
@@ -1471,24 +1287,22 @@ function VolEnvironment({ env, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Volatility & Liquidity Environment"
-      consequence="Volatility environment determines stop placement and position sizing precision."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Volatility & Liquidity Environment" consequence="Volatility environment determines stop placement and position sizing precision." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   if (!env) return null;
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-5">
+    <CardShell>
       <Label>Market Conditions</Label>
       <h2 className="text-base font-semibold">Volatility & Liquidity Environment</h2>
-{inner}
-</div>
-);
+      {inner}
+    </CardShell>
+  );
 }
+
 // ─────────────────────────────────────────
 // TRANSITION MATRIX
 // ─────────────────────────────────────────
@@ -1502,9 +1316,9 @@ function TransitionMatrix({ transitions, isPro, onUnlock }) {
             <div className="flex-1 bg-zinc-800 rounded-full h-1.5">
               <div
                 className={`h-1.5 rounded-full transition-all duration-700 ${
-                  state === transitions?.current_state ? "bg-white"      :
-                  state.includes("Risk-On")            ? "bg-green-500"  :
-                  state.includes("Risk-Off")           ? "bg-red-500"    : "bg-yellow-500"
+                  state === transitions?.current_state ? "bg-white" :
+                  state.includes("Risk-On") ? "bg-green-500" :
+                  state.includes("Risk-Off") ? "bg-red-500" : "bg-yellow-500"
                 }`}
                 style={{ width: `${prob}%` }}
               />
@@ -1516,18 +1330,15 @@ function TransitionMatrix({ transitions, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Regime Transition Probability"
-      consequence="Transition probabilities show where the regime is statistically likely to move next."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Regime Transition Probability" consequence="Transition probabilities show where the regime is statistically likely to move next." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   if (!transitions?.transitions) return null;
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-5">
+    <CardShell>
       <div>
         <Label>Regime Transition Probability</Label>
         <h2 className="text-base font-semibold">
@@ -1541,31 +1352,31 @@ function TransitionMatrix({ transitions, isPro, onUnlock }) {
         )}
       </div>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
 // ─────────────────────────────────────────
-// PORTFOLIO ALLOCATOR
+// PORTFOLIO ALLOCATOR — FIX: token + authHeaders
 // ─────────────────────────────────────────
-function PortfolioAllocator({ stack, isPro, onUnlock }) {
-  const [accountSize,   setAccountSize]   = useState(10000);
-  const [strategyMode,  setStrategyMode]  = useState("balanced");
-  const [allocation,    setAllocation]    = useState(null);
-  const [loading,       setLoading]       = useState(false);
-  const [error,         setError]         = useState(null);
+function PortfolioAllocator({ stack, token, isPro, onUnlock }) {
+  const [accountSize, setAccountSize] = useState(10000);
+  const [strategyMode, setStrategyMode] = useState("balanced");
+  const [allocation, setAllocation] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const calculate = async () => {
     if (!isPro) { onUnlock(); return; }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `${BACKEND}/portfolio-allocator?account_size=${accountSize}&strategy_mode=${strategyMode}&coin=${stack?.coin || "BTC"}`,
-        { method: "POST", headers: { "Content-Type": "application/json" } }
+      const data = await apiFetch(
+        `/portfolio-allocator?account_size=${accountSize}&strategy_mode=${strategyMode}&coin=${stack?.coin || "BTC"}`,
+        token,
+        { method: "POST" }
       );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setAllocation(await res.json());
+      setAllocation(data);
     } catch {
       setError("Calculation failed. Please try again.");
     } finally {
@@ -1574,7 +1385,7 @@ function PortfolioAllocator({ stack, isPro, onUnlock }) {
   };
 
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-6">
+    <CardShell>
       <div>
         <Label>Portfolio Exposure Allocator</Label>
         <h2 className="text-base font-semibold">Risk-Adjusted Capital Allocation</h2>
@@ -1598,9 +1409,7 @@ function PortfolioAllocator({ stack, isPro, onUnlock }) {
                 key={m}
                 onClick={() => setStrategyMode(m)}
                 className={`flex-1 py-3 rounded-xl text-xs font-medium capitalize transition-colors ${
-                  strategyMode === m
-                    ? "bg-white text-black"
-                    : "bg-zinc-950 text-gray-400 border border-zinc-700 hover:border-zinc-500"
+                  strategyMode === m ? "bg-white text-black" : "bg-zinc-950 text-gray-400 border border-zinc-700 hover:border-zinc-500"
                 }`}
               >
                 {m}
@@ -1620,25 +1429,25 @@ function PortfolioAllocator({ stack, isPro, onUnlock }) {
       </div>
 
       {error && (
-        <div className="border border-red-900 bg-red-950 px-4 py-3 text-red-400 text-sm">{error}</div>
+        <div className="border border-red-900 bg-red-950 px-4 py-3 text-red-400 text-sm rounded-lg">{error}</div>
       )}
 
       {allocation && !allocation.error && (
         <div className="space-y-3">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Deployed",     value: `
+              { label: "Deployed", value: `
 $$
 {allocation.deployed_capital?.toLocaleString()}`, color: exposureColor(allocation.adjusted_exposure) },
-              { label: "Spot",         value: `
+              { label: "Spot", value: `
 $$
-{allocation.spot_allocation?.toLocaleString()}`,  color: "text-blue-400"   },
-              { label: "Swing",        value: `
+{allocation.spot_allocation?.toLocaleString()}`, color: "text-blue-400" },
+              { label: "Swing", value: `
 $$
 {allocation.swing_allocation?.toLocaleString()}`, color: "text-purple-400" },
               { label: "Cash Reserve", value: `
 $$
-{allocation.cash_reserve?.toLocaleString()}`,     color: "text-gray-300"   },
+{allocation.cash_reserve?.toLocaleString()}`, color: "text-gray-300" },
             ].map(({ label, value, color }) => (
               <div key={label} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
                 <div className="text-xs text-zinc-400">{label}</div>
@@ -1646,7 +1455,7 @@ $$
               </div>
             ))}
           </div>
-          <div className="border border-white/5/50 px-4 py-3 text-xs text-zinc-500 space-x-4">
+          <div className="border border-white/5 px-4 py-3 text-xs text-zinc-500 space-x-4 rounded-lg">
             <span>Adjusted exposure: <span className="text-gray-400">{allocation.adjusted_exposure}%</span></span>
             <span>Strategy: <span className="text-gray-400 capitalize">{allocation.strategy_mode}</span></span>
             <span>Confidence: <span className="text-gray-400">{allocation.confidence}%</span></span>
@@ -1656,16 +1465,14 @@ $$
 
       {!isPro && (
         <div
-          className="border border-dashed border-zinc-700 p-6 text-center space-y-2 cursor-pointer hover:border-zinc-500 transition-colors rounded-sm"
+          className="border border-dashed border-zinc-700 p-6 text-center space-y-2 cursor-pointer hover:border-zinc-500 transition-colors rounded-lg"
           onClick={onUnlock}
         >
           <div className="text-sm text-gray-400"><Lock />Portfolio allocator requires Pro</div>
-          <div className="text-xs text-zinc-500">
-            Unlock deployed capital · spot vs swing split · cash reserve calculation
-          </div>
+          <div className="text-xs text-zinc-500">Unlock deployed capital · spot vs swing split · cash reserve calculation</div>
         </div>
       )}
-    </div>
+    </CardShell>
   );
 }
 
@@ -1687,40 +1494,34 @@ function CorrelationPanel({ correlation, isPro, onUnlock }) {
                 {Number(corr).toFixed(2)}
               </div>
               <div className="text-xs text-zinc-500">{label}</div>
-              <Bar
-                value={abs * 100}
-                cls={abs > 0.8 ? "bg-emerald-500" : abs > 0.5 ? "bg-yellow-500" : "bg-red-500"}
-              />
+              <Bar value={abs * 100} cls={abs > 0.8 ? "bg-emerald-500" : abs > 0.5 ? "bg-yellow-500" : "bg-red-500"} />
             </div>
           );
         })}
       </div>
       {correlation?.alerts?.map((alert, i) => (
-        <div key={i} className="border border-red-900 bg-red-900/20 border border-red-700/40/10 px-4 py-3 text-red-400 text-sm">
+        <div key={i} className="border border-red-900 bg-red-900/10 px-4 py-3 text-red-400 text-sm rounded-lg">
           ⚠ {alert}
         </div>
       ))}
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Cross-Asset Correlation Monitor"
-      consequence="Correlation breakdown between assets is an early warning of regime stress."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Cross-Asset Correlation Monitor" consequence="Correlation breakdown between assets is an early warning of regime stress." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   if (!correlation?.pairs?.length) return null;
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-5">
+    <CardShell>
       <div>
         <Label>Cross-Asset Correlation Monitor</Label>
         <h2 className="text-base font-semibold">Pairwise Return Correlation (24H)</h2>
       </div>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -1729,19 +1530,19 @@ function CorrelationPanel({ correlation, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 function RegimeHeatmap({ overview, isPro, onUnlock }) {
   function cellStyle(label) {
-    if (label === "Strong Risk-On")  return "bg-emerald-900/40 text-emerald-400 border-emerald-900/50";
-    if (label === "Risk-On")         return "bg-green-900/30 text-green-400 border-green-900/40";
-    if (label === "Strong Risk-Off") return "bg-red-900/20 border border-red-700/40/40 text-red-400 border-red-900/50";
-    if (label === "Risk-Off")        return "bg-red-900/20 border border-red-700/40/20 text-red-400 border-red-900/30";
-    if (label === "Neutral")         return "bg-yellow-900/20 text-yellow-400 border-yellow-900/30";
+    if (label === "Strong Risk-On") return "bg-emerald-900/40 text-emerald-400 border-emerald-900/50";
+    if (label === "Risk-On") return "bg-green-900/30 text-green-400 border-green-900/40";
+    if (label === "Strong Risk-Off") return "bg-red-900/40 text-red-400 border-red-900/50";
+    if (label === "Risk-Off") return "bg-red-900/20 text-red-400 border-red-900/30";
+    if (label === "Neutral") return "bg-yellow-900/20 text-yellow-400 border-yellow-900/30";
     return "bg-zinc-950/40 text-zinc-500 border-white/5";
   }
   function shortLabel(label) {
-    if (!label)                      return "—";
-    if (label === "Strong Risk-On")  return "S.R+";
-    if (label === "Risk-On")         return "R+";
+    if (!label) return "—";
+    if (label === "Strong Risk-On") return "S.R+";
+    if (label === "Risk-On") return "R+";
     if (label === "Strong Risk-Off") return "S.R-";
-    if (label === "Risk-Off")        return "R-";
+    if (label === "Risk-Off") return "R-";
     return "NEU";
   }
 
@@ -1754,8 +1555,8 @@ function RegimeHeatmap({ overview, isPro, onUnlock }) {
               <th className="text-left text-zinc-400 pb-3 pr-6 font-normal uppercase tracking-widest">Asset</th>
               {[
                 { label: "Execution", tf: "1H" },
-                { label: "Trend",     tf: "4H" },
-                { label: "Macro",     tf: "1D" },
+                { label: "Trend", tf: "4H" },
+                { label: "Macro", tf: "1D" },
               ].map(({ label, tf }) => (
                 <th key={tf} className="text-zinc-400 pb-3 px-3 font-normal uppercase tracking-widest text-center">
                   {label} <span className="text-gray-700">({tf})</span>
@@ -1767,7 +1568,7 @@ function RegimeHeatmap({ overview, isPro, onUnlock }) {
           </thead>
           <tbody>
             {(overview || []).map((item) => (
-              <tr key={item.coin} className="border-t border-white/5/50">
+              <tr key={item.coin} className="border-t border-white/5">
                 <td className="pr-6 py-2.5 font-semibold text-white">{item.coin}</td>
                 {[item.execution, item.trend, item.macro].map((regime, i) => (
                   <td key={i} className="px-3 py-2.5 text-center">
@@ -1794,10 +1595,10 @@ function RegimeHeatmap({ overview, isPro, onUnlock }) {
       <div className="flex gap-4 flex-wrap pt-1">
         {[
           { label: "S.R+", cls: "bg-emerald-900/40 text-emerald-400 border-emerald-900/50" },
-          { label: "R+",   cls: "bg-green-900/30 text-green-400 border-green-900/40"       },
-          { label: "NEU",  cls: "bg-yellow-900/20 text-yellow-400 border-yellow-900/30"    },
-          { label: "R-",   cls: "bg-red-900/20 border border-red-700/40/20 text-red-400 border-red-900/30"             },
-          { label: "S.R-", cls: "bg-red-900/20 border border-red-700/40/40 text-red-400 border-red-900/50"             },
+          { label: "R+", cls: "bg-green-900/30 text-green-400 border-green-900/40" },
+          { label: "NEU", cls: "bg-yellow-900/20 text-yellow-400 border-yellow-900/30" },
+          { label: "R-", cls: "bg-red-900/20 text-red-400 border-red-900/30" },
+          { label: "S.R-", cls: "bg-red-900/40 text-red-400 border-red-900/50" },
         ].map(({ label, cls }) => (
           <span key={label} className={`text-xs px-2 py-0.5 rounded-sm border ${cls}`}>{label}</span>
         ))}
@@ -1808,25 +1609,22 @@ function RegimeHeatmap({ overview, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Regime Heatmap"
-      consequence="Heatmap shows regime alignment across all assets simultaneously."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Regime Heatmap" consequence="Heatmap shows regime alignment across all assets simultaneously." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   if (!overview?.length) return null;
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-5">
+    <CardShell>
       <div>
         <Label>Regime Heatmap</Label>
         <h2 className="text-base font-semibold">Asset × Timeframe Regime Grid</h2>
         <p className="text-xs text-zinc-400 mt-1">Full regime snapshot across every asset and timeframe</p>
       </div>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -1837,7 +1635,7 @@ function RiskEvents({ events }) {
   if (!events?.length) return null;
 
   function impactStyle(impact) {
-    if (impact === "High")   return "text-red-400 border-red-900 bg-red-900/20 border border-red-700/40/10";
+    if (impact === "High") return "text-red-400 border-red-900 bg-red-900/10";
     if (impact === "Medium") return "text-yellow-400 border-yellow-900 bg-yellow-900/10";
     return "text-gray-400 border-white/5 bg-zinc-950/20";
   }
@@ -1848,7 +1646,7 @@ function RiskEvents({ events }) {
   });
 
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-5">
+    <CardShell>
       <div>
         <Label>Risk Event Monitor</Label>
         <h2 className="text-base font-semibold">Active Macro Risk Flags</h2>
@@ -1856,7 +1654,7 @@ function RiskEvents({ events }) {
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {sorted.map((e) => (
-          <div key={e.name} className={`border px-4 py-3 rounded-sm space-y-1.5 ${impactStyle(e.impact)}`}>
+          <div key={e.name} className={`border px-4 py-3 rounded-lg space-y-1.5 ${impactStyle(e.impact)}`}>
             <div className="font-medium text-sm">{e.name}</div>
             <div className="text-xs opacity-70">{e.type}</div>
             <div className={`text-xs font-medium px-2 py-0.5 rounded-full border inline-block ${impactStyle(e.impact)}`}>
@@ -1865,7 +1663,7 @@ function RiskEvents({ events }) {
           </div>
         ))}
       </div>
-    </div>
+    </CardShell>
   );
 }
 
@@ -1876,14 +1674,14 @@ function RegimeMaturity({ regimeAge, avgDuration, maturityLabel, isPro, onUnlock
   const maturityPct = avgDuration > 0 ? Math.min(100, (regimeAge / avgDuration) * 100) : 0;
 
   const phaseColor =
-    maturityLabel === "Overextended" ? "text-red-400"    :
-    maturityLabel === "Late Phase"   ? "text-orange-400" :
-    maturityLabel === "Mid Phase"    ? "text-yellow-400" : "text-emerald-400";
+    maturityLabel === "Overextended" ? "text-red-400" :
+    maturityLabel === "Late Phase" ? "text-orange-400" :
+    maturityLabel === "Mid Phase" ? "text-yellow-400" : "text-emerald-400";
 
   const phaseCls =
-    maturityLabel === "Overextended" ? "bg-red-500"    :
-    maturityLabel === "Late Phase"   ? "bg-orange-500" :
-    maturityLabel === "Mid Phase"    ? "bg-yellow-500" : "bg-emerald-500";
+    maturityLabel === "Overextended" ? "bg-red-500" :
+    maturityLabel === "Late Phase" ? "bg-orange-500" :
+    maturityLabel === "Mid Phase" ? "bg-yellow-500" : "bg-emerald-500";
 
   const inner = (
     <div className="space-y-4">
@@ -1898,10 +1696,8 @@ function RegimeMaturity({ regimeAge, avgDuration, maturityLabel, isPro, onUnlock
         {["Early Phase", "Mid Phase", "Late Phase", "Overextended"].map((ph) => (
           <div
             key={ph}
-            className={`py-1.5 rounded-sm ${
-              maturityLabel === ph
-                ? "bg-white text-black font-semibold"
-                : "text-zinc-500 border border-white/5"
+            className={`py-1.5 rounded-lg ${
+              maturityLabel === ph ? "bg-white text-black font-semibold" : "text-zinc-500 border border-white/5"
             }`}
           >
             {ph}
@@ -1914,20 +1710,17 @@ function RegimeMaturity({ regimeAge, avgDuration, maturityLabel, isPro, onUnlock
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Regime Maturity"
-      consequence="Regime maturity tells you how much statistical life remains in the current trend."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Regime Maturity" consequence="Regime maturity tells you how much statistical life remains in the current trend." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Regime Maturity</Label>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -1937,7 +1730,7 @@ function RegimeMaturity({ regimeAge, avgDuration, maturityLabel, isPro, onUnlock
 function RegimeTimeline({ history, coin }) {
   if (!history?.length) return null;
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-5">
+    <CardShell>
       <div>
         <Label>Regime Score History</Label>
         <h2 className="text-base font-semibold">{coin} 48H Momentum Signal</h2>
@@ -1947,8 +1740,8 @@ function RegimeTimeline({ history, coin }) {
         <AreaChart data={history}>
           <defs>
             <linearGradient id="hGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.15} />
-              <stop offset="95%" stopColor="#22c55e" stopOpacity={0}    />
+              <stop offset="5%" stopColor="#22c55e" stopOpacity={0.15} />
+              <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#18181b" strokeDasharray="3 3" />
@@ -1959,13 +1752,13 @@ function RegimeTimeline({ history, coin }) {
             labelStyle={{ color: "#71717a" }}
             formatter={(v) => [v?.toFixed(2), "Score"]}
           />
-          <ReferenceLine y={0}   stroke="#27272a" />
-          <ReferenceLine y={35}  stroke="#16a34a" strokeDasharray="3 3" strokeOpacity={0.4} />
+          <ReferenceLine y={0} stroke="#27272a" />
+          <ReferenceLine y={35} stroke="#16a34a" strokeDasharray="3 3" strokeOpacity={0.4} />
           <ReferenceLine y={-35} stroke="#dc2626" strokeDasharray="3 3" strokeOpacity={0.4} />
           <Area type="monotone" dataKey="score" stroke="#22c55e" strokeWidth={2} fill="url(#hGrad)" dot={false} />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </CardShell>
   );
 }
 
@@ -1976,18 +1769,15 @@ function BreadthPanel({ breadth }) {
   if (!breadth?.total) return null;
   const { bullish, neutral, bearish, total, breadth_score } = breadth;
 
-  const scoreColor =
-    breadth_score >  30 ? "text-green-400"  :
-    breadth_score < -30 ? "text-red-400"    : "text-yellow-400";
-
+  const scoreColor = breadth_score > 30 ? "text-green-400" : breadth_score < -30 ? "text-red-400" : "text-yellow-400";
   const trendLabel =
-    breadth_score >  60 ? "Strong Participation" :
-    breadth_score >  20 ? "Healthy"               :
-    breadth_score > -20 ? "Mixed"                  :
-    breadth_score > -60 ? "Weak"                   : "Broad Risk-Off";
+    breadth_score > 60 ? "Strong Participation" :
+    breadth_score > 20 ? "Healthy" :
+    breadth_score > -20 ? "Mixed" :
+    breadth_score > -60 ? "Weak" : "Broad Risk-Off";
 
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-5">
+    <CardShell>
       <div className="flex justify-between items-start">
         <div>
           <Label>Market Breadth</Label>
@@ -2001,25 +1791,17 @@ function BreadthPanel({ breadth }) {
         </div>
       </div>
       <div className="flex h-2 rounded-full overflow-hidden gap-px">
-        {bullish > 0 && (
-          <div className="bg-green-500 transition-all"  style={{ width: `${(bullish  / total) * 100}%` }} />
-        )}
-        {neutral > 0 && (
-          <div className="bg-yellow-500 transition-all" style={{ width: `${(neutral  / total) * 100}%` }} />
-        )}
-        {bearish > 0 && (
-          <div className="bg-red-500 transition-all"    style={{ width: `${(bearish  / total) * 100}%` }} />
-        )}
+        {bullish > 0 && <div className="bg-green-500 transition-all" style={{ width: `${(bullish / total) * 100}%` }} />}
+        {neutral > 0 && <div className="bg-yellow-500 transition-all" style={{ width: `${(neutral / total) * 100}%` }} />}
+        {bearish > 0 && <div className="bg-red-500 transition-all" style={{ width: `${(bearish / total) * 100}%` }} />}
       </div>
       <div className="flex gap-6 text-xs">
         <span className="text-green-400">{bullish} bullish</span>
         <span className="text-yellow-400">{neutral} neutral</span>
         <span className="text-red-400">{bearish} bearish</span>
-        <span className="text-zinc-500 ml-auto">
-          {Math.round(((bullish + bearish) / total) * 100)}% trending
-        </span>
+        <span className="text-zinc-500 ml-auto">{Math.round(((bullish + bearish) / total) * 100)}% trending</span>
       </div>
-    </div>
+    </CardShell>
   );
 }
 
@@ -2029,41 +1811,37 @@ function BreadthPanel({ breadth }) {
 function RegimeMap({ overview, activeCoin, onSelect }) {
   if (!overview?.length) return null;
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-5">
+    <CardShell>
       <Label>Multi-Asset Regime Map</Label>
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
         {overview.map((item) => (
           <button
             key={item.coin}
             onClick={() => onSelect(item.coin)}
-            className={`border p-3 text-left space-y-1.5 transition-colors rounded-sm ${
+            className={`border p-3 text-left space-y-1.5 transition-colors rounded-lg ${
               item.coin === activeCoin ? "border-white" : "border-white/5 hover:border-zinc-600"
             }`}
           >
             <div className="font-semibold text-sm">{item.coin}</div>
             {[
-              { l: "M", v: item.macro     },
-              { l: "T", v: item.trend     },
+              { l: "M", v: item.macro },
+              { l: "T", v: item.trend },
               { l: "E", v: item.execution },
             ].map(({ l, v }) => (
               <div key={l} className="flex items-center gap-1">
                 <span className="text-zinc-500 text-xs w-3">{l}</span>
                 <span className={`text-xs ${regimeText(v)}`}>
-                  {v
-                    ? v.replace("Strong ", "S.").replace("Risk-On", "R+").replace("Risk-Off", "R-")
-                    : "—"}
+                  {v ? v.replace("Strong ", "S.").replace("Risk-On", "R+").replace("Risk-Off", "R-") : "—"}
                 </span>
               </div>
             ))}
             {item.alignment != null && (
-              <div className={`text-xs font-medium ${alignColor(item.alignment)}`}>
-                {item.alignment}%
-              </div>
+              <div className={`text-xs font-medium ${alignColor(item.alignment)}`}>{item.alignment}%</div>
             )}
           </button>
         ))}
       </div>
-    </div>
+    </CardShell>
   );
 }
 
@@ -2072,13 +1850,11 @@ function RegimeMap({ overview, activeCoin, onSelect }) {
 // ─────────────────────────────────────────
 function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-4 relative overflow-hidden">
+    <CardShell>
       <div>
         <Label>Survival Curve</Label>
         <h2 className="text-base font-semibold">Regime Persistence Probability</h2>
-        <p className="text-xs text-zinc-400 mt-1">
-          Probability current regime persists · white line = current age
-        </p>
+        <p className="text-xs text-zinc-400 mt-1">Probability current regime persists · white line = current age</p>
       </div>
       <div className={!isPro ? "blur-sm pointer-events-none" : ""}>
         <ResponsiveContainer width="100%" height={260}>
@@ -2092,33 +1868,23 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
               formatter={(v, n) => [`${v?.toFixed(1)}%`, n]}
             />
             <Line type="monotone" dataKey="survival" stroke="#22c55e" strokeWidth={2} dot={false} name="Survival %" />
-            <Line type="monotone" dataKey="hazard"   stroke="#f87171" strokeWidth={1.5} strokeDasharray="4 4" dot={false} name="Hazard %" />
-            <ReferenceLine
-              x={Math.round(regimeAge)}
-              stroke="#ffffff"
-              strokeDasharray="3 3"
-              label={{ value: "Now", fill: "#71717a", fontSize: 10 }}
-            />
+            <Line type="monotone" dataKey="hazard" stroke="#f87171" strokeWidth={1.5} strokeDasharray="4 4" dot={false} name="Hazard %" />
+            <ReferenceLine x={Math.round(regimeAge)} stroke="#ffffff" strokeDasharray="3 3" label={{ value: "Now", fill: "#71717a", fontSize: 10 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
       {!isPro && (
-        <div
-          className="absolute inset-0 flex items-center justify-center cursor-pointer"
-          onClick={onUnlock}
-        >
-          <div className="bg-zinc-950 border border-zinc-700 px-6 py-5 text-center space-y-3">
+        <div className="absolute inset-0 flex items-center justify-center cursor-pointer rounded-2xl" onClick={onUnlock}>
+          <div className="bg-zinc-950 border border-zinc-700 px-6 py-5 text-center space-y-3 rounded-xl">
             <div className="text-sm font-medium">Survival Curve</div>
-            <div className="text-xs text-zinc-400 max-w-xs">
-              Without survival modeling, you cannot quantify regime decay probability.
-            </div>
+            <div className="text-xs text-zinc-400 max-w-xs">Without survival modeling, you cannot quantify regime decay probability.</div>
             <button className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-4 py-2.5 rounded-xl text-xs font-semibold">
-              Unlock Pro — $39/month
+              Unlock Pro — \$39/month
             </button>
           </div>
         </div>
       )}
-    </div>
+    </CardShell>
   );
 }
 
@@ -2128,12 +1894,12 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
 function InterpretationPanel({ stack, latest, isPro }) {
   if (!stack) return null;
   const regimeAge = stack.regime_age_hours ?? 0;
-  const hazard    = stack.hazard    ?? 0;
-  const survival  = stack.survival  ?? 0;
+  const hazard = stack.hazard ?? 0;
+  const survival = stack.survival ?? 0;
   const alignment = stack.alignment ?? 0;
 
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-4">
+    <CardShell>
       <Label>Signal Interpretation</Label>
       <div className="grid md:grid-cols-2 gap-3 text-sm text-gray-400">
         <div>Regime Age: <span className="text-white">{regimeAge.toFixed(1)}h</span></div>
@@ -2151,55 +1917,44 @@ function InterpretationPanel({ stack, latest, isPro }) {
                 {latest.momentum_24h?.toFixed(2) ?? "—"}%
               </span>
             </div>
-            <div>
-              Volatility: <span className="text-white">{latest.volatility?.toFixed(2) ?? "—"}</span>
-            </div>
+            <div>Volatility: <span className="text-white">{latest.volatility?.toFixed(2) ?? "—"}</span></div>
           </>
         )}
       </div>
       {isPro && hazard > 60 && (
-        <div className="text-red-400 text-sm pt-1">
-          ⚠ Elevated hazard above 60% — deterioration risk is statistically significant.
-        </div>
+        <div className="text-red-400 text-sm pt-1">⚠ Elevated hazard above 60% — deterioration risk is statistically significant.</div>
       )}
       {isPro && survival > 70 && (
-        <div className="text-green-400 text-sm pt-1">
-          ✓ Regime persistence statistically strong at current age.
-        </div>
+        <div className="text-green-400 text-sm pt-1">✓ Regime persistence statistically strong at current age.</div>
       )}
       {alignment < 40 && (
-        <div className="text-yellow-400 text-sm pt-1">
-          ⚡ Low alignment — timeframes in conflict. Reduce position size.
-        </div>
+        <div className="text-yellow-400 text-sm pt-1">⚡ Low alignment — timeframes in conflict. Reduce position size.</div>
       )}
       {stack.macro?.label?.includes("Risk-Off") && stack.execution?.label?.includes("Risk-On") && (
-        <div className="border border-yellow-900 bg-yellow-900/10 px-4 py-3 text-yellow-400 text-sm">
+        <div className="border border-yellow-900 bg-yellow-900/10 px-4 py-3 text-yellow-400 text-sm rounded-lg">
           Counter-trend detected: short-term bullish inside bearish macro. Exposure automatically reduced.
         </div>
       )}
       {stack.macro?.label?.includes("Risk-On") && stack.execution?.label?.includes("Risk-Off") && (
-        <div className="border border-blue-900 bg-blue-900/10 px-4 py-3 text-blue-400 text-sm">
+        <div className="border border-blue-900 bg-blue-900/10 px-4 py-3 text-blue-400 text-sm rounded-lg">
           Pullback within bullish macro — potential re-entry zone. Await execution alignment before adding size.
         </div>
       )}
-    </div>
+    </CardShell>
   );
 }
 
 // ─────────────────────────────────────────
-// DECISION ENGINE PANEL
+// DECISION ENGINE PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function DecisionEnginePanel({ stack, isPro, onUnlock, onDecisionLoaded }) {
+function DecisionEnginePanel({ stack, token, isPro, onUnlock, onDecisionLoaded }) {
   const [decision, setDecision] = useState(null);
-  const [loading,  setLoading]  = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // FIX: wrap onDecisionLoaded in useCallback at call site; here we stabilise
-  // the effect by only depending on primitive values
   useEffect(() => {
     if (!stack?.coin || !isPro) return;
     setLoading(true);
-    fetch(`${BACKEND}/decision-engine?coin=${stack.coin}`)
-      .then((r) => r.json())
+    apiFetch(`/decision-engine?coin=${stack.coin}`, token)
       .then((d) => {
         if (!d.error) {
           setDecision(d);
@@ -2208,13 +1963,13 @@ function DecisionEnginePanel({ stack, isPro, onUnlock, onDecisionLoaded }) {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [stack?.coin, isPro]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stack?.coin, isPro, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const directiveStyle = (action) => {
     if (action === "aggressive") return { border: "border-emerald-700", bg: "bg-emerald-950", text: "text-emerald-300", bar: "bg-emerald-500" };
-    if (action === "hold")       return { border: "border-green-800",   bg: "bg-green-950",   text: "text-green-300",   bar: "bg-green-500"   };
-    if (action === "trim")       return { border: "border-yellow-800",  bg: "bg-yellow-950",  text: "text-yellow-300",  bar: "bg-yellow-500"  };
-    if (action === "defensive")  return { border: "border-orange-800",  bg: "bg-orange-950",  text: "text-orange-300",  bar: "bg-orange-500"  };
+    if (action === "hold") return { border: "border-green-800", bg: "bg-green-950", text: "text-green-300", bar: "bg-green-500" };
+    if (action === "trim") return { border: "border-yellow-800", bg: "bg-yellow-950", text: "text-yellow-300", bar: "bg-yellow-500" };
+    if (action === "defensive") return { border: "border-orange-800", bg: "bg-orange-950", text: "text-orange-300", bar: "bg-orange-500" };
     return { border: "border-red-800", bg: "bg-red-950", text: "text-red-300", bar: "bg-red-500" };
   };
 
@@ -2223,7 +1978,7 @@ function DecisionEnginePanel({ stack, isPro, onUnlock, onDecisionLoaded }) {
       {(() => {
         const s = directiveStyle(decision.action);
         return (
-          <div className={`border ${s.border} ${s.bg} p-6 space-y-3`}>
+          <div className={`border ${s.border} ${s.bg} p-6 space-y-3 rounded-lg`}>
             <div className="flex justify-between items-start">
               <div>
                 <div className="text-xs text-zinc-400 uppercase tracking-widest mb-1">ChainPulse Directive</div>
@@ -2236,10 +1991,7 @@ function DecisionEnginePanel({ stack, isPro, onUnlock, onDecisionLoaded }) {
             </div>
             <div className={`text-sm ${s.text} opacity-80`}>{decision.description}</div>
             <div className="w-full bg-zinc-800 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all duration-700 ${s.bar}`}
-                style={{ width: `${decision.score}%` }}
-              />
+              <div className={`h-2 rounded-full transition-all duration-700 ${s.bar}`} style={{ width: `${decision.score}%` }} />
             </div>
           </div>
         );
@@ -2264,9 +2016,7 @@ function DecisionEnginePanel({ stack, isPro, onUnlock, onDecisionLoaded }) {
                 <div className="text-xs text-zinc-500 w-20 capitalize shrink-0">{key}</div>
                 <div className="flex-1 bg-zinc-800 rounded-full h-1.5">
                   <div
-                    className={`h-1.5 rounded-full transition-all ${
-                      val >= 70 ? "bg-emerald-500" : val >= 50 ? "bg-yellow-500" : "bg-red-500"
-                    }`}
+                    className={`h-1.5 rounded-full transition-all ${val >= 70 ? "bg-emerald-500" : val >= 50 ? "bg-yellow-500" : "bg-red-500"}`}
                     style={{ width: `${val}%` }}
                   />
                 </div>
@@ -2281,19 +2031,16 @@ function DecisionEnginePanel({ stack, isPro, onUnlock, onDecisionLoaded }) {
         <div className="text-xs text-zinc-400 uppercase tracking-widest mb-3">Decision Score Map</div>
         <div className="grid grid-cols-5 gap-1 text-xs text-center">
           {[
-            { range: "80–100", label: "Increase",  cls: "bg-emerald-900/40 text-emerald-400 border-emerald-900" },
-            { range: "60–79",  label: "Maintain",  cls: "bg-green-900/30 text-green-400 border-green-900"       },
-            { range: "40–59",  label: "Trim",       cls: "bg-yellow-900/30 text-yellow-400 border-yellow-900"   },
-            { range: "20–39",  label: "Defensive",  cls: "bg-orange-900/30 text-orange-400 border-orange-900"   },
-            { range: "0–19",   label: "Risk-Off",   cls: "bg-red-900/20 border border-red-700/40/30 text-red-400 border-red-900"            },
+            { range: "80–100", label: "Increase", cls: "bg-emerald-900/40 text-emerald-400 border-emerald-900" },
+            { range: "60–79", label: "Maintain", cls: "bg-green-900/30 text-green-400 border-green-900" },
+            { range: "40–59", label: "Trim", cls: "bg-yellow-900/30 text-yellow-400 border-yellow-900" },
+            { range: "20–39", label: "Defensive", cls: "bg-orange-900/30 text-orange-400 border-orange-900" },
+            { range: "0–19", label: "Risk-Off", cls: "bg-red-900/30 text-red-400 border-red-900" },
           ].map(({ range, label, cls }) => {
             const [lo, hi] = range.split("–").map(Number);
-            const active   = decision.score >= lo && decision.score <= (hi || 100);
+            const active = decision.score >= lo && decision.score <= (hi || 100);
             return (
-              <div
-                key={range}
-                className={`border px-2 py-2 rounded-sm space-y-0.5 ${cls} ${active ? "ring-1 ring-white" : ""}`}
-              >
+              <div key={range} className={`border px-2 py-2 rounded-sm space-y-0.5 ${cls} ${active ? "ring-1 ring-white" : ""}`}>
                 <div className="font-semibold">{label}</div>
                 <div className="opacity-60">{range}</div>
               </div>
@@ -2308,43 +2055,38 @@ function DecisionEnginePanel({ stack, isPro, onUnlock, onDecisionLoaded }) {
     <div className="text-sm text-zinc-400">Insufficient data</div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Decision Engine"
-      consequence="Without the decision engine, you have no systematic directive for today's session."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Decision Engine" consequence="Without the decision engine, you have no systematic directive for today's session." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Decision Engine</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Systematic directive based on all regime signals — updated every hour
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Systematic directive based on all regime signals — updated every hour</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
 // ─────────────────────────────────────────
-// IF YOU DO NOTHING PANEL
+// IF YOU DO NOTHING PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function IfNothingPanel({ stack, isPro, onUnlock }) {
+function IfNothingPanel({ stack, token, isPro, onUnlock }) {
   const [userExposure, setUserExposure] = useState(50);
-  const [result,       setResult]       = useState(null);
-  const [loading,      setLoading]      = useState(false);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const analyse = async () => {
     if (!stack?.coin) return;
     setLoading(true);
     try {
-      const res = await fetch(
-        `${BACKEND}/if-nothing-panel?coin=${stack.coin}&user_exposure=${userExposure}`,
+      const data = await apiFetch(
+        `/if-nothing-panel?coin=${stack.coin}&user_exposure=${userExposure}`,
+        token,
         { method: "POST" }
       );
-      const data = await res.json();
       if (!data.error) setResult(data);
     } catch (e) {
       console.error(e);
@@ -2354,7 +2096,7 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
   };
 
   const severityStyle = (severity) => {
-    if (severity === "high")   return "border-red-800 bg-red-950 text-red-300";
+    if (severity === "high") return "border-red-800 bg-red-950 text-red-300";
     if (severity === "medium") return "border-yellow-800 bg-yellow-950 text-yellow-300";
     return "border-emerald-800 bg-emerald-950 text-emerald-300";
   };
@@ -2376,7 +2118,7 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
         <button
           onClick={analyse}
           disabled={loading}
-          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
+          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 disabled:opacity-50 whitespace-nowrap"
         >
           {loading ? "Analysing..." : "Show Consequences"}
         </button>
@@ -2384,36 +2126,26 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
 
       {result && (
         <div className="space-y-4">
-          <div className={`border p-5 space-y-2 ${severityStyle(result.severity)}`}>
+          <div className={`border p-5 space-y-2 rounded-lg ${severityStyle(result.severity)}`}>
             <div className="font-semibold text-sm">{result.message}</div>
             <div className="text-xs opacity-70">{result.sub}</div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              {
-                label: "Your Exposure",
-                value: `${result.user_exposure}%`,
-                color: exposureColor(result.user_exposure),
-              },
-              {
-                label: "Model Recommendation",
-                value: `${result.model_exposure}%`,
-                color: exposureColor(result.model_exposure),
-              },
+              { label: "Your Exposure", value: `${result.user_exposure}%`, color: exposureColor(result.user_exposure) },
+              { label: "Model Recommendation", value: `${result.model_exposure}%`, color: exposureColor(result.model_exposure) },
               {
                 label: "Drawdown Probability",
                 value: `${result.drawdown_prob}%`,
                 color: riskColor(result.drawdown_prob),
-                sub:   result.dd_prob_increase > 0
-                  ? `+${result.dd_prob_increase}% vs model`
-                  : "Within model range",
+                sub: result.dd_prob_increase > 0 ? `+${result.dd_prob_increase}% vs model` : "Within model range",
               },
               {
                 label: "Expected Loss Risk",
                 value: `${result.expected_loss_pct}%`,
                 color: riskColor(result.expected_loss_pct),
-                sub:   `Model: ${result.model_loss_pct}%`,
+                sub: `Model: ${result.model_loss_pct}%`,
               },
             ].map(({ label, value, color, sub }) => (
               <div key={label} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
@@ -2427,39 +2159,31 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
           <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-3">
             <div className="text-xs text-zinc-400">Your exposure vs model recommendation</div>
             <div className="relative h-4 bg-zinc-800 rounded-full overflow-hidden">
-              {/* model band */}
               <div
                 className="absolute h-full bg-zinc-700/60"
-                style={{
-                  left:  `${Math.max(0, result.model_exposure - 10)}%`,
-                  width: "20%",
-                }}
+                style={{ left: `${Math.max(0, result.model_exposure - 10)}%`, width: "20%" }}
               />
-              {/* model midpoint */}
               <div
                 className="absolute h-full w-0.5 bg-white opacity-60"
                 style={{ left: `${Math.min(99, result.model_exposure)}%` }}
               />
-              {/* user marker */}
               <div
                 className={`absolute h-full w-1 rounded-full ${
-                  result.severity === "high"   ? "bg-red-400"     :
-                  result.severity === "medium" ? "bg-yellow-400"  : "bg-emerald-400"
+                  result.severity === "high" ? "bg-red-400" :
+                  result.severity === "medium" ? "bg-yellow-400" : "bg-emerald-400"
                 }`}
                 style={{ left: `${Math.min(99, result.user_exposure)}%` }}
               />
             </div>
             <div className="flex justify-between text-xs text-zinc-500">
               <span>0%</span>
-              <span className="text-gray-400">
-                ← Model: {result.model_exposure}%&nbsp;&nbsp;|&nbsp;&nbsp;You: {result.user_exposure}% →
-              </span>
+              <span className="text-gray-400">← Model: {result.model_exposure}%&nbsp;&nbsp;|&nbsp;&nbsp;You: {result.user_exposure}% →</span>
               <span>100%</span>
             </div>
           </div>
 
           {result.over_exposed && result.delta_abs > 15 && (
-            <div className="border border-red-900 bg-red-950 px-4 py-3 text-red-300 text-sm">
+            <div className="border border-red-900 bg-red-950 px-4 py-3 text-red-300 text-sm rounded-lg">
               ⚠ If this regime shifts while you are over-exposed, estimated drawdown impact is{" "}
               {result.expected_loss_pct}% of portfolio vs {result.model_loss_pct}% if following the model.
             </div>
@@ -2469,23 +2193,18 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Consequence Simulator"
-      consequence="See exactly what happens to your portfolio if you ignore regime signals."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Consequence Simulator" consequence="See exactly what happens to your portfolio if you ignore regime signals." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Consequence Simulator</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        The cost of maintaining your current exposure in this regime
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">The cost of maintaining your current exposure in this regime</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -2494,43 +2213,41 @@ function IfNothingPanel({ stack, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 function PnLImpactEstimator({ stack, isPro, onUnlock }) {
   const [portfolioSize, setPortfolioSize] = useState(10000);
-  const [userExposure,  setUserExposure]  = useState(50);
-  const [result,        setResult]        = useState(null);
+  const [userExposure, setUserExposure] = useState(50);
+  const [result, setResult] = useState(null);
 
   const estimate = () => {
     if (!stack) return;
-    const modelExposure = stack.exposure   ?? 50;
-    const hazard        = stack.hazard     ?? 30;
-    const shiftRisk     = stack.shift_risk ?? 30;
-    const survival      = stack.survival   ?? 70;
-    const execLabel     = stack.execution?.label ?? "Neutral";
+    const modelExposure = stack.exposure ?? 50;
+    const hazard = stack.hazard ?? 30;
+    const shiftRisk = stack.shift_risk ?? 30;
+    const survival = stack.survival ?? 70;
+    const execLabel = stack.execution?.label ?? "Neutral";
 
-    const expectedMoveUp   = execLabel.includes("Risk-On")  ? 0.08 :
-                             execLabel === "Neutral"         ? 0.03 : 0.01;
-    const expectedMoveDown = execLabel.includes("Risk-Off") ? 0.12 :
-                             execLabel === "Neutral"         ? 0.05 : 0.03;
+    const expectedMoveUp = execLabel.includes("Risk-On") ? 0.08 : execLabel === "Neutral" ? 0.03 : 0.01;
+    const expectedMoveDown = execLabel.includes("Risk-Off") ? 0.12 : execLabel === "Neutral" ? 0.05 : 0.03;
 
-    const upProb   = survival / 100;
+    const upProb = survival / 100;
     const downProb = (hazard + shiftRisk) / 200;
 
-    const userUpPnL    = portfolioSize * (userExposure  / 100) * expectedMoveUp;
-    const modelUpPnL   = portfolioSize * (modelExposure / 100) * expectedMoveUp;
-    const userDownPnL  = portfolioSize * (userExposure  / 100) * expectedMoveDown * -1;
+    const userUpPnL = portfolioSize * (userExposure / 100) * expectedMoveUp;
+    const modelUpPnL = portfolioSize * (modelExposure / 100) * expectedMoveUp;
+    const userDownPnL = portfolioSize * (userExposure / 100) * expectedMoveDown * -1;
     const modelDownPnL = portfolioSize * (modelExposure / 100) * expectedMoveDown * -1;
 
-    const userEV  = upProb * userUpPnL  + downProb * userDownPnL;
+    const userEV = upProb * userUpPnL + downProb * userDownPnL;
     const modelEV = upProb * modelUpPnL + downProb * modelDownPnL;
 
     setResult({
-      userEV:       Math.round(userEV),
-      modelEV:      Math.round(modelEV),
-      evDelta:      Math.round(userEV - modelEV),
-      userUpPnL:    Math.round(userUpPnL),
-      modelUpPnL:   Math.round(modelUpPnL),
-      userDownPnL:  Math.round(userDownPnL),
+      userEV: Math.round(userEV),
+      modelEV: Math.round(modelEV),
+      evDelta: Math.round(userEV - modelEV),
+      userUpPnL: Math.round(userUpPnL),
+      modelUpPnL: Math.round(modelUpPnL),
+      userDownPnL: Math.round(userDownPnL),
       modelDownPnL: Math.round(modelDownPnL),
-      upProb:       Math.round(upProb   * 100),
-      downProb:     Math.round(downProb * 100),
+      upProb: Math.round(upProb * 100),
+      downProb: Math.round(downProb * 100),
       modelExposure,
       execLabel,
     });
@@ -2541,48 +2258,29 @@ function PnLImpactEstimator({ stack, isPro, onUnlock }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <div className="text-xs text-zinc-400">Portfolio Size (USD)</div>
-          <input
-            type="number"
-            value={portfolioSize}
-            onChange={(e) => setPortfolioSize(Number(e.target.value))}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
-          />
+          <input type="number" value={portfolioSize} onChange={(e) => setPortfolioSize(Number(e.target.value))} className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500" />
         </div>
         <div className="space-y-2">
           <div className="text-xs text-zinc-400">Your Current Exposure %</div>
-          <input
-            type="number"
-            value={userExposure}
-            onChange={(e) => setUserExposure(Number(e.target.value))}
-            min={0}
-            max={200}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
-          />
+          <input type="number" value={userExposure} onChange={(e) => setUserExposure(Number(e.target.value))} min={0} max={200} className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500" />
         </div>
       </div>
 
-      <button
-        onClick={estimate}
-        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors"
-      >
+      <button onClick={estimate} className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100">
         Estimate PnL Impact
       </button>
 
       {result && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className={`border p-5 space-y-2 ${
-              result.userEV >= 0 ? "border-emerald-900 bg-emerald-950" : "border-red-900 bg-red-950"
-            }`}>
+            <div className={`border p-5 space-y-2 rounded-lg ${result.userEV >= 0 ? "border-emerald-900 bg-emerald-950" : "border-red-900 bg-red-950"}`}>
               <div className="text-xs text-zinc-400">Your Expected Value</div>
               <div className={`text-3xl font-bold ${result.userEV >= 0 ? "text-emerald-300" : "text-red-300"}`}>
                 {result.userEV >= 0 ? "+" : ""}{result.userEV.toLocaleString()}
               </div>
               <div className="text-xs text-zinc-400">At {userExposure}% exposure</div>
             </div>
-            <div className={`border p-5 space-y-2 ${
-              result.modelEV >= 0 ? "border-blue-900 bg-blue-950" : "border-white/5 bg-zinc-950"
-            }`}>
+            <div className={`border p-5 space-y-2 rounded-lg ${result.modelEV >= 0 ? "border-blue-900 bg-blue-950" : "border-white/5 bg-zinc-950"}`}>
               <div className="text-xs text-zinc-400">Model Expected Value</div>
               <div className={`text-3xl font-bold ${result.modelEV >= 0 ? "text-blue-300" : "text-gray-300"}`}>
                 {result.modelEV >= 0 ? "+" : ""}{result.modelEV.toLocaleString()}
@@ -2592,10 +2290,8 @@ function PnLImpactEstimator({ stack, isPro, onUnlock }) {
           </div>
 
           {result.evDelta !== 0 && (
-            <div className={`border px-4 py-3 text-sm ${
-              result.evDelta < 0
-                ? "border-red-900 bg-red-950 text-red-300"
-                : "border-emerald-900 bg-emerald-950 text-emerald-300"
+            <div className={`border px-4 py-3 text-sm rounded-lg ${
+              result.evDelta < 0 ? "border-red-900 bg-red-950 text-red-300" : "border-emerald-900 bg-emerald-950 text-emerald-300"
             }`}>
               {result.evDelta < 0
                 ? `⚠ Your exposure reduces expected value by 
@@ -2634,23 +2330,18 @@ $$
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="PnL Impact Estimator"
-      consequence="Without PnL modeling you cannot quantify the expected value of your exposure decision."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="PnL Impact Estimator" consequence="Without PnL modeling you cannot quantify the expected value of your exposure decision." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>PnL Impact Estimator</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Expected value of your current exposure vs model recommendation
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Expected value of your current exposure vs model recommendation</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -2659,29 +2350,29 @@ $$
 // ─────────────────────────────────────────
 function DrawdownSimulator({ stack, isPro, onUnlock }) {
   const [portfolioSize, setPortfolioSize] = useState(10000);
-  const [userExposure,  setUserExposure]  = useState(50);
-  const [result,        setResult]        = useState(null);
+  const [userExposure, setUserExposure] = useState(50);
+  const [result, setResult] = useState(null);
 
   const simulate = () => {
     if (!stack) return;
     const modelExposure = stack.exposure ?? 50;
     const scenarios = [
       { label: "Moderate", pct: 10, color: "text-yellow-400", barCls: "bg-yellow-500" },
-      { label: "Severe",   pct: 20, color: "text-orange-400", barCls: "bg-orange-500" },
-      { label: "Extreme",  pct: 30, color: "text-red-400",    barCls: "bg-red-500"    },
+      { label: "Severe", pct: 20, color: "text-orange-400", barCls: "bg-orange-500" },
+      { label: "Extreme", pct: 30, color: "text-red-400", barCls: "bg-red-500" },
     ];
     const results = scenarios.map(({ label, pct, color, barCls }) => {
-      const userLoss  = (userExposure  / 100) * (pct / 100) * portfolioSize;
+      const userLoss = (userExposure / 100) * (pct / 100) * portfolioSize;
       const modelLoss = (modelExposure / 100) * (pct / 100) * portfolioSize;
-      const saving    = userLoss - modelLoss;
+      const saving = userLoss - modelLoss;
       return {
         label, pct, color, barCls,
-        userLoss:   Math.round(userLoss),
-        modelLoss:  Math.round(modelLoss),
-        saving:     Math.round(saving),
-        userPct:    ((userLoss  / portfolioSize) * 100).toFixed(1),
-        modelPct:   ((modelLoss / portfolioSize) * 100).toFixed(1),
-        savingPct:  ((saving    / portfolioSize) * 100).toFixed(1),
+        userLoss: Math.round(userLoss),
+        modelLoss: Math.round(modelLoss),
+        saving: Math.round(saving),
+        userPct: ((userLoss / portfolioSize) * 100).toFixed(1),
+        modelPct: ((modelLoss / portfolioSize) * 100).toFixed(1),
+        savingPct: ((saving / portfolioSize) * 100).toFixed(1),
       };
     });
     setResult({ scenarios: results, modelExposure });
@@ -2692,36 +2383,21 @@ function DrawdownSimulator({ stack, isPro, onUnlock }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <div className="text-xs text-zinc-400">Portfolio Size (USD)</div>
-          <input
-            type="number"
-            value={portfolioSize}
-            onChange={(e) => setPortfolioSize(Number(e.target.value))}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
-          />
+          <input type="number" value={portfolioSize} onChange={(e) => setPortfolioSize(Number(e.target.value))} className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500" />
         </div>
         <div className="space-y-2">
           <div className="text-xs text-zinc-400">Your Current Exposure %</div>
-          <input
-            type="number"
-            value={userExposure}
-            onChange={(e) => setUserExposure(Number(e.target.value))}
-            min={0}
-            max={200}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
-          />
+          <input type="number" value={userExposure} onChange={(e) => setUserExposure(Number(e.target.value))} min={0} max={200} className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500" />
         </div>
       </div>
 
-      <button
-        onClick={simulate}
-        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors"
-      >
+      <button onClick={simulate} className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100">
         Run Drawdown Scenarios
       </button>
 
       {result && (
         <div className="space-y-4">
-          <div className="border border-white/5 px-4 py-3 text-xs text-zinc-400">
+          <div className="border border-white/5 px-4 py-3 text-xs text-zinc-400 rounded-lg">
             <span>Model recommendation: <span className="text-gray-300">{result.modelExposure}%</span></span>
             <span className="mx-3">·</span>
             <span>Your exposure: <span className="text-gray-300">{userExposure}%</span></span>
@@ -2732,9 +2408,7 @@ function DrawdownSimulator({ stack, isPro, onUnlock }) {
             <div key={label} className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <div className={`text-lg font-semibold ${color}`}>
-                    {label} Drawdown — {pct}% price decline
-                  </div>
+                  <div className={`text-lg font-semibold ${color}`}>{label} Drawdown — {pct}% price decline</div>
                   <div className="text-xs text-zinc-400 mt-0.5">Simulated portfolio impact</div>
                 </div>
                 {saving > 0 && (
@@ -2759,7 +2433,7 @@ function DrawdownSimulator({ stack, isPro, onUnlock }) {
                 </div>
               </div>
               {saving > 0 && (
-                <div className="border border-emerald-900 bg-emerald-950 px-3 py-2 text-emerald-300 text-xs">
+                <div className="border border-emerald-900 bg-emerald-950 px-3 py-2 text-emerald-300 text-xs rounded-lg">
                   Following the model saves ${saving.toLocaleString()} ({savingPct}%) in this scenario.
                 </div>
               )}
@@ -2770,113 +2444,78 @@ function DrawdownSimulator({ stack, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Drawdown Simulator"
-      consequence="Without drawdown simulation you cannot quantify the real cost of your current exposure."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Drawdown Simulator" consequence="Without drawdown simulation you cannot quantify the real cost of your current exposure." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Drawdown Simulator</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Three drawdown scenarios at your exposure vs model recommendation
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Three drawdown scenarios at your exposure vs model recommendation</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
 // ─────────────────────────────────────────
-// RISK PROFILE PANEL
+// RISK PROFILE PANEL — FIX: uses token + authHeaders
 // ─────────────────────────────────────────
-function RiskProfilePanel({ email, isPro, onUnlock, onProfileSaved }) {
-  const [drawdown,  setDrawdown]  = useState(20);
-  const [leverage,  setLeverage]  = useState(1);
-  const [holding,   setHolding]   = useState(10);
-  const [identity,  setIdentity]  = useState("balanced");
-  const [saved,     setSaved]     = useState(false);
-  const [loading,   setLoading]   = useState(false);
+function RiskProfilePanel({ email, token, isPro, onUnlock, onProfileSaved }) {
+  const [drawdown, setDrawdown] = useState(20);
+  const [leverage, setLeverage] = useState(1);
+  const [holding, setHolding] = useState(10);
+  const [identity, setIdentity] = useState("balanced");
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const save = async () => {
     if (!email) return;
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND}/user-profile`, {
+      const data = await apiFetch("/user-profile", token, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
-          max_drawdown_pct:    drawdown,
-          typical_leverage:    leverage,
-          holding_period_days: holding,
-          risk_identity:       identity,
+          email, max_drawdown_pct: drawdown, typical_leverage: leverage,
+          holding_period_days: holding, risk_identity: identity,
         }),
       });
-      const data = await res.json();
       if (data.status === "saved") {
         setSaved(true);
         if (onProfileSaved) onProfileSaved(data);
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
   const identityDesc = {
     conservative: "Lower returns, minimal drawdowns. Capital preservation first.",
-    balanced:     "Standard regime-based allocation. Model defaults.",
-    aggressive:   "Maximum exposure in strong regimes. Higher volatility accepted.",
+    balanced: "Standard regime-based allocation. Model defaults.",
+    aggressive: "Maximum exposure in strong regimes. Higher volatility accepted.",
   };
 
   const inner = (
     <div className="space-y-6">
       {saved && (
-        <div className="border border-emerald-800 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm">
+        <div className="border border-emerald-800 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm rounded-lg">
           ✓ Risk profile saved. Exposure recommendations are now personalised.
         </div>
       )}
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-5">
           {[
-            {
-              l: "Max Tolerable Drawdown", val: drawdown, set: setDrawdown,
-              min: 5, max: 50, step: 5,
-              fmt: (v) => `${v}%`,
-              left: "5% (conservative)", right: "50% (aggressive)",
-            },
-            {
-              l: "Typical Leverage", val: leverage, set: setLeverage,
-              min: 1, max: 10, step: 0.5,
-              fmt: (v) => `${v}x`,
-              left: "1x (spot)", right: "10x",
-            },
-            {
-              l: "Typical Holding Period", val: holding, set: setHolding,
-              min: 1, max: 30, step: 1,
-              fmt: (v) => `${v} days`,
-              left: "1 day (scalp)", right: "30 days (swing)",
-            },
+            { l: "Max Tolerable Drawdown", val: drawdown, set: setDrawdown, min: 5, max: 50, step: 5, fmt: (v) => `${v}%`, left: "5% (conservative)", right: "50% (aggressive)" },
+            { l: "Typical Leverage", val: leverage, set: setLeverage, min: 1, max: 10, step: 0.5, fmt: (v) => `${v}x`, left: "1x (spot)", right: "10x" },
+            { l: "Typical Holding Period", val: holding, set: setHolding, min: 1, max: 30, step: 1, fmt: (v) => `${v} days`, left: "1 day (scalp)", right: "30 days (swing)" },
           ].map(({ l, val, set, min, max, step, fmt, left, right }) => (
             <div key={l} className="space-y-2">
               <div className="flex justify-between">
                 <div className="text-xs text-zinc-400">{l}</div>
                 <div className="text-xs text-white font-medium">{fmt(val)}</div>
               </div>
-              <input
-                type="range"
-                min={min} max={max} step={step} value={val}
-                onChange={(e) => set(Number(e.target.value))}
-                className="w-full accent-white"
-              />
-              <div className="flex justify-between text-xs text-gray-700">
-                <span>{left}</span><span>{right}</span>
-              </div>
+              <input type="range" min={min} max={max} step={step} value={val} onChange={(e) => set(Number(e.target.value))} className="w-full accent-white" />
+              <div className="flex justify-between text-xs text-gray-700"><span>{left}</span><span>{right}</span></div>
             </div>
           ))}
         </div>
@@ -2888,9 +2527,7 @@ function RiskProfilePanel({ email, isPro, onUnlock, onProfileSaved }) {
                 key={id}
                 onClick={() => setIdentity(id)}
                 className={`w-full text-left p-4 rounded-xl border transition-colors space-y-1 ${
-                  identity === id
-                    ? "border-white bg-zinc-800"
-                    : "border-white/5 hover:border-zinc-600"
+                  identity === id ? "border-white bg-zinc-800" : "border-white/5 hover:border-zinc-600"
                 }`}
               >
                 <div className="text-sm font-medium capitalize">{id}</div>
@@ -2900,165 +2537,113 @@ function RiskProfilePanel({ email, isPro, onUnlock, onProfileSaved }) {
           </div>
         </div>
       </div>
-      <button
-        onClick={save}
-        disabled={loading || !email}
-        className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
-      >
+      <button onClick={save} disabled={loading || !email} className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 disabled:opacity-50">
         {loading ? "Saving..." : "Save Risk Profile"}
       </button>
       {!email && <div className="text-xs text-zinc-500">Sign in to save your profile.</div>}
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Risk Profile Calibration"
-      consequence="Without a risk profile, exposure recommendations cannot be personalised to your capital."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Risk Profile Calibration" consequence="Without a risk profile, exposure recommendations cannot be personalised to your capital." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Risk Profile Calibration</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Personalise exposure recommendations to your trading style and capital
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Personalise exposure recommendations to your trading style and capital</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
 // ─────────────────────────────────────────
-// EXPOSURE LOGGER
+// EXPOSURE LOGGER — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function ExposureLogger({ stack, email, isPro, onUnlock }) {
+function ExposureLogger({ stack, email, token, isPro, onUnlock }) {
   const [userExposure, setUserExposure] = useState(50);
-  const [result,       setResult]       = useState(null);
-  const [loading,      setLoading]      = useState(false);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const logIt = async () => {
     if (!email || !stack?.coin) return;
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND}/log-exposure`, {
+      const data = await apiFetch("/log-exposure", token, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          coin:               stack.coin,
-          user_exposure_pct:  userExposure,
-        }),
+        body: JSON.stringify({ email, coin: stack.coin, user_exposure_pct: userExposure }),
       });
-      setResult(await res.json());
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+      setResult(data);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
   const inner = (
     <div className="space-y-5">
-      <p className="text-xs text-zinc-400">
-        Log your actual exposure to build your discipline score and performance tracking over time.
-      </p>
+      <p className="text-xs text-zinc-400">Log your actual exposure to build your discipline score and performance tracking over time.</p>
       <div className="flex gap-4 items-end">
         <div className="space-y-2 flex-1">
-          <div className="text-xs text-zinc-400">
-            My current exposure in {stack?.coin ?? "BTC"} (%)
-          </div>
-          <input
-            type="number"
-            value={userExposure}
-            onChange={(e) => setUserExposure(Number(e.target.value))}
-            min={0}
-            max={200}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
-          />
+          <div className="text-xs text-zinc-400">My current exposure in {stack?.coin ?? "BTC"} (%)</div>
+          <input type="number" value={userExposure} onChange={(e) => setUserExposure(Number(e.target.value))} min={0} max={200} className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500" />
         </div>
         <div className="space-y-1">
           <div className="text-xs text-zinc-500">Model says</div>
-          <div className={`text-xl font-semibold ${exposureColor(stack?.exposure ?? 0)}`}>
-            {stack?.exposure ?? "—"}%
-          </div>
+          <div className={`text-xl font-semibold ${exposureColor(stack?.exposure ?? 0)}`}>{stack?.exposure ?? "—"}%</div>
         </div>
-        <button
-          onClick={logIt}
-          disabled={loading || !email}
-          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
-        >
+        <button onClick={logIt} disabled={loading || !email} className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 disabled:opacity-50 whitespace-nowrap">
           {loading ? "Logging..." : "Log Exposure"}
         </button>
       </div>
       {result && (
-        <div className={`border px-4 py-3 space-y-1 text-sm ${
-          result.severity === "warning" ? "border-red-900 bg-red-950 text-red-300"         :
+        <div className={`border px-4 py-3 space-y-1 text-sm rounded-lg ${
+          result.severity === "warning" ? "border-red-900 bg-red-950 text-red-300" :
           result.severity === "caution" ? "border-yellow-900 bg-yellow-950 text-yellow-300" :
-                                          "border-emerald-900 bg-emerald-950 text-emerald-300"
+          "border-emerald-900 bg-emerald-950 text-emerald-300"
         }`}>
           <div className="font-semibold">{result.feedback}</div>
-          <div className="text-xs opacity-70">
-            Delta vs model: {result.delta > 0 ? "+" : ""}{result.delta}% · Regime: {result.regime}
-          </div>
+          <div className="text-xs opacity-70">Delta vs model: {result.delta > 0 ? "+" : ""}{result.delta}% · Regime: {result.regime}</div>
         </div>
       )}
-      {!email && (
-        <div className="text-xs text-zinc-500">
-          Sign in to log exposure and track discipline over time.
-        </div>
-      )}
+      {!email && <div className="text-xs text-zinc-500">Sign in to log exposure and track discipline over time.</div>}
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Exposure Logger"
-      consequence="Without logging, you cannot build a discipline score or track your performance vs the model."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Exposure Logger" consequence="Without logging, you cannot build a discipline score or track your performance vs the model." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Exposure Logger</Label>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
 // ─────────────────────────────────────────
-// STREAK TRACKER
+// STREAK TRACKER — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function StreakTracker({ email, isPro, onUnlock }) {
-  const [data,    setData]    = useState(null);
+function StreakTracker({ email, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!email || !isPro) return;
     setLoading(true);
-    fetch(`${BACKEND}/discipline-score?email=${encodeURIComponent(email)}`)
-      .then((r) => r.json())
+    apiFetch(`/discipline-score?email=${encodeURIComponent(email)}`, token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [email, isPro]);
+  }, [email, isPro, token]);
 
   const streak = data?.followed ?? 0;
-  const total  = data?.total    ?? 0;
-
-  const streakColor =
-    streak >= 7 ? "text-emerald-400" :
-    streak >= 3 ? "text-yellow-400"  : "text-red-400";
-
-  const streakLabel =
-    streak >= 10 ? "Elite Discipline"   :
-    streak >= 7  ? "Strong Streak"      :
-    streak >= 3  ? "Building Momentum"  :
-    streak >= 1  ? "Getting Started"    : "No streak yet";
+  const total = data?.total ?? 0;
+  const streakColor = streak >= 7 ? "text-emerald-400" : streak >= 3 ? "text-yellow-400" : "text-red-400";
+  const streakLabel = streak >= 10 ? "Elite Discipline" : streak >= 7 ? "Strong Streak" : streak >= 3 ? "Building Momentum" : streak >= 1 ? "Getting Started" : "No streak yet";
 
   const inner = (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
@@ -3070,86 +2655,60 @@ function StreakTracker({ email, isPro, onUnlock }) {
       <div className="flex-1 space-y-3 w-full">
         <div className="flex gap-1 flex-wrap">
           {Array.from({ length: Math.min(total, 20) }).map((_, i) => (
-            <div
-              key={i}
-              className={`w-6 h-6 rounded-sm border transition-all ${
-                i < streak
-                  ? "bg-emerald-500 border-emerald-400"
-                  : "bg-zinc-800 border-zinc-700"
-              }`}
-            />
+            <div key={i} className={`w-6 h-6 rounded-sm border transition-all ${
+              i < streak ? "bg-emerald-500 border-emerald-400" : "bg-zinc-800 border-zinc-700"
+            }`} />
           ))}
-          {total === 0 && (
-            <div className="text-xs text-zinc-500">
-              Log your exposure to start building a streak.
-            </div>
-          )}
+          {total === 0 && <div className="text-xs text-zinc-500">Log your exposure to start building a streak.</div>}
         </div>
-        {total > 0 && (
-          <div className="text-xs text-zinc-500">
-            {streak}/{total} sessions · Last 20 shown
-          </div>
-        )}
+        {total > 0 && <div className="text-xs text-zinc-500">{streak}/{total} sessions · Last 20 shown</div>}
         {streak >= 7 && (
-          <div className="border border-emerald-800 bg-emerald-950 px-3 py-2 text-emerald-300 text-xs">
-            ✓ Consistent discipline — regime-aligned trader
-          </div>
+          <div className="border border-emerald-800 bg-emerald-950 px-3 py-2 text-emerald-300 text-xs rounded-lg">✓ Consistent discipline — regime-aligned trader</div>
         )}
         {streak === 0 && total > 0 && (
-          <div className="border border-red-900 bg-red-950 px-3 py-2 text-red-300 text-xs">
-            ⚠ Last session deviated from model — refocus on protocol
-          </div>
+          <div className="border border-red-900 bg-red-950 px-3 py-2 text-red-300 text-xs rounded-lg">⚠ Last session deviated from model — refocus on protocol</div>
         )}
       </div>
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Discipline Streak"
-      consequence="Streak tracking creates daily accountability and reduces impulsive deviation."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Discipline Streak" consequence="Streak tracking creates daily accountability and reduces impulsive deviation." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Discipline Streak</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Consecutive sessions where your exposure aligned with regime recommendation
-      </p>
-      {loading
-        ? <div className="text-sm text-zinc-400">Loading streak...</div>
-        : inner
-      }
-    </div>
+      <p className="text-xs text-zinc-400 mb-4">Consecutive sessions where your exposure aligned with regime recommendation</p>
+      {loading ? <div className="text-sm text-zinc-400">Loading streak...</div> : inner}
+    </CardShell>
   );
 }
 
 // ─────────────────────────────────────────
-// DISCIPLINE PANEL
+// DISCIPLINE PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function DisciplinePanel({ email, isPro, onUnlock }) {
-  const [data,    setData]    = useState(null);
+function DisciplinePanel({ email, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!email || !isPro) return;
     setLoading(true);
-    fetch(`${BACKEND}/discipline-score?email=${encodeURIComponent(email)}`)
-      .then((r) => r.json())
+    apiFetch(`/discipline-score?email=${encodeURIComponent(email)}`, token)
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [email, isPro]);
+  }, [email, isPro, token]);
 
   const scoreColor = (s) => {
     if (s === null) return "text-zinc-400";
-    if (s >= 85)   return "text-emerald-400";
-    if (s >= 70)   return "text-green-400";
-    if (s >= 50)   return "text-yellow-400";
-    if (s >= 30)   return "text-orange-400";
+    if (s >= 85) return "text-emerald-400";
+    if (s >= 70) return "text-green-400";
+    if (s >= 50) return "text-yellow-400";
+    if (s >= 30) return "text-orange-400";
     return "text-red-400";
   };
 
@@ -3157,27 +2716,20 @@ function DisciplinePanel({ email, isPro, onUnlock }) {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-6">
         <div className="space-y-2">
-          <div className={`text-6xl font-bold ${scoreColor(data.score)}`}>
-            {data.score !== null ? `${data.score}` : "—"}
-          </div>
+          <div className={`text-6xl font-bold ${scoreColor(data.score)}`}>{data.score !== null ? `${data.score}` : "—"}</div>
           <div className={`text-lg font-medium ${scoreColor(data.score)}`}>{data.label}</div>
-          <Bar
-            value={data.score ?? 0}
-            cls={
-              (data.score ?? 0) >= 85 ? "bg-emerald-500" :
-              (data.score ?? 0) >= 70 ? "bg-green-500"   :
-              (data.score ?? 0) >= 50 ? "bg-yellow-500"  :
-              (data.score ?? 0) >= 30 ? "bg-orange-500"  : "bg-red-500"
-            }
-          />
+          <Bar value={data.score ?? 0} cls={
+            (data.score ?? 0) >= 85 ? "bg-emerald-500" : (data.score ?? 0) >= 70 ? "bg-green-500" :
+            (data.score ?? 0) >= 50 ? "bg-yellow-500" : (data.score ?? 0) >= 30 ? "bg-orange-500" : "bg-red-500"
+          } />
           <div className="text-xs text-zinc-500">{data.summary}</div>
         </div>
         <div className="grid grid-cols-2 gap-3 shrink-0">
           {[
-            { l: "Followed", v: data.followed,               c: "text-emerald-400" },
-            { l: "Total",    v: data.total,                   c: "text-white"       },
-            { l: "Bonuses",  v: `+${data.bonuses  ?? 0}`,    c: "text-emerald-400" },
-            { l: "Penalties",v: `-${data.penalties ?? 0}`,    c: "text-red-400"     },
+            { l: "Followed", v: data.followed, c: "text-emerald-400" },
+            { l: "Total", v: data.total, c: "text-white" },
+            { l: "Bonuses", v: `+${data.bonuses ?? 0}`, c: "text-emerald-400" },
+            { l: "Penalties", v: `-${data.penalties ?? 0}`, c: "text-red-400" },
           ].map(({ l, v, c }) => (
             <div key={l} className="bg-white/2 border border-white/5 rounded-lg p-3 text-center space-y-1">
               <div className="text-xs text-zinc-500">{l}</div>
@@ -3191,14 +2743,9 @@ function DisciplinePanel({ email, isPro, onUnlock }) {
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Recent Flags</div>
           <div className="space-y-2">
             {data.flags.map((flag, i) => (
-              <div
-                key={i}
-                className={`border px-4 py-3 text-sm flex justify-between items-center ${
-                  flag.type === "penalty"
-                    ? "border-red-900 bg-red-950 text-red-300"
-                    : "border-emerald-900 bg-emerald-950 text-emerald-300"
-                }`}
-              >
+              <div key={i} className={`border px-4 py-3 text-sm flex justify-between items-center rounded-lg ${
+                flag.type === "penalty" ? "border-red-900 bg-red-950 text-red-300" : "border-emerald-900 bg-emerald-950 text-emerald-300"
+              }`}>
                 <span>{flag.label}</span>
                 <span className="text-xs opacity-60">{flag.date} · {flag.regime}</span>
               </div>
@@ -3210,50 +2757,42 @@ function DisciplinePanel({ email, isPro, onUnlock }) {
   ) : loading ? (
     <div className="text-sm text-zinc-400">Loading discipline score...</div>
   ) : (
-    <div className="text-sm text-zinc-400">
-      No data yet. Log your exposure to start building your discipline score.
-    </div>
+    <div className="text-sm text-zinc-400">No data yet. Log your exposure to start building your discipline score.</div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Discipline Score"
-      consequence="Without discipline tracking, you cannot identify the patterns that are costing you money."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Discipline Score" consequence="Without discipline tracking, you cannot identify the patterns that are costing you money." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Discipline Score</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        How consistently you follow regime-based risk protocols
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">How consistently you follow regime-based risk protocols</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
 // ─────────────────────────────────────────
-// MISTAKE REPLAY PANEL
+// MISTAKE REPLAY PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function MistakeReplayPanel({ email, coin, isPro, onUnlock }) {
-  const [data,    setData]    = useState(null);
+function MistakeReplayPanel({ email, coin, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!email || !isPro) return;
     setLoading(true);
-    fetch(`${BACKEND}/mistake-replay?email=${encodeURIComponent(email)}&coin=${coin}`)
-      .then((r) => r.json())
+    apiFetch(`/mistake-replay?email=${encodeURIComponent(email)}&coin=${coin}`, token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [email, coin, isPro]);
+  }, [email, coin, isPro, token]);
 
   const severityStyle = (s) => {
-    if (s === "high")   return "border-red-800 bg-red-950 text-red-300";
+    if (s === "high") return "border-red-800 bg-red-950 text-red-300";
     if (s === "medium") return "border-orange-800 bg-orange-950 text-orange-300";
     return "border-yellow-800 bg-yellow-950 text-yellow-300";
   };
@@ -3261,34 +2800,25 @@ function MistakeReplayPanel({ email, coin, isPro, onUnlock }) {
   const inner = data?.replays?.length > 0 ? (
     <div className="space-y-3">
       {data.replays.map((replay, i) => (
-        <div key={i} className={`border p-5 space-y-3 ${severityStyle(replay.severity)}`}>
+        <div key={i} className={`border p-5 space-y-3 rounded-lg ${severityStyle(replay.severity)}`}>
           <div className="flex justify-between items-start gap-4">
             <div>
               <div className="text-sm font-semibold">{replay.message}</div>
-              <div className="text-xs opacity-70 mt-0.5">
-                {replay.date} · {replay.regime}
-              </div>
+              <div className="text-xs opacity-70 mt-0.5">{replay.date} · {replay.regime}</div>
             </div>
             <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 capitalize ${
-              replay.severity === "high"   ? "border-red-700 text-red-300"       :
-              replay.severity === "medium" ? "border-orange-700 text-orange-300" :
-                                             "border-yellow-700 text-yellow-300"
-            }`}>
-              {replay.severity}
-            </span>
+              replay.severity === "high" ? "border-red-700 text-red-300" :
+              replay.severity === "medium" ? "border-orange-700 text-orange-300" : "border-yellow-700 text-yellow-300"
+            }`}>{replay.severity}</span>
           </div>
           <div className="grid grid-cols-3 gap-3 text-xs">
             <div className="space-y-0.5">
               <div className="text-zinc-400">Your Exposure</div>
-              <div className={`font-semibold ${exposureColor(replay.user_exp)}`}>
-                {replay.user_exp}%
-              </div>
+              <div className={`font-semibold ${exposureColor(replay.user_exp)}`}>{replay.user_exp}%</div>
             </div>
             <div className="space-y-0.5">
               <div className="text-zinc-400">Model Said</div>
-              <div className={`font-semibold ${exposureColor(replay.model_exp)}`}>
-                {replay.model_exp}%
-              </div>
+              <div className={`font-semibold ${exposureColor(replay.model_exp)}`}>{replay.model_exp}%</div>
             </div>
             <div className="space-y-0.5">
               <div className="text-zinc-400">Delta</div>
@@ -3298,18 +2828,8 @@ function MistakeReplayPanel({ email, coin, isPro, onUnlock }) {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 text-xs border-t border-white/10 pt-3">
-            <div>
-              <span className="text-zinc-400">Hazard at time: </span>
-              <span className={riskColor(replay.signals_at_time?.hazard ?? 0)}>
-                {replay.signals_at_time?.hazard ?? "—"}%
-              </span>
-            </div>
-            <div>
-              <span className="text-zinc-400">Shift risk: </span>
-              <span className={riskColor(replay.signals_at_time?.shift_risk ?? 0)}>
-                {replay.signals_at_time?.shift_risk ?? "—"}%
-              </span>
-            </div>
+            <div><span className="text-zinc-400">Hazard at time: </span><span className={riskColor(replay.signals_at_time?.hazard ?? 0)}>{replay.signals_at_time?.hazard ?? "—"}%</span></div>
+            <div><span className="text-zinc-400">Shift risk: </span><span className={riskColor(replay.signals_at_time?.shift_risk ?? 0)}>{replay.signals_at_time?.shift_risk ?? "—"}%</span></div>
           </div>
         </div>
       ))}
@@ -3318,48 +2838,36 @@ function MistakeReplayPanel({ email, coin, isPro, onUnlock }) {
     <div className="text-sm text-zinc-400">Analysing deviation history...</div>
   ) : (
     <div className="text-sm text-zinc-400">
-      {data?.count === 0
-        ? "No significant deviations detected. Discipline is strong."
-        : "Log exposure over time to generate mistake replay analysis."}
+      {data?.count === 0 ? "No significant deviations detected. Discipline is strong." : "Log exposure over time to generate mistake replay analysis."}
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Mistake Replay Engine"
-      consequence="Mistake replay identifies the exact conditions where your decisions cost you money."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Mistake Replay Engine" consequence="Mistake replay identifies the exact conditions where your decisions cost you money." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Mistake Replay Engine</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Sessions where you deviated from the model during elevated risk conditions
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Sessions where you deviated from the model during elevated risk conditions</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
 // ─────────────────────────────────────────
-// PERFORMANCE PANEL
+// PERFORMANCE PANEL — already had token, kept clean
 // ─────────────────────────────────────────
 function PerformancePanel({ email, coin, token, isPro, onUnlock }) {
-  const [data,    setData]    = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!email || !isPro) return;
     setLoading(true);
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    fetch(
-      `${BACKEND}/performance-comparison?email=${encodeURIComponent(email)}&coin=${coin}`,
-      { headers }
-    )
-      .then((r) => r.json())
+    apiFetch(`/performance-comparison?email=${encodeURIComponent(email)}&coin=${coin}`, token)
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -3369,32 +2877,10 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock }) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          {
-            label: "Your Return",
-            value: data.user_total_return !== null
-              ? `${(data.user_total_return ?? 0) > 0 ? "+" : ""}${data.user_total_return?.toFixed(1)}%`
-              : "—",
-            color: (data.user_total_return ?? 0) >= 0 ? "text-emerald-400" : "text-red-400",
-          },
-          {
-            label: "Model Return",
-            value: data.model_total_return !== null
-              ? `${(data.model_total_return ?? 0) > 0 ? "+" : ""}${data.model_total_return?.toFixed(1)}%`
-              : "—",
-            color: (data.model_total_return ?? 0) >= 0 ? "text-blue-400" : "text-red-400",
-          },
-          {
-            label: "Alpha vs Model",
-            value: data.alpha !== null
-              ? `${(data.alpha ?? 0) > 0 ? "+" : ""}${data.alpha?.toFixed(1)}%`
-              : "—",
-            color: (data.alpha ?? 0) >= 0 ? "text-emerald-400" : "text-red-400",
-          },
-          {
-            label: "Periods Tracked",
-            value: data.periods ?? "—",
-            color: "text-gray-300",
-          },
+          { label: "Your Return", value: data.user_total_return !== null ? `${(data.user_total_return ?? 0) > 0 ? "+" : ""}${data.user_total_return?.toFixed(1)}%` : "—", color: (data.user_total_return ?? 0) >= 0 ? "text-emerald-400" : "text-red-400" },
+          { label: "Model Return", value: data.model_total_return !== null ? `${(data.model_total_return ?? 0) > 0 ? "+" : ""}${data.model_total_return?.toFixed(1)}%` : "—", color: (data.model_total_return ?? 0) >= 0 ? "text-blue-400" : "text-red-400" },
+          { label: "Alpha vs Model", value: data.alpha !== null ? `${(data.alpha ?? 0) > 0 ? "+" : ""}${data.alpha?.toFixed(1)}%` : "—", color: (data.alpha ?? 0) >= 0 ? "text-emerald-400" : "text-red-400" },
+          { label: "Periods Tracked", value: data.periods ?? "—", color: "text-gray-300" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
             <div className="text-xs text-zinc-400">{label}</div>
@@ -3403,29 +2889,19 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock }) {
         ))}
       </div>
 
-      {data.message && (
-        <div className="text-xs text-zinc-500 border border-white/5 px-4 py-3">
-          {data.message}
-        </div>
-      )}
+      {data.message && <div className="text-xs text-zinc-500 border border-white/5 px-4 py-3 rounded-lg">{data.message}</div>}
 
       {data.curve?.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs text-zinc-400 uppercase tracking-widest">
-            Cumulative Return Comparison
-          </div>
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Cumulative Return Comparison</div>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={data.curve}>
               <CartesianGrid stroke="#18181b" strokeDasharray="3 3" />
               <XAxis dataKey="period" stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
               <YAxis stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
-              <Tooltip
-                contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }}
-                labelStyle={{ color: "#71717a" }}
-                formatter={(v, n) => [`${v?.toFixed(1)}%`, n]}
-              />
+              <Tooltip contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }} labelStyle={{ color: "#71717a" }} formatter={(v, n) => [`${v?.toFixed(1)}%`, n]} />
               <ReferenceLine y={0} stroke="#27272a" />
-              <Line type="monotone" dataKey="user_cum"  stroke="#22c55e" strokeWidth={2} dot={false} name="Your Return"  />
+              <Line type="monotone" dataKey="user_cum" stroke="#22c55e" strokeWidth={2} dot={false} name="Your Return" />
               <Line type="monotone" dataKey="model_cum" stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 4" dot={false} name="Model Return" />
             </LineChart>
           </ResponsiveContainer>
@@ -3434,28 +2910,14 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock }) {
 
       {data.regime_breakdown && Object.keys(data.regime_breakdown).length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs text-zinc-400 uppercase tracking-widest">
-            Performance by Regime
-          </div>
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Performance by Regime</div>
           <div className="space-y-2">
             {Object.entries(data.regime_breakdown).map(([regime, stats]) => (
-              <div key={regime} className="flex items-center justify-between border border-white/5 px-4 py-3">
-                <div className={`text-sm font-medium w-36 shrink-0 ${regimeText(regime)}`}>
-                  {regime}
-                </div>
+              <div key={regime} className="flex items-center justify-between border border-white/5 px-4 py-3 rounded-lg">
+                <div className={`text-sm font-medium w-36 shrink-0 ${regimeText(regime)}`}>{regime}</div>
                 <div className="flex gap-6 text-xs">
-                  <span>
-                    You:{" "}
-                    <span className={stats.user_avg >= 0 ? "text-emerald-400" : "text-red-400"}>
-                      {stats.user_avg > 0 ? "+" : ""}{stats.user_avg?.toFixed(1)}%
-                    </span>
-                  </span>
-                  <span>
-                    Model:{" "}
-                    <span className={stats.model_avg >= 0 ? "text-blue-400" : "text-red-400"}>
-                      {stats.model_avg > 0 ? "+" : ""}{stats.model_avg?.toFixed(1)}%
-                    </span>
-                  </span>
+                  <span>You: <span className={stats.user_avg >= 0 ? "text-emerald-400" : "text-red-400"}>{stats.user_avg > 0 ? "+" : ""}{stats.user_avg?.toFixed(1)}%</span></span>
+                  <span>Model: <span className={stats.model_avg >= 0 ? "text-blue-400" : "text-red-400"}>{stats.model_avg > 0 ? "+" : ""}{stats.model_avg?.toFixed(1)}%</span></span>
                   <span className="text-zinc-500">{stats.count} periods</span>
                 </div>
               </div>
@@ -3467,19 +2929,15 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock }) {
       {(data.best_regime || data.worst_regime) && (
         <div className="grid grid-cols-2 gap-4">
           {data.best_regime && (
-            <div className="border border-emerald-900 bg-emerald-950 p-4 space-y-1">
+            <div className="border border-emerald-900 bg-emerald-950 p-4 space-y-1 rounded-lg">
               <div className="text-xs text-zinc-400">Best Regime for You</div>
-              <div className={`text-sm font-semibold ${regimeText(data.best_regime)}`}>
-                {data.best_regime}
-              </div>
+              <div className={`text-sm font-semibold ${regimeText(data.best_regime)}`}>{data.best_regime}</div>
             </div>
           )}
           {data.worst_regime && (
-            <div className="border border-red-900 bg-red-950 p-4 space-y-1">
+            <div className="border border-red-900 bg-red-950 p-4 space-y-1 rounded-lg">
               <div className="text-xs text-zinc-400">Worst Regime for You</div>
-              <div className={`text-sm font-semibold ${regimeText(data.worst_regime)}`}>
-                {data.worst_regime}
-              </div>
+              <div className={`text-sm font-semibold ${regimeText(data.worst_regime)}`}>{data.worst_regime}</div>
             </div>
           )}
         </div>
@@ -3488,92 +2946,72 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock }) {
   ) : loading ? (
     <div className="text-sm text-zinc-400">Loading performance data...</div>
   ) : (
-    <div className="text-sm text-zinc-400">
-      No performance data yet. Log your exposure over multiple periods to begin tracking.
-    </div>
+    <div className="text-sm text-zinc-400">No performance data yet. Log your exposure over multiple periods to begin tracking.</div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Performance Comparison"
-      consequence="Without performance tracking, you cannot measure whether your decisions are adding or destroying alpha."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Performance Comparison" consequence="Without performance tracking, you cannot measure whether your decisions are adding or destroying alpha." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Performance Comparison</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Your actual returns vs following the model — compounded over time
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Your actual returns vs following the model — compounded over time</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
 // ─────────────────────────────────────────
-// EDGE PROFILE PANEL
+// EDGE PROFILE PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function EdgeProfilePanel({ email, isPro, onUnlock }) {
-  const [data,    setData]    = useState(null);
+function EdgeProfilePanel({ email, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!email || !isPro) return;
     setLoading(true);
-    fetch(`${BACKEND}/edge-profile?email=${encodeURIComponent(email)}`)
-      .then((r) => r.json())
+    apiFetch(`/edge-profile?email=${encodeURIComponent(email)}`, token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [email, isPro]);
+  }, [email, isPro, token]);
 
   const perfColor = (perf) => {
     if (perf === "Strong") return "text-emerald-400";
-    if (perf === "Good")   return "text-green-400";
-    if (perf === "Weak")   return "text-yellow-400";
+    if (perf === "Good") return "text-green-400";
+    if (perf === "Weak") return "text-yellow-400";
     return "text-red-400";
   };
 
   const inner = !data ? (
-    loading
-      ? <div className="text-sm text-zinc-400">Building your edge profile...</div>
-      : <div className="text-sm text-zinc-400">Log exposure across multiple sessions to unlock your edge profile.</div>
+    loading ? <div className="text-sm text-zinc-400">Building your edge profile...</div>
+    : <div className="text-sm text-zinc-400">Log exposure across multiple sessions to unlock your edge profile.</div>
   ) : !data.ready ? (
     <div className="space-y-3">
-      <div className="border border-white/5 px-4 py-3 text-sm text-zinc-400">
-        {data.message}
-      </div>
+      <div className="border border-white/5 px-4 py-3 text-sm text-zinc-400 rounded-lg">{data.message}</div>
       <div className="w-full bg-zinc-800 rounded-full h-1">
-        <div
-          className="h-1 bg-blue-500 rounded-full transition-all"
-          style={{ width: `${((data.entry_count ?? 0) / 5) * 100}%` }}
-        />
+        <div className="h-1 bg-blue-500 rounded-full transition-all" style={{ width: `${((data.entry_count ?? 0) / 5) * 100}%` }} />
       </div>
-      <div className="text-xs text-zinc-500">
-        {data.entry_count ?? 0} / 5 entries to unlock
-      </div>
+      <div className="text-xs text-zinc-500">{data.entry_count ?? 0} / 5 entries to unlock</div>
     </div>
   ) : (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         {data.best_regime && (
-          <div className="border border-emerald-900 bg-emerald-950 p-4 space-y-1">
+          <div className="border border-emerald-900 bg-emerald-950 p-4 space-y-1 rounded-lg">
             <div className="text-xs text-zinc-400">Your Best Regime</div>
-            <div className={`text-base font-semibold ${regimeText(data.best_regime)}`}>
-              {data.best_regime}
-            </div>
+            <div className={`text-base font-semibold ${regimeText(data.best_regime)}`}>{data.best_regime}</div>
             <div className="text-xs text-zinc-400">Strongest historical edge</div>
           </div>
         )}
         {data.worst_regime && (
-          <div className="border border-red-900 bg-red-950 p-4 space-y-1">
+          <div className="border border-red-900 bg-red-950 p-4 space-y-1 rounded-lg">
             <div className="text-xs text-zinc-400">Your Worst Regime</div>
-            <div className={`text-base font-semibold ${regimeText(data.worst_regime)}`}>
-              {data.worst_regime}
-            </div>
+            <div className={`text-base font-semibold ${regimeText(data.worst_regime)}`}>{data.worst_regime}</div>
             <div className="text-xs text-zinc-400">Underperforms here historically</div>
           </div>
         )}
@@ -3581,15 +3019,11 @@ function EdgeProfilePanel({ email, isPro, onUnlock }) {
 
       {data.profile && Object.keys(data.profile).length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs text-zinc-400 uppercase tracking-widest">
-            Performance by Regime
-          </div>
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Performance by Regime</div>
           <div className="space-y-2">
             {Object.entries(data.profile).map(([regime, stats]) => (
-              <div key={regime} className="border border-white/5 px-4 py-3 flex items-center justify-between gap-4">
-                <div className={`text-sm font-medium w-36 shrink-0 ${regimeText(regime)}`}>
-                  {regime}
-                </div>
+              <div key={regime} className="border border-white/5 px-4 py-3 flex items-center justify-between gap-4 rounded-lg">
+                <div className={`text-sm font-medium w-36 shrink-0 ${regimeText(regime)}`}>{regime}</div>
                 <div className="flex-1">
                   <div className="flex justify-between text-xs text-zinc-400 mb-1">
                     <span>{stats.count} sessions</span>
@@ -3598,23 +3032,18 @@ function EdgeProfilePanel({ email, isPro, onUnlock }) {
                   <div className="w-full bg-zinc-800 rounded-full h-1">
                     <div
                       className={`h-1 rounded-full transition-all ${
-                        stats.avg_return >= 2   ? "bg-emerald-500" :
-                        stats.avg_return >= 0.5 ? "bg-green-500"   :
-                        stats.avg_return >= -1  ? "bg-yellow-500"  : "bg-red-500"
+                        stats.avg_return >= 2 ? "bg-emerald-500" : stats.avg_return >= 0.5 ? "bg-green-500" :
+                        stats.avg_return >= -1 ? "bg-yellow-500" : "bg-red-500"
                       }`}
                       style={{ width: `${Math.min(100, Math.max(0, 50 + stats.avg_return * 10))}%` }}
                     />
                   </div>
                 </div>
                 <div className="text-right shrink-0 space-y-0.5">
-                  <div className={`text-sm font-semibold ${
-                    stats.avg_return >= 0 ? "text-emerald-400" : "text-red-400"
-                  }`}>
+                  <div className={`text-sm font-semibold ${stats.avg_return >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                     {stats.avg_return > 0 ? "+" : ""}{stats.avg_return}%
                   </div>
-                  <div className={`text-xs ${perfColor(stats.performance)}`}>
-                    {stats.performance}
-                  </div>
+                  <div className={`text-xs ${perfColor(stats.performance)}`}>{stats.performance}</div>
                 </div>
               </div>
             ))}
@@ -3624,13 +3053,10 @@ function EdgeProfilePanel({ email, isPro, onUnlock }) {
 
       {data.recommendations?.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs text-zinc-400 uppercase tracking-widest">
-            Personalised Recommendations
-          </div>
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Personalised Recommendations</div>
           {data.recommendations.map((rec, i) => (
-            <div key={i} className="border border-white/5 px-4 py-3 text-sm text-gray-300 flex items-start gap-2">
-              <span className="text-blue-400 shrink-0 mt-0.5">→</span>
-              {rec}
+            <div key={i} className="border border-white/5 px-4 py-3 text-sm text-gray-300 flex items-start gap-2 rounded-lg">
+              <span className="text-blue-400 shrink-0 mt-0.5">→</span>{rec}
             </div>
           ))}
         </div>
@@ -3638,84 +3064,48 @@ function EdgeProfilePanel({ email, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Edge Profile"
-      consequence="Without an edge profile you cannot identify which regimes you consistently outperform in."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Edge Profile" consequence="Without an edge profile you cannot identify which regimes you consistently outperform in." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Edge Profile</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Your historical performance breakdown by regime type
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Your historical performance breakdown by regime type</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
 // ─────────────────────────────────────────
-// WEEKLY REPORT PANEL
+// WEEKLY REPORT PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function WeeklyReportPanel({ email, coin, isPro, onUnlock }) {
-  const [data,    setData]    = useState(null);
+function WeeklyReportPanel({ email, coin, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!email || !isPro) return;
     setLoading(true);
     Promise.all([
-      fetch(`${BACKEND}/discipline-score?email=${encodeURIComponent(email)}`).then((r) => r.json()),
-      fetch(`${BACKEND}/performance-comparison?email=${encodeURIComponent(email)}&coin=${coin}`).then((r) => r.json()),
+      apiFetch(`/discipline-score?email=${encodeURIComponent(email)}`, token),
+      apiFetch(`/performance-comparison?email=${encodeURIComponent(email)}&coin=${coin}`, token),
     ])
       .then(([discipline, performance]) => setData({ discipline, performance }))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [email, coin, isPro]);
+  }, [email, coin, isPro, token]);
 
   const inner = data ? (
     <div className="space-y-5">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          {
-            label: "Discipline Score",
-            value: data.discipline?.score !== null ? `${data.discipline?.score}` : "—",
-            suffix: "",
-            color: data.discipline?.score >= 70 ? "text-emerald-400" :
-                   data.discipline?.score >= 50 ? "text-yellow-400"  : "text-red-400",
-            sub: data.discipline?.label ?? "—",
-          },
-          {
-            label: "Your Return",
-            value: data.performance?.user_total_return !== null
-              ? `${(data.performance?.user_total_return ?? 0) > 0 ? "+" : ""}${data.performance?.user_total_return?.toFixed(1)}`
-              : "—",
-            suffix: data.performance?.user_total_return !== null ? "%" : "",
-            color:  (data.performance?.user_total_return ?? 0) >= 0 ? "text-emerald-400" : "text-red-400",
-            sub: "This period",
-          },
-          {
-            label: "Model Return",
-            value: data.performance?.model_total_return !== null
-              ? `${(data.performance?.model_total_return ?? 0) > 0 ? "+" : ""}${data.performance?.model_total_return?.toFixed(1)}`
-              : "—",
-            suffix: data.performance?.model_total_return !== null ? "%" : "",
-            color:  "text-blue-400",
-            sub: "If followed model",
-          },
-          {
-            label: "Alpha",
-            value: data.performance?.alpha !== null
-              ? `${(data.performance?.alpha ?? 0) > 0 ? "+" : ""}${data.performance?.alpha?.toFixed(1)}`
-              : "—",
-            suffix: data.performance?.alpha !== null ? "%" : "",
-            color:  (data.performance?.alpha ?? 0) >= 0 ? "text-emerald-400" : "text-red-400",
-            sub: "vs model",
-          },
+          { label: "Discipline Score", value: data.discipline?.score !== null ? `${data.discipline?.score}` : "—", suffix: "", color: data.discipline?.score >= 70 ? "text-emerald-400" : data.discipline?.score >= 50 ? "text-yellow-400" : "text-red-400", sub: data.discipline?.label ?? "—" },
+          { label: "Your Return", value: data.performance?.user_total_return !== null ? `${(data.performance?.user_total_return ?? 0) > 0 ? "+" : ""}${data.performance?.user_total_return?.toFixed(1)}` : "—", suffix: data.performance?.user_total_return !== null ? "%" : "", color: (data.performance?.user_total_return ?? 0) >= 0 ? "text-emerald-400" : "text-red-400", sub: "This period" },
+          { label: "Model Return", value: data.performance?.model_total_return !== null ? `${(data.performance?.model_total_return ?? 0) > 0 ? "+" : ""}${data.performance?.model_total_return?.toFixed(1)}` : "—", suffix: data.performance?.model_total_return !== null ? "%" : "", color: "text-blue-400", sub: "If followed model" },
+          { label: "Alpha", value: data.performance?.alpha !== null ? `${(data.performance?.alpha ?? 0) > 0 ? "+" : ""}${data.performance?.alpha?.toFixed(1)}` : "—", suffix: data.performance?.alpha !== null ? "%" : "", color: (data.performance?.alpha ?? 0) >= 0 ? "text-emerald-400" : "text-red-400", sub: "vs model" },
         ].map(({ label, value, suffix, color, sub }) => (
           <div key={label} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
             <div className="text-xs text-zinc-400">{label}</div>
@@ -3727,18 +3117,11 @@ function WeeklyReportPanel({ email, coin, isPro, onUnlock }) {
 
       {data.discipline?.flags?.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs text-zinc-400 uppercase tracking-widest">
-            Notable Events This Period
-          </div>
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Notable Events This Period</div>
           {data.discipline.flags.slice(0, 5).map((flag, i) => (
-            <div
-              key={i}
-              className={`border px-4 py-2.5 text-xs flex justify-between items-center ${
-                flag.type === "penalty"
-                  ? "border-red-900 bg-red-950/50 text-red-300"
-                  : "border-emerald-900 bg-emerald-950/50 text-emerald-300"
-              }`}
-            >
+            <div key={i} className={`border px-4 py-2.5 text-xs flex justify-between items-center rounded-lg ${
+              flag.type === "penalty" ? "border-red-900 bg-red-950/50 text-red-300" : "border-emerald-900 bg-emerald-950/50 text-emerald-300"
+            }`}>
               <span>{flag.label}</span>
               <span className="opacity-60">{flag.date} · {flag.regime}</span>
             </div>
@@ -3746,95 +3129,62 @@ function WeeklyReportPanel({ email, coin, isPro, onUnlock }) {
         </div>
       )}
 
-      <div className="border border-white/5 px-4 py-3 text-xs text-zinc-400 space-y-1">
+      <div className="border border-white/5 px-4 py-3 text-xs text-zinc-400 space-y-1 rounded-lg">
         <div className="font-medium text-gray-400">Period Summary</div>
-        <div>
-          {data.performance?.message ?? "Log more sessions to generate a full weekly summary."}
-        </div>
+        <div>{data.performance?.message ?? "Log more sessions to generate a full weekly summary."}</div>
       </div>
     </div>
   ) : loading ? (
     <div className="text-sm text-zinc-400">Loading weekly report...</div>
   ) : (
-    <div className="text-sm text-zinc-400">
-      No report data yet. Log exposure to generate your weekly summary.
-    </div>
+    <div className="text-sm text-zinc-400">No report data yet. Log exposure to generate your weekly summary.</div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Weekly Performance Report"
-      consequence="Weekly reports show whether your discipline is improving or deteriorating over time."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Weekly Performance Report" consequence="Weekly reports show whether your discipline is improving or deteriorating over time." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Weekly Performance Report</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Discipline score, returns, and notable events from this period
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Discipline score, returns, and notable events from this period</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
 // ─────────────────────────────────────────
-// PORTFOLIO HEALTH SCORE
+// PORTFOLIO HEALTH SCORE — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function PortfolioHealthScore({ stack, email, isPro, onUnlock }) {
+function PortfolioHealthScore({ stack, email, token, isPro, onUnlock }) {
   const [disciplineData, setDisciplineData] = useState(null);
 
   useEffect(() => {
     if (!email || !isPro) return;
-    fetch(`${BACKEND}/discipline-score?email=${encodeURIComponent(email)}`)
-      .then((r) => r.json())
+    apiFetch(`/discipline-score?email=${encodeURIComponent(email)}`, token)
       .then((d) => { if (!d.error) setDisciplineData(d); })
       .catch(console.error);
-  }, [email, isPro]);
+  }, [email, isPro, token]);
 
-  const regimeQuality    = deriveQuality(stack);
-  const disciplineScore  = disciplineData?.score ?? null;
-  const exposureDelta    = Math.abs((stack?.exposure ?? 50) - 50);
-  const exposureAlign    = Math.max(0, 100 - exposureDelta * 1.5);
+  const regimeQuality = deriveQuality(stack);
+  const disciplineScore = disciplineData?.score ?? null;
+  const exposureDelta = Math.abs((stack?.exposure ?? 50) - 50);
+  const exposureAlign = Math.max(0, 100 - exposureDelta * 1.5);
 
   const healthScore = disciplineScore !== null && regimeQuality
-    ? Math.round(
-        regimeQuality.score * 0.40 +
-        disciplineScore     * 0.35 +
-        exposureAlign       * 0.25
-      )
-    : regimeQuality
-    ? regimeQuality.score
-    : null;
+    ? Math.round(regimeQuality.score * 0.40 + disciplineScore * 0.35 + exposureAlign * 0.25)
+    : regimeQuality ? regimeQuality.score : null;
 
-  const healthColor =
-    healthScore === null ? "text-zinc-400"    :
-    healthScore >= 80    ? "text-emerald-400" :
-    healthScore >= 60    ? "text-green-400"   :
-    healthScore >= 40    ? "text-yellow-400"  :
-    healthScore >= 20    ? "text-orange-400"  : "text-red-400";
-
-  const healthLabel =
-    healthScore === null ? "Insufficient data" :
-    healthScore >= 80    ? "Optimal"           :
-    healthScore >= 60    ? "Healthy"           :
-    healthScore >= 40    ? "Moderate Risk"     :
-    healthScore >= 20    ? "Elevated Risk"     : "High Risk";
-
-  const healthBarCls =
-    healthScore === null ? "bg-zinc-700"    :
-    healthScore >= 80    ? "bg-emerald-500" :
-    healthScore >= 60    ? "bg-green-500"   :
-    healthScore >= 40    ? "bg-yellow-500"  :
-    healthScore >= 20    ? "bg-orange-500"  : "bg-red-500";
+  const healthColor = healthScore === null ? "text-zinc-400" : healthScore >= 80 ? "text-emerald-400" : healthScore >= 60 ? "text-green-400" : healthScore >= 40 ? "text-yellow-400" : healthScore >= 20 ? "text-orange-400" : "text-red-400";
+  const healthLabel = healthScore === null ? "Insufficient data" : healthScore >= 80 ? "Optimal" : healthScore >= 60 ? "Healthy" : healthScore >= 40 ? "Moderate Risk" : healthScore >= 20 ? "Elevated Risk" : "High Risk";
+  const healthBarCls = healthScore === null ? "bg-zinc-700" : healthScore >= 80 ? "bg-emerald-500" : healthScore >= 60 ? "bg-green-500" : healthScore >= 40 ? "bg-yellow-500" : healthScore >= 20 ? "bg-orange-500" : "bg-red-500";
 
   const components = [
-    { label: "Regime Quality",      value: regimeQuality?.score ?? null, weight: "40%", hint: regimeQuality?.structural ?? "—"             },
-    { label: "Discipline Score",    value: disciplineScore,               weight: "35%", hint: disciplineData?.label ?? "Log exposure to unlock" },
-    { label: "Exposure Alignment",  value: Math.round(exposureAlign),    weight: "25%", hint: "vs regime recommendation"                    },
+    { label: "Regime Quality", value: regimeQuality?.score ?? null, weight: "40%", hint: regimeQuality?.structural ?? "—" },
+    { label: "Discipline Score", value: disciplineScore, weight: "35%", hint: disciplineData?.label ?? "Log exposure to unlock" },
+    { label: "Exposure Alignment", value: Math.round(exposureAlign), weight: "25%", hint: "vs regime recommendation" },
   ];
 
   const inner = (
@@ -3853,11 +3203,7 @@ function PortfolioHealthScore({ stack, email, isPro, onUnlock }) {
                 <span className="text-zinc-400">{label}</span>
                 <div className="flex gap-3">
                   <span className="text-gray-700">{weight}</span>
-                  <span className={
-                    value === null ? "text-zinc-500"  :
-                    value >= 70   ? "text-emerald-400" :
-                    value >= 50   ? "text-yellow-400"  : "text-red-400"
-                  }>
+                  <span className={value === null ? "text-zinc-500" : value >= 70 ? "text-emerald-400" : value >= 50 ? "text-yellow-400" : "text-red-400"}>
                     {value !== null ? `${value}%` : "—"}
                   </span>
                 </div>
@@ -3865,9 +3211,7 @@ function PortfolioHealthScore({ stack, email, isPro, onUnlock }) {
               <div className="w-full bg-zinc-800 rounded-full h-1">
                 <div
                   className={`h-1 rounded-full transition-all ${
-                    value === null ? "bg-zinc-700"    :
-                    value >= 70   ? "bg-emerald-500" :
-                    value >= 50   ? "bg-yellow-500"  : "bg-red-500"
+                    value === null ? "bg-zinc-700" : value >= 70 ? "bg-emerald-500" : value >= 50 ? "bg-yellow-500" : "bg-red-500"
                   }`}
                   style={{ width: `${value ?? 0}%` }}
                 />
@@ -3878,39 +3222,155 @@ function PortfolioHealthScore({ stack, email, isPro, onUnlock }) {
         </div>
       </div>
       {healthScore !== null && healthScore < 40 && (
-        <div className="border border-red-900 bg-red-950 px-4 py-3 text-red-300 text-sm">
+        <div className="border border-red-900 bg-red-950 px-4 py-3 text-red-300 text-sm rounded-lg">
           ⚠ Portfolio health is low. Review regime quality and exposure alignment before adding positions.
         </div>
       )}
       {healthScore !== null && healthScore >= 80 && (
-        <div className="border border-emerald-900 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm">
+        <div className="border border-emerald-900 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm rounded-lg">
           ✓ Portfolio health is optimal. Conditions are favourable for disciplined position sizing.
         </div>
       )}
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Portfolio Health Score"
-      consequence="Without a health score you have no single metric to assess your overall trading posture."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  // ... continuing PortfolioHealthScore
+  if (!isPro)
+    return (
+      <ProGate label="Portfolio Health Score" consequence="Without a health score you have no single metric to assess your overall trading posture." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-2">
+    <CardShell>
       <Label>Portfolio Health Score</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Composite score across regime quality, discipline, and exposure alignment
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Composite score across regime quality, discipline, and exposure alignment</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
+// ─────────────────────────────────────────
+// ARCHETYPE OVERLAY PANEL (consolidated — replaces both old panels)
+// ─────────────────────────────────────────
+function ArchetypeOverlayPanel({ coin, email, token, isPro, onUnlock }) {
+  const [archetype, setArchetype] = useState("swing");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saveMsg, setSaveMsg] = useState(null);
 
+  const load = useCallback(() => {
+    if (!isPro || !coin) return;
+    setLoading(true);
+    apiFetch(`/archetype-overlay?coin=${coin}&archetype=${archetype}&email=${encodeURIComponent(email || "")}`, token)
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [coin, archetype, email, isPro, token]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const saveArchetype = async () => {
+    if (!email) return;
+    try {
+      await apiFetch("/save-archetype", token, {
+        method: "POST",
+        body: JSON.stringify({ email, archetype }),
+      });
+      setSaveMsg("Archetype saved!");
+      setTimeout(() => setSaveMsg(null), 3000);
+    } catch { setSaveMsg("Save failed"); }
+  };
+
+  const inner = (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        {Object.entries(ARCHETYPE_CONFIG).map(([key, cfg]) => (
+          <button
+            key={key}
+            onClick={() => setArchetype(key)}
+            className={`py-3 px-2 rounded-xl text-xs font-medium border transition-all text-center space-y-0.5 ${
+              archetype === key ? "bg-white text-black border-white" : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"
+            }`}
+          >
+            <div>{cfg.label}</div>
+          </button>
+        ))}
+      </div>
+      <div className="text-xs text-zinc-500">{ARCHETYPE_CONFIG[archetype]?.description}</div>
+
+      {data && !data.error && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Adjusted Exposure</div>
+              <div className={`text-2xl font-semibold ${exposureColor(data.adjusted_exposure)}`}>{data.adjusted_exposure}%</div>
+              <div className="text-xs text-zinc-500">Base: {data.base_exposure}% × {data.exposure_multiplier}</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Max Hold</div>
+              <div className="text-2xl font-semibold text-white">{data.max_hold_days}d</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Stop Width</div>
+              <div className="text-2xl font-semibold text-white">{data.stop_width_multiplier}x</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Alert Now?</div>
+              <div className={`text-2xl font-semibold ${data.should_alert_now ? "text-red-400" : "text-green-400"}`}>
+                {data.should_alert_now ? "YES" : "No"}
+              </div>
+            </div>
+          </div>
+
+          {data.archetype_actions?.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs text-zinc-400 uppercase tracking-widest">Archetype-Specific Actions</div>
+              {data.archetype_actions.map((a, i) => (
+                <div key={i} className="border border-white/5 px-4 py-3 text-sm text-gray-300 flex items-start gap-2 rounded-lg">
+                  <span className="text-blue-400 shrink-0">→</span>{a}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="border border-white/5 px-4 py-3 text-xs text-zinc-500 flex gap-4 flex-wrap rounded-lg">
+            <span>Sensitivity: <span className="text-gray-300">{data.alert_sensitivity}</span></span>
+            <span>Timeframe: <span className="text-gray-300">{data.preferred_timeframe}</span></span>
+            <span>Playbook: <span className="text-gray-300">{data.playbook_bias}</span></span>
+          </div>
+        </>
+      )}
+
+      {loading && <div className="text-sm text-zinc-400">Loading archetype overlay...</div>}
+
+      <div className="flex gap-3 items-center">
+        <button
+          onClick={saveArchetype}
+          disabled={!email}
+          className="bg-white text-black px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
+        >
+          Save as My Archetype
+        </button>
+        {saveMsg && <span className="text-xs text-emerald-400">{saveMsg}</span>}
+      </div>
+    </div>
+  );
+
+  if (!isPro)
+    return (
+      <ProGate label="Trader Archetype Overlay" consequence="Without archetype personalization, exposure recommendations don't match your trading style." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
+  return (
+    <CardShell>
+      <Label>Trader Archetype Overlay</Label>
+      <p className="text-xs text-zinc-400 mb-4">Personalized regime interpretation for your trading style</p>
+      {inner}
+    </CardShell>
+  );
+}
 
 // ─────────────────────────────────────────
 // ALERT THRESHOLDS PANEL
@@ -3948,7 +3408,6 @@ function AlertThresholdsPanel({ email, token, isPro, onUnlock }) {
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-      // Refresh
       const d = await apiFetch(`/alert-thresholds?email=${encodeURIComponent(email)}`, token);
       if (d.thresholds) setThresholds(d.thresholds);
     } catch (e) { console.error(e); }
@@ -3958,15 +3417,12 @@ function AlertThresholdsPanel({ email, token, isPro, onUnlock }) {
   const inner = (
     <div className="space-y-6">
       {saved && (
-        <div className="border border-emerald-800 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm">
-          ✓ Alert thresholds saved for {coin}.
-        </div>
+        <div className="border border-emerald-800 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm rounded-lg">✓ Alert thresholds saved for {coin}.</div>
       )}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="space-y-2">
           <div className="text-xs text-zinc-400">Coin</div>
-          <select value={coin} onChange={(e) => setCoin(e.target.value)}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-3 py-2.5 rounded-xl text-sm">
+          <select value={coin} onChange={(e) => setCoin(e.target.value)} className="w-full bg-zinc-950 border border-zinc-700 text-white px-3 py-2.5 rounded-xl text-sm">
             {SUPPORTED_COINS.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
@@ -3978,13 +3434,11 @@ function AlertThresholdsPanel({ email, token, isPro, onUnlock }) {
         ].map(({ l, v, s }) => (
           <div key={l} className="space-y-2">
             <div className="text-xs text-zinc-400">{l}</div>
-            <input type="number" value={v} onChange={(e) => s(Number(e.target.value))} min={0} max={100}
-              className="w-full bg-zinc-950 border border-zinc-700 text-white px-3 py-2.5 rounded-xl text-sm" />
+            <input type="number" value={v} onChange={(e) => s(Number(e.target.value))} min={0} max={100} className="w-full bg-zinc-950 border border-zinc-700 text-white px-3 py-2.5 rounded-xl text-sm" />
           </div>
         ))}
       </div>
-      <button onClick={save} disabled={saving || !email}
-        className="bg-white text-black px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50">
+      <button onClick={save} disabled={saving || !email} className="bg-white text-black px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50">
         {saving ? "Saving..." : "Save Thresholds"}
       </button>
 
@@ -3993,7 +3447,7 @@ function AlertThresholdsPanel({ email, token, isPro, onUnlock }) {
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Current Thresholds</div>
           <div className="space-y-1">
             {thresholds.map((t, i) => (
-              <div key={i} className="border border-white/5 px-4 py-2.5 text-xs flex justify-between items-center">
+              <div key={i} className="border border-white/5 px-4 py-2.5 text-xs flex justify-between items-center rounded-lg">
                 <span className="font-semibold text-white">{t.coin}</span>
                 <div className="flex gap-4 text-zinc-400">
                   <span>Shift≥{t.shift_risk_threshold}%</span>
@@ -4011,17 +3465,18 @@ function AlertThresholdsPanel({ email, token, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate label="Dynamic Alert Thresholds" consequence="Without custom alerts, you miss critical regime shifts." onUnlock={onUnlock}>
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Dynamic Alert Thresholds" consequence="Without custom alerts, you miss critical regime shifts." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+    <CardShell>
       <Label>Dynamic Alert Thresholds</Label>
       <p className="text-xs text-zinc-400 mb-4">Configure per-coin alert triggers for shift risk, setup quality, and more</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -4052,7 +3507,7 @@ function UserAlertsInbox({ email, token, isPro, onUnlock }) {
     <div className="space-y-3">
       {loading && <div className="text-sm text-zinc-400">Evaluating alerts...</div>}
       {!loading && alerts.length === 0 && (
-        <div className="border border-emerald-900 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm">
+        <div className="border border-emerald-900 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm rounded-lg">
           ✓ No active alerts. All conditions within thresholds.
         </div>
       )}
@@ -4076,17 +3531,18 @@ function UserAlertsInbox({ email, token, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate label="Alert Inbox" consequence="Without alert evaluation, you miss actionable regime warnings." onUnlock={onUnlock}>
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Alert Inbox" consequence="Without alert evaluation, you miss actionable regime warnings." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+    <CardShell>
       <Label>Alert Inbox</Label>
       <p className="text-xs text-zinc-400 mb-4">Active alerts based on your custom thresholds</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -4123,19 +3579,17 @@ function PerformanceLogger({ coin, email, token, isPro, onUnlock }) {
         ].map(({ l, v, s }) => (
           <div key={l} className="space-y-2">
             <div className="text-xs text-zinc-400">{l}</div>
-            <input type="number" value={v} onChange={(e) => s(Number(e.target.value))}
-              className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500" />
+            <input type="number" value={v} onChange={(e) => s(Number(e.target.value))} className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500" />
           </div>
         ))}
         <div className="flex items-end">
-          <button onClick={log} disabled={loading || !email}
-            className="w-full bg-white text-black py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50">
+          <button onClick={log} disabled={loading || !email} className="w-full bg-white text-black py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50">
             {loading ? "Logging..." : "Log Period"}
           </button>
         </div>
       </div>
       {result && (
-        <div className={`border p-4 text-sm space-y-1 ${result.alpha >= 0 ? "border-emerald-900 bg-emerald-950 text-emerald-300" : "border-red-900 bg-red-950 text-red-300"}`}>
+        <div className={`border p-4 text-sm space-y-1 rounded-lg ${result.alpha >= 0 ? "border-emerald-900 bg-emerald-950 text-emerald-300" : "border-red-900 bg-red-950 text-red-300"}`}>
           <div className="font-semibold">Period logged: {result.price_return > 0 ? "+" : ""}{result.price_return}% price move</div>
           <div className="text-xs opacity-80">
             Your return: {result.user_return > 0 ? "+" : ""}{result.user_return}% · Model: {result.model_return > 0 ? "+" : ""}{result.model_return}% · Alpha: {result.alpha > 0 ? "+" : ""}{result.alpha}%
@@ -4153,17 +3607,18 @@ function PerformanceLogger({ coin, email, token, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate label="Performance Logger" consequence="Without logging trades, you cannot measure alpha vs the model." onUnlock={onUnlock}>
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Performance Logger" consequence="Without logging trades, you cannot measure alpha vs the model." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+    <CardShell>
       <Label>Performance Logger</Label>
       <p className="text-xs text-zinc-400 mb-4">Log trade periods to build your performance comparison and edge profile</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -4184,561 +3639,6 @@ function ModelVersionBadge({ version, durationMs }) {
 }
 
 // ─────────────────────────────────────────
-// EMAIL CAPTURE
-// ─────────────────────────────────────────
-function EmailCapture({ onEmailSet }) {
-  const [input,   setInput]   = useState("");
-  const [loading, setLoading] = useState(false);
-  const [done,    setDone]    = useState(false);
-  const [error,   setError]   = useState(null);
-
-  const submit = async () => {
-    const email = input.trim().toLowerCase();
-    if (!email || !email.includes("@")) {
-      setError("Enter a valid email address.");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      await fetch(`${BACKEND}/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      setDone(true);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("cp_email", email);
-      }
-      onEmailSet(email);
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (done) {
-    return (
-      <div className="border border-emerald-800 bg-emerald-950 px-6 py-4 text-emerald-300 text-sm">
-        ✓ Daily regime brief confirmed. Check your inbox.
-      </div>
-    );
-  }
-
-  return (
-    <div className="border border-zinc-700 bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] px-6 py-5 space-y-3">
-      <div className="space-y-1">
-        <div className="text-sm font-medium text-white">Get the daily regime brief</div>
-        <div className="text-xs text-zinc-400">
-          Regime verdict, shift risk, and directive — delivered every morning. Free.
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <input
-          type="email"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
-          placeholder="your@email.com"
-          className="flex-1 bg-zinc-800 border border-zinc-700 text-white px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-zinc-500 placeholder-zinc-600"
-        />
-        <button
-          onClick={submit}
-          disabled={loading}
-          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 whitespace-nowrap"
-        >
-          {loading ? "..." : "Get Brief"}
-        </button>
-      </div>
-      {error && <div className="text-xs text-red-400">{error}</div>}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────
-// ADVANCED ANALYTICS
-// ─────────────────────────────────────────
-function AdvancedAnalytics({ children, isPro }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="space-y-4">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full border border-white/5 px-6 py-4 flex justify-between items-center hover:border-zinc-600 transition-colors"
-      >
-        <div className="text-left space-y-0.5">
-          <div className="text-sm font-medium text-white">Advanced Analytics</div>
-          <div className="text-xs text-zinc-400">
-            Correlation · Heatmap · Transition matrix · Timeline · Breadth · Risk events
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 ml-4">
-          {!isPro && (
-            <span className="text-xs text-zinc-500 flex items-center gap-1">
-              <Lock />Some require Pro
-            </span>
-          )}
-          <svg
-            className={`w-4 h-4 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`}
-            fill="none" stroke="currentColor" viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </button>
-      {open && <div className="space-y-4">{children}</div>}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────
-// PRO MODAL 
-// ─────────────────────────────────────────
-function ProModal({ onClose }) {
-  const [billingCycle, setBillingCycle] = useState("annual");
-  const [loading,      setLoading]      = useState(false);
-
-  const checkout = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${BACKEND}/create-checkout-session`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ billing_cycle: billingCycle }),
-      });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center px-4 py-8 overflow-y-auto">
-      <div className="bg-zinc-950 border border-white/8 rounded-2xl max-w-md w-full p-8 space-y-6 relative shadow-2xl shadow-black/50">
-
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
-        {/* Header */}
-        <div className="space-y-2 pr-6">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <Label>ChainPulse Pro</Label>
-          </div>
-          <h2 className="text-2xl font-semibold leading-tight tracking-tight">
-            Trade with a systematic risk framework
-          </h2>
-          <p className="text-zinc-500 text-sm leading-relaxed">
-            Survival modeling, hazard rate, and a daily directive — so you always know your exposure.
-          </p>
-        </div>
-
-        {/* Billing toggle */}
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => setBillingCycle("monthly")}
-            className={`py-3 rounded-xl text-sm font-medium border transition-all ${
-              billingCycle === "monthly"
-                ? "bg-white text-black border-white"
-                : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"
-            }`}
-          >
-            <div>Monthly</div>
-            <div className="text-xs font-normal opacity-70">$39/mo</div>
-          </button>
-          <button
-            onClick={() => setBillingCycle("annual")}
-            className={`py-3 rounded-xl text-sm font-medium border transition-all relative ${
-              billingCycle === "annual"
-                ? "bg-white text-black border-white"
-                : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"
-            }`}
-          >
-            <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
-              SAVE 26%
-            </div>
-            <div>Annual</div>
-            <div className="text-xs font-normal opacity-70">$29/mo · $348/yr</div>
-          </button>
-        </div>
-
-        {/* Features (short list) */}
-        <div className="bg-white/2 border border-white/5 rounded-xl p-5 space-y-3">
-          {[
-            { icon: "→", text: "Daily Directive — what to do today" },
-            { icon: "→", text: "Exposure % — regime-adjusted sizing" },
-            { icon: "→", text: "Survival + Hazard — persistence modeling" },
-            { icon: "→", text: "Drawdown + PnL simulation" },
-            { icon: "→", text: "Discipline score + mistake replay" },
-            { icon: "→", text: "All 7 assets · Real-time alerts" },
-          ].map(({ icon, text }) => (
-            <div key={text} className="flex items-center gap-3 text-sm text-zinc-300">
-              <span className="text-emerald-400 shrink-0">{icon}</span>
-              {text}
-            </div>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <div className="space-y-3">
-          <button
-            onClick={checkout}
-            disabled={loading}
-            className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all disabled:opacity-50 text-sm shadow-lg"
-          >
-            {loading
-              ? "Redirecting..."
-              : billingCycle === "annual"
-              ? "Start Pro — $348/year"
-              : "Start Pro — $39/month"}
-          </button>
-          <div className="text-center text-zinc-600 text-xs">
-            7-day risk-free evaluation · Cancel anytime · Instant access
-          </div>
-        </div>
-
-        {/* Trust */}
-        <div className="border-t border-white/5 pt-4 text-center">
-          <div className="text-xs text-zinc-600">
-            For swing traders managing $5,000+
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-// ─────────────────────────────────────────
-// LIVE PRICE TICKER
-// ─────────────────────────────────────────
-function LivePriceTicker({ activeCoin, onCoinSelect }) {
-  const [prices,  setPrices]  = useState({});
-  const [changes, setChanges] = useState({});
-  const [prev,    setPrev]    = useState({});
-
-  useEffect(() => {
-    const fetchPrices = async () => {
-      try {
-        const symbols = SUPPORTED_COINS.map((c) => `${c}USDT`);
-        const res  = await fetch(
-          `https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`
-        );
-        const data = await res.json();
-        const p = {}, ch = {};
-        data.forEach((item) => {
-          const coin = item.symbol.replace("USDT", "");
-          p[coin]  = parseFloat(item.lastPrice);
-          ch[coin] = parseFloat(item.priceChangePercent);
-        });
-        setPrev(prices);
-        setPrices(p);
-        setChanges(ch);
-      } catch (err) {
-        console.error("Price fetch error:", err);
-      }
-    };
-    fetchPrices();
-    const iv = setInterval(fetchPrices, 30_000);
-    return () => clearInterval(iv);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const fmt = (price) => {
-    if (!price) return "—";
-    if (price >= 1000) return price.toLocaleString("en-US", { maximumFractionDigits: 0 });
-    if (price >= 1)    return price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return price.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-  };
-
-  return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-hide py-0.5 flex-wrap">
-      {SUPPORTED_COINS.map((coin) => {
-        const price    = prices[coin];
-        const change   = changes[coin];
-        const isPos    = (change ?? 0) >= 0;
-        const isActive = coin === activeCoin;
-        const flash    = prev[coin] && price && price !== prev[coin];
-
-        return (
-          <button
-            key={coin}
-            onClick={() => onCoinSelect?.(coin)}
-            className={`
-              flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 shrink-0
-              border
-              ${isActive
-                ? "bg-white/8 border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-                : "bg-white/2 border-white/5 hover:bg-white/5 hover:border-white/10"
-              }
-              ${flash ? "animate-pulse" : ""}
-            `}
-          >
-            <span className={`text-xs font-semibold ${isActive ? "text-white" : "text-zinc-300"}`}>
-              {coin}
-            </span>
-            <span className="text-xs text-zinc-400 tabular-nums font-mono">
-              ${fmt(price)}
-            </span>
-            {change !== undefined && (
-              <span className={`text-xs font-medium tabular-nums ${isPos ? "text-emerald-400" : "text-red-400"}`}>
-                {isPos ? "+" : ""}{change?.toFixed(2)}%
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────
-// SITE HEADER
-// ─────────────────────────────────────────
-function SiteHeader({ coin, onCoinSelect, isPro, onUnlock }) {
-  return (
-    <header className="sticky top-0 z-40 w-full bg-zinc-950/80 backdrop-blur-md border-b border-white/5">
-      {/* ── Top row: brand + nav + CTA ── */}
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-center justify-between h-14 gap-6">
-
-          {/* Brand */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="w-6 h-6 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-emerald-400" />
-            </div>
-            <span className="text-sm font-semibold text-white tracking-tight">
-              ChainPulse
-            </span>
-            <span className="text-xs text-zinc-600 hidden sm:block">Quant</span>
-          </div>
-
-          {/* Nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {[
-              { label: "Home",        href: "/"            },
-              { label: "Dashboard",   href: "/app"         },
-              { label: "Pricing",     href: "/pricing"     },
-              { label: "Methodology", href: "/methodology" },
-            ].map(({ label, href }) => (
-              <a
-                key={label}
-                href={href}
-                className="px-3 py-1.5 text-sm text-zinc-400 hover:text-white transition-colors rounded-xl hover:bg-white/4"
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
-
-          {/* Right side */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="hidden sm:flex items-center gap-1.5 text-xs text-zinc-500">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live
-            </div>
-            {isPro ? (
-              <span className="text-xs text-emerald-400 border border-emerald-900/60 bg-emerald-950/40 px-3 py-1.5 rounded-xl">
-                Pro Active
-              </span>
-            ) : (
-              <button
-                onClick={onUnlock}
-                className="bg-white text-black text-xs font-semibold px-4 py-2 rounded-lg hover:bg-zinc-100 transition-colors shadow-sm"
-              >
-                Go Pro
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Bottom row: coin market pills ── */}
-      <div className="border-t border-white/4 bg-zinc-950/40">
-        <div className="max-w-7xl mx-auto px-6 py-2">
-          <LivePriceTicker activeCoin={coin} onCoinSelect={onCoinSelect} />
-        </div>
-      </div>
-    </header>
-  );
-}
-
-// ─────────────────────────────────────────
-// PRO INTELLIGENCE PREVIEW
-// ─────────────────────────────────────────
-function ProIntelligencePreview({ onUnlock }) {
-  return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <Label>Pro Intelligence</Label>
-          <h2 className="text-lg font-semibold">
-            8 analytics panels locked
-          </h2>
-          <p className="text-sm text-zinc-500 leading-relaxed">
-            Unlock the full regime intelligence stack
-          </p>
-        </div>
-        <button
-          onClick={onUnlock}
-          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all shrink-0 shadow-sm"
-        >
-          Unlock Pro — $39/mo
-        </button>
-      </div>
-
-      {/* Blurred preview */}
-      <div className="relative rounded-lg overflow-hidden">
-        <div className="blur-md pointer-events-none opacity-40 space-y-3 p-4 bg-white/2 border border-white/5 rounded-lg">
-          <div className="grid grid-cols-3 gap-4">
-            {["Decision Engine", "Survival Curve", "Stress Meter"].map((l) => (
-              <div key={l} className="bg-white/5 rounded-lg p-4 space-y-2">
-                <div className="text-xs text-zinc-500">{l}</div>
-                <div className="text-2xl font-semibold text-emerald-400">
-                  {l === "Decision Engine" ? "Hold" : l === "Survival Curve" ? "74%" : "32"}
-                </div>
-                <div className="w-full bg-white/5 rounded-full h-1">
-                  <div className="h-1 rounded-full bg-emerald-500" style={{ width: "74%" }} />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {["Regime Countdown", "PnL Impact", "Drawdown Simulator", "Edge Profile"].map((l) => (
-              <div key={l} className="bg-white/5 rounded-lg p-3 flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-sm text-zinc-300">{l}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/95 via-zinc-950/50 to-transparent" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center space-y-3">
-            <div className="text-sm text-zinc-400">
-              Full regime intelligence suite
-            </div>
-            <ul className="text-xs text-zinc-500 space-y-1.5">
-              {[
-                "Decision Engine — today's directive",
-                "Survival + Hazard modeling",
-                "Drawdown + PnL simulation",
-                "Discipline score + mistake replay",
-                "Edge profile + weekly reports",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-2 justify-center">
-                  <span className="text-emerald-500">→</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={onUnlock}
-              className="mt-2 bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all6 py-2.5 rounded-lg text-sm font-semibold hover:bg-zinc-100 transition-colors"
-            >
-              Unlock Pro — $39/month
-            </button>
-            <div className="text-xs text-zinc-700">
-              7-day risk-free · Cancel anytime
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────
-// TODAY PANEL
-// ─────────────────────────────────────────
-function TodayPanel({ stack, decision, isPro, onUnlock }) {
-  if (!stack) return null;
-  const execLabel = stack.execution?.label ?? "—";
-  const exposure  = stack.exposure   ?? 0;
-  const shiftRisk = stack.shift_risk ?? 0;
-  const regimeAge = stack.regime_age_hours ?? 0;
-
-  return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-6 space-y-5">
-      <div className="flex items-center justify-between">
-        <Label>Today at a glance</Label>
-        <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Live
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Regime */}
-        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
-          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Regime</div>
-          <div className={`text-lg font-semibold ${regimeText(execLabel)}`}>
-            {execLabel}
-          </div>
-          <div className="text-xs text-zinc-600">{regimeAge.toFixed(1)}h active</div>
-        </div>
-
-        {/* Exposure */}
-        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
-          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Exposure</div>
-          {isPro ? (
-            <div className={`text-lg font-semibold tabular-nums ${exposureColor(exposure)}`}>
-              {exposure}%
-            </div>
-          ) : (
-            <div className="text-lg font-semibold text-zinc-700 blur-sm select-none">
-              00%
-            </div>
-          )}
-          <div className="text-xs text-zinc-600">recommended</div>
-        </div>
-
-        {/* Shift Risk */}
-        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
-          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Shift Risk</div>
-          {isPro ? (
-            <div className={`text-lg font-semibold tabular-nums ${riskColor(shiftRisk)}`}>
-              {shiftRisk}%
-            </div>
-          ) : (
-            <div className="text-lg font-semibold text-zinc-700 blur-sm select-none">
-              00%
-            </div>
-          )}
-          <div className="text-xs text-zinc-600">deterioration signal</div>
-        </div>
-
-        {/* Directive */}
-        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
-          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Directive</div>
-          {isPro && decision ? (
-            <div className="text-lg font-semibold text-white">
-              {decision.directive}
-            </div>
-          ) : (
-            <button
-              onClick={onUnlock}
-              className="text-xs text-zinc-500 hover:text-white transition-colors flex items-center gap-1"
-            >
-              <Lock />Unlock
-            </button>
-          )}
-          <div className="text-xs text-zinc-600">today's action</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────
 // SETUP QUALITY PANEL
 // ─────────────────────────────────────────
 function SetupQualityPanel({ coin, token, isPro, onUnlock }) {
@@ -4748,9 +3648,7 @@ function SetupQualityPanel({ coin, token, isPro, onUnlock }) {
   useEffect(() => {
     if (!isPro || !coin) return;
     setLoading(true);
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    fetch(`${BACKEND}/setup-quality?coin=${coin}`, { headers })
-      .then((r) => r.json())
+    apiFetch(`/setup-quality?coin=${coin}`, token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -4772,58 +3670,32 @@ function SetupQualityPanel({ coin, token, isPro, onUnlock }) {
 
   const inner = data ? (
     <div className="space-y-6">
-      {/* Hero metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2 text-center">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Setup Quality</div>
-          <div className={`text-5xl font-bold ${qualityColor(data.setup_quality_score)}`}>
-            {data.setup_quality_score}
-          </div>
-          <div className={`text-sm font-medium ${qualityColor(data.setup_quality_score)}`}>
-            {data.setup_label}
-          </div>
-          <Bar
-            value={data.setup_quality_score}
-            cls={data.setup_quality_score >= 65 ? "bg-emerald-500" : data.setup_quality_score >= 40 ? "bg-yellow-500" : "bg-red-500"}
-          />
+          <div className={`text-5xl font-bold ${qualityColor(data.setup_quality_score)}`}>{data.setup_quality_score}</div>
+          <div className={`text-sm font-medium ${qualityColor(data.setup_quality_score)}`}>{data.setup_label}</div>
+          <Bar value={data.setup_quality_score} cls={data.setup_quality_score >= 65 ? "bg-emerald-500" : data.setup_quality_score >= 40 ? "bg-yellow-500" : "bg-red-500"} />
         </div>
-
         <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2">
           <div className="text-xs text-zinc-400">Entry Mode</div>
           <div className="text-xl font-semibold text-white">{data.entry_mode}</div>
           <div className="text-xs text-zinc-500">Current recommendation</div>
         </div>
-
         <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2">
           <div className="text-xs text-zinc-400">Chase Risk</div>
-          <div className={`text-3xl font-semibold ${chaseColor(data.chase_risk)}`}>
-            {data.chase_risk}%
-          </div>
-          <Bar
-            value={data.chase_risk}
-            cls={data.chase_risk > 75 ? "bg-red-500" : data.chase_risk > 50 ? "bg-yellow-500" : "bg-green-500"}
-          />
-          <div className="text-xs text-zinc-500">
-            {data.chase_risk > 75 ? "⚠ High — wait for pullback" : data.chase_risk > 50 ? "Moderate" : "Low — entry conditions favorable"}
-          </div>
+          <div className={`text-3xl font-semibold ${chaseColor(data.chase_risk)}`}>{data.chase_risk}%</div>
+          <Bar value={data.chase_risk} cls={data.chase_risk > 75 ? "bg-red-500" : data.chase_risk > 50 ? "bg-yellow-500" : "bg-green-500"} />
+          <div className="text-xs text-zinc-500">{data.chase_risk > 75 ? "⚠ High — wait for pullback" : data.chase_risk > 50 ? "Moderate" : "Low — entry conditions favorable"}</div>
         </div>
-
         <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2">
           <div className="text-xs text-zinc-400">Trend Exhaustion</div>
-          <div className={`text-3xl font-semibold ${data.trend_exhaustion > 65 ? "text-red-400" : data.trend_exhaustion > 40 ? "text-yellow-400" : "text-green-400"}`}>
-            {data.trend_exhaustion}%
-          </div>
-          <Bar
-            value={data.trend_exhaustion}
-            cls={data.trend_exhaustion > 65 ? "bg-red-500" : data.trend_exhaustion > 40 ? "bg-yellow-500" : "bg-green-500"}
-          />
-          <div className="text-xs text-zinc-500">
-            {data.trend_exhaustion > 65 ? "Momentum fading" : "Trend has room"}
-          </div>
+          <div className={`text-3xl font-semibold ${data.trend_exhaustion > 65 ? "text-red-400" : data.trend_exhaustion > 40 ? "text-yellow-400" : "text-green-400"}`}>{data.trend_exhaustion}%</div>
+          <Bar value={data.trend_exhaustion} cls={data.trend_exhaustion > 65 ? "bg-red-500" : data.trend_exhaustion > 40 ? "bg-yellow-500" : "bg-green-500"} />
+          <div className="text-xs text-zinc-500">{data.trend_exhaustion > 65 ? "Momentum fading" : "Trend has room"}</div>
         </div>
       </div>
 
-      {/* Sub-scores */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { l: "Pullback Quality", v: data.pullback_quality, hint: "Quality of current pullback for entry" },
@@ -4833,28 +3705,19 @@ function SetupQualityPanel({ coin, token, isPro, onUnlock }) {
         ].map(({ l, v, hint }) => (
           <div key={l} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
             <div className="text-xs text-zinc-400">{l}</div>
-            <div className={`text-xl font-semibold ${v >= 65 ? "text-emerald-400" : v >= 40 ? "text-yellow-400" : "text-red-400"}`}>
-              {v?.toFixed(1)}%
-            </div>
+            <div className={`text-xl font-semibold ${v >= 65 ? "text-emerald-400" : v >= 40 ? "text-yellow-400" : "text-red-400"}`}>{v?.toFixed(1)}%</div>
             <Bar value={v} cls={v >= 65 ? "bg-emerald-500" : v >= 40 ? "bg-yellow-500" : "bg-red-500"} />
             <div className="text-xs text-zinc-500">{hint}</div>
           </div>
         ))}
       </div>
 
-      {/* Entry zone + stops */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-3">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Optimal Entry Zone</div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <div className="text-xs text-zinc-500">Entry Low</div>
-              <div className="text-lg font-semibold text-white">${data.optimal_entry_zone?.low?.toLocaleString()}</div>
-            </div>
-            <div>
-              <div className="text-xs text-zinc-500">Entry High</div>
-              <div className="text-lg font-semibold text-white">${data.optimal_entry_zone?.high?.toLocaleString()}</div>
-            </div>
+            <div><div className="text-xs text-zinc-500">Entry Low</div><div className="text-lg font-semibold text-white">${data.optimal_entry_zone?.low?.toLocaleString()}</div></div>
+            <div><div className="text-xs text-zinc-500">Entry High</div><div className="text-lg font-semibold text-white">${data.optimal_entry_zone?.high?.toLocaleString()}</div></div>
           </div>
           <div className="border-t border-white/5 pt-3">
             <div className="text-xs text-zinc-500">Invalidation Level</div>
@@ -4871,7 +3734,6 @@ function SetupQualityPanel({ coin, token, isPro, onUnlock }) {
             </div>
           )}
         </div>
-
         <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-3">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Stop Guidance</div>
           <div className="space-y-3">
@@ -4881,21 +3743,15 @@ function SetupQualityPanel({ coin, token, isPro, onUnlock }) {
               { l: "Wide Stop", v: data.stop_guidance?.wide, desc: "For high-conviction holds" },
             ].map(({ l, v, desc }) => (
               <div key={l} className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-white font-medium">{l}</div>
-                  <div className="text-xs text-zinc-500">{desc}</div>
-                </div>
+                <div><div className="text-sm text-white font-medium">{l}</div><div className="text-xs text-zinc-500">{desc}</div></div>
                 <div className="text-sm font-semibold text-gray-300">${v?.toLocaleString()}</div>
               </div>
             ))}
           </div>
-          <div className="border-t border-white/5 pt-3 text-xs text-zinc-500">
-            Normal stop = {data.stop_guidance?.normal_pct}% of current price · ATR-based
-          </div>
+          <div className="border-t border-white/5 pt-3 text-xs text-zinc-500">Normal stop = {data.stop_guidance?.normal_pct}% of current price · ATR-based</div>
         </div>
       </div>
 
-      {/* Extension info */}
       <div className="grid grid-cols-3 gap-3">
         {[
           { l: "Extension from 20MA", v: `${data.extension_from_mean_pct}%`, c: Math.abs(data.extension_from_mean_pct) > 3 ? "text-yellow-400" : "text-green-400" },
@@ -4915,23 +3771,18 @@ function SetupQualityPanel({ coin, token, isPro, onUnlock }) {
     <div className="text-sm text-zinc-400">No setup data available</div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Setup Quality Engine"
-      consequence="Without setup quality, you cannot distinguish good entries from chasing extended moves."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Setup Quality Engine" consequence="Without setup quality, you cannot distinguish good entries from chasing extended moves." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+    <CardShell>
       <Label>Setup Quality Engine</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Entry timing, chase risk, exhaustion, and optimal entry zones
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Entry timing, chase risk, exhaustion, and optimal entry zones</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -4945,9 +3796,7 @@ function OpportunityRankingPanel({ token, isPro, onUnlock }) {
   useEffect(() => {
     if (!isPro) return;
     setLoading(true);
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    fetch(`${BACKEND}/opportunity-ranking`, { headers })
-      .then((r) => r.json())
+    apiFetch("/opportunity-ranking", token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -4962,7 +3811,6 @@ function OpportunityRankingPanel({ token, isPro, onUnlock }) {
 
   const inner = data ? (
     <div className="space-y-6">
-      {/* Summary badges */}
       <div className="flex gap-4 flex-wrap">
         {data.best_long && (
           <div className="border border-emerald-900 bg-emerald-950 px-4 py-2 rounded-lg">
@@ -4984,69 +3832,39 @@ function OpportunityRankingPanel({ token, isPro, onUnlock }) {
         )}
       </div>
 
-      {/* Rankings table */}
       <div className="space-y-2">
         {(data.rankings || []).map((r, i) => (
           <div key={r.coin} className="border border-white/5 rounded-lg p-4 flex items-center gap-4">
             <div className="text-lg font-bold text-zinc-500 w-8 text-center">#{i + 1}</div>
             <div className="w-16 shrink-0">
               <div className="text-base font-semibold text-white">{r.coin}</div>
-              <div className={`text-xs ${r.direction === "bullish" ? "text-green-400" : r.direction === "bearish" ? "text-red-400" : "text-yellow-400"}`}>
-                {r.direction}
-              </div>
+              <div className={`text-xs ${r.direction === "bullish" ? "text-green-400" : r.direction === "bearish" ? "text-red-400" : "text-yellow-400"}`}>{r.direction}</div>
             </div>
             <div className="flex-1 space-y-1">
               <div className="flex items-center gap-3">
-                <div className={`text-2xl font-bold ${oppColor(r.opportunity_score)}`}>
-                  {r.opportunity_score}
-                </div>
+                <div className={`text-2xl font-bold ${oppColor(r.opportunity_score)}`}>{r.opportunity_score}</div>
                 <div className="flex-1">
                   <div className="w-full bg-zinc-800 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full transition-all ${
-                        r.opportunity_score >= 70 ? "bg-emerald-500" :
-                        r.opportunity_score >= 50 ? "bg-yellow-500" :
-                        r.opportunity_score >= 30 ? "bg-orange-500" : "bg-red-500"
-                      }`}
-                      style={{ width: `${r.opportunity_score}%` }}
-                    />
+                    <div className={`h-2 rounded-full transition-all ${r.opportunity_score >= 70 ? "bg-emerald-500" : r.opportunity_score >= 50 ? "bg-yellow-500" : r.opportunity_score >= 30 ? "bg-orange-500" : "bg-red-500"}`} style={{ width: `${r.opportunity_score}%` }} />
                   </div>
                 </div>
               </div>
               <div className="text-xs text-zinc-500">{r.reason}</div>
             </div>
             <div className="grid grid-cols-3 gap-3 text-xs text-center shrink-0">
-              <div>
-                <div className="text-zinc-500">Setup</div>
-                <div className={`font-semibold ${r.setup_quality_score >= 60 ? "text-green-400" : "text-yellow-400"}`}>
-                  {r.setup_quality_score}
-                </div>
-              </div>
-              <div>
-                <div className="text-zinc-500">Grade</div>
-                <div className={`font-semibold ${gradeColor(r.regime_quality_grade)}`}>
-                  {r.regime_quality_grade}
-                </div>
-              </div>
-              <div>
-                <div className="text-zinc-500">Chase</div>
-                <div className={`font-semibold ${r.chase_risk > 70 ? "text-red-400" : r.chase_risk > 50 ? "text-yellow-400" : "text-green-400"}`}>
-                  {r.chase_risk}%
-                </div>
-              </div>
+              <div><div className="text-zinc-500">Setup</div><div className={`font-semibold ${r.setup_quality_score >= 60 ? "text-green-400" : "text-yellow-400"}`}>{r.setup_quality_score}</div></div>
+              <div><div className="text-zinc-500">Grade</div><div className={`font-semibold ${gradeColor(r.regime_quality_grade)}`}>{r.regime_quality_grade}</div></div>
+              <div><div className="text-zinc-500">Chase</div><div className={`font-semibold ${r.chase_risk > 70 ? "text-red-400" : r.chase_risk > 50 ? "text-yellow-400" : "text-green-400"}`}>{r.chase_risk}%</div></div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Rotation signals */}
       {data.rotation_signals?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Rotation Signals</div>
           {data.rotation_signals.map((sig, i) => (
-            <div key={i} className="border border-blue-900 bg-blue-950 px-4 py-3 text-blue-300 text-sm">
-              → {sig}
-            </div>
+            <div key={i} className="border border-blue-900 bg-blue-950 px-4 py-3 text-blue-300 text-sm rounded-lg">→ {sig}</div>
           ))}
         </div>
       )}
@@ -5055,23 +3873,18 @@ function OpportunityRankingPanel({ token, isPro, onUnlock }) {
     <div className="text-sm text-zinc-400">Ranking opportunities across all assets...</div>
   ) : null;
 
-  if (!isPro) return (
-    <ProGate
-      label="Opportunity Ranking"
-      consequence="Without opportunity ranking, you cannot identify the best risk-adjusted entry across all assets."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Opportunity Ranking" consequence="Without opportunity ranking, you cannot identify the best risk-adjusted entry across all assets." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+    <CardShell>
       <Label>Opportunity Ranking</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Cross-asset opportunity ranking — where is the best entry right now?
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Cross-asset opportunity ranking — where is the best entry right now?</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -5085,9 +3898,7 @@ function ScenariosPanel({ coin, token, isPro, onUnlock }) {
   useEffect(() => {
     if (!isPro || !coin) return;
     setLoading(true);
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    fetch(`${BACKEND}/scenarios?coin=${coin}`, { headers })
-      .then((r) => r.json())
+    apiFetch(`/scenarios?coin=${coin}`, token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -5101,7 +3912,6 @@ function ScenariosPanel({ coin, token, isPro, onUnlock }) {
 
   const inner = data ? (
     <div className="space-y-6">
-      {/* Scenario cards */}
       <div className="grid md:grid-cols-3 gap-4">
         {(data.scenarios || []).map((s) => {
           const st = scenarioStyle(s.name);
@@ -5135,7 +3945,6 @@ function ScenariosPanel({ coin, token, isPro, onUnlock }) {
         })}
       </div>
 
-      {/* Expected path */}
       {data.expected_path && (
         <div className="grid md:grid-cols-2 gap-4">
           <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
@@ -5149,14 +3958,11 @@ function ScenariosPanel({ coin, token, isPro, onUnlock }) {
         </div>
       )}
 
-      {/* Invalidation triggers */}
       {data.invalidation_triggers?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">What Invalidates Base Case</div>
           {data.invalidation_triggers.map((t, i) => (
-            <div key={i} className="border border-yellow-900 bg-yellow-950 px-4 py-2 text-yellow-300 text-sm">
-              ⚠ {t}
-            </div>
+            <div key={i} className="border border-yellow-900 bg-yellow-950 px-4 py-2 text-yellow-300 text-sm rounded-lg">⚠ {t}</div>
           ))}
         </div>
       )}
@@ -5165,23 +3971,18 @@ function ScenariosPanel({ coin, token, isPro, onUnlock }) {
     <div className="text-sm text-zinc-400">Computing probabilistic scenarios...</div>
   ) : null;
 
-  if (!isPro) return (
-    <ProGate
-      label="Probabilistic Scenarios"
-      consequence="Without scenario analysis, you have no framework for multiple outcomes."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Probabilistic Scenarios" consequence="Without scenario analysis, you have no framework for multiple outcomes." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+    <CardShell>
       <Label>Probabilistic Scenarios</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Base / Bull / Bear case with probability-weighted outcomes
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Base / Bull / Bear case with probability-weighted outcomes</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -5195,52 +3996,27 @@ function InternalDamagePanel({ coin, token, isPro, onUnlock }) {
   useEffect(() => {
     if (!isPro || !coin) return;
     setLoading(true);
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    fetch(`${BACKEND}/internal-damage?coin=${coin}`, { headers })
-      .then((r) => r.json())
+    apiFetch(`/internal-damage?coin=${coin}`, token)
       .then((d) => { if (!d.error && d.internal_damage_score !== null) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [coin, isPro, token]);
 
-  function damageColor(score) {
-    if (score >= 70) return "text-red-400";
-    if (score >= 50) return "text-orange-400";
-    if (score >= 30) return "text-yellow-400";
-    return "text-green-400";
-  }
-
   const inner = data ? (
     <div className="space-y-6">
-      {/* Hero */}
       <div className="flex items-center gap-8">
         <div className="text-center space-y-2 shrink-0">
-          <div className={`text-6xl font-bold ${damageColor(data.internal_damage_score)}`}>
-            {data.internal_damage_score}
-          </div>
-          <div className={`text-sm font-medium ${damageColor(data.internal_damage_score)}`}>
-            {data.damage_label}
-          </div>
-          <Bar
-            value={data.internal_damage_score}
-            cls={data.internal_damage_score >= 70 ? "bg-red-500" : data.internal_damage_score >= 50 ? "bg-orange-500" : data.internal_damage_score >= 30 ? "bg-yellow-500" : "bg-green-500"}
-          />
+          <div className={`text-6xl font-bold ${damageColor(data.internal_damage_score)}`}>{data.internal_damage_score}</div>
+          <div className={`text-sm font-medium ${damageColor(data.internal_damage_score)}`}>{data.damage_label}</div>
+          <Bar value={data.internal_damage_score} cls={data.internal_damage_score >= 70 ? "bg-red-500" : data.internal_damage_score >= 50 ? "bg-orange-500" : data.internal_damage_score >= 30 ? "bg-yellow-500" : "bg-green-500"} />
         </div>
         <div className="flex-1 space-y-3">
           <div className="text-sm text-gray-400">{data.damage_message}</div>
-          {/* Component bars */}
           {Object.entries(data.components || {}).map(([key, val]) => (
             <div key={key} className="flex items-center gap-3">
-              <div className="text-xs text-zinc-500 w-40 shrink-0 capitalize">
-                {key.replace(/_/g, " ")}
-              </div>
+              <div className="text-xs text-zinc-500 w-40 shrink-0 capitalize">{key.replace(/_/g, " ")}</div>
               <div className="flex-1 bg-zinc-800 rounded-full h-1.5">
-                <div
-                  className={`h-1.5 rounded-full transition-all ${
-                    val >= 60 ? "bg-red-500" : val >= 35 ? "bg-yellow-500" : "bg-green-500"
-                  }`}
-                  style={{ width: `${Math.min(100, val)}%` }}
-                />
+                <div className={`h-1.5 rounded-full transition-all ${val >= 60 ? "bg-red-500" : val >= 35 ? "bg-yellow-500" : "bg-green-500"}`} style={{ width: `${Math.min(100, val)}%` }} />
               </div>
               <div className="text-xs text-zinc-400 w-8 text-right">{Math.round(val)}</div>
             </div>
@@ -5248,21 +4024,15 @@ function InternalDamagePanel({ coin, token, isPro, onUnlock }) {
         </div>
       </div>
 
-      {/* Signals */}
       {data.signals?.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs text-zinc-400 uppercase tracking-widest">
-            Damage Signals ({data.high_severity_count} high severity)
-          </div>
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Damage Signals ({data.high_severity_count} high severity)</div>
           {data.signals.map((sig, i) => (
-            <div
-              key={i}
-              className={`border px-4 py-3 text-sm ${
-                sig.severity === "high" ? "border-red-800 bg-red-950 text-red-300" :
-                sig.severity === "medium" ? "border-orange-800 bg-orange-950 text-orange-300" :
-                "border-yellow-800 bg-yellow-950 text-yellow-300"
-              }`}
-            >
+            <div key={i} className={`border px-4 py-3 text-sm rounded-lg ${
+              sig.severity === "high" ? "border-red-800 bg-red-950 text-red-300" :
+              sig.severity === "medium" ? "border-orange-800 bg-orange-950 text-orange-300" :
+              "border-yellow-800 bg-yellow-950 text-yellow-300"
+            }`}>
               <div className="flex justify-between items-start">
                 <span>{sig.message}</span>
                 <span className="text-xs opacity-60 capitalize shrink-0 ml-3">{sig.severity}</span>
@@ -5273,7 +4043,7 @@ function InternalDamagePanel({ coin, token, isPro, onUnlock }) {
       )}
 
       {data.signals?.length === 0 && (
-        <div className="border border-emerald-900 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm">
+        <div className="border border-emerald-900 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm rounded-lg">
           ✓ No internal damage signals detected. Structure intact.
         </div>
       )}
@@ -5282,23 +4052,18 @@ function InternalDamagePanel({ coin, token, isPro, onUnlock }) {
     <div className="text-sm text-zinc-400">Scanning internal structure...</div>
   ) : null;
 
-  if (!isPro) return (
-    <ProGate
-      label="Internal Damage Monitor"
-      consequence="Internal damage often precedes visible regime shifts. Without it, you're blindsided."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Internal Damage Monitor" consequence="Internal damage often precedes visible regime shifts. Without it, you're blindsided." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+    <CardShell>
       <Label>Internal Damage Monitor</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Detects structural weakening before it appears in price
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Detects structural weakening before it appears in price</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -5312,9 +4077,7 @@ function BehavioralAlphaPanel({ email, token, isPro, onUnlock }) {
   useEffect(() => {
     if (!isPro || !email) return;
     setLoading(true);
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    fetch(`${BACKEND}/behavioral-alpha?email=${encodeURIComponent(email)}&lookback_days=30`, { headers })
-      .then((r) => r.json())
+    apiFetch(`/behavioral-alpha?email=${encodeURIComponent(email)}&lookback_days=30`, token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -5329,15 +4092,10 @@ function BehavioralAlphaPanel({ email, token, isPro, onUnlock }) {
 
   const inner = data?.ready ? (
     <div className="space-y-6">
-      {/* Hero */}
       <div className="flex items-start gap-8">
         <div className="text-center space-y-2 shrink-0">
-          <div className={`text-6xl font-bold ${gradeStyle(data.behavior_grade)}`}>
-            {data.behavior_grade}
-          </div>
-          <div className={`text-sm font-medium ${gradeStyle(data.behavior_grade)}`}>
-            {data.behavior_label}
-          </div>
+          <div className={`text-6xl font-bold ${gradeStyle(data.behavior_grade)}`}>{data.behavior_grade}</div>
+          <div className={`text-sm font-medium ${gradeStyle(data.behavior_grade)}`}>{data.behavior_label}</div>
         </div>
         <div className="flex-1 space-y-3">
           <div className="grid grid-cols-3 gap-3">
@@ -5357,7 +4115,6 @@ function BehavioralAlphaPanel({ email, token, isPro, onUnlock }) {
         </div>
       </div>
 
-      {/* Leaks */}
       {data.leaks?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Behavioral Leaks Detected</div>
@@ -5378,24 +4135,22 @@ function BehavioralAlphaPanel({ email, token, isPro, onUnlock }) {
         </div>
       )}
 
-      {/* Strengths */}
       {data.strengths?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Strengths</div>
           {data.strengths.map((s, i) => (
-            <div key={i} className="border border-emerald-900 bg-emerald-950/50 px-4 py-3 text-emerald-300 text-sm flex items-center gap-2">
+            <div key={i} className="border border-emerald-900 bg-emerald-950/50 px-4 py-3 text-emerald-300 text-sm flex items-center gap-2 rounded-lg">
               <span className="shrink-0">✓</span>{s}
             </div>
           ))}
         </div>
       )}
 
-      {/* Recommendations */}
       {data.recommendations?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Recommendations</div>
           {data.recommendations.map((r, i) => (
-            <div key={i} className="border border-white/5 px-4 py-3 text-sm text-gray-300 flex items-start gap-2">
+            <div key={i} className="border border-white/5 px-4 py-3 text-sm text-gray-300 flex items-start gap-2 rounded-lg">
               <span className="text-blue-400 shrink-0 mt-0.5">→</span>{r}
             </div>
           ))}
@@ -5415,23 +4170,18 @@ function BehavioralAlphaPanel({ email, token, isPro, onUnlock }) {
     <div className="text-sm text-zinc-400">Log exposure to start building your behavioral profile.</div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Behavioral Alpha Report"
-      consequence="Without behavioral analysis, you cannot identify the specific patterns costing you money."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Behavioral Alpha Report" consequence="Without behavioral analysis, you cannot identify the specific patterns costing you money." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+    <CardShell>
       <Label>Behavioral Alpha Report</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Identifies specific behavioral leaks and their estimated cost
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Identifies specific behavioral leaks and their estimated cost</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -5445,9 +4195,7 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock }) {
   useEffect(() => {
     if (!isPro || !coin) return;
     setLoading(true);
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    fetch(`${BACKEND}/event-risk-overlay?coin=${coin}`, { headers })
-      .then((r) => r.json())
+    apiFetch(`/event-risk-overlay?coin=${coin}`, token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -5455,7 +4203,6 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock }) {
 
   const inner = data ? (
     <div className="space-y-6">
-      {/* Adjustment banner */}
       <div className={`border p-5 rounded-lg space-y-2 ${
         data.exposure_adjustment < -15 ? "border-red-800 bg-red-950" :
         data.exposure_adjustment < 0 ? "border-yellow-800 bg-yellow-950" :
@@ -5464,8 +4211,7 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock }) {
         <div className="flex justify-between items-start">
           <div>
             <div className={`text-lg font-semibold ${
-              data.exposure_adjustment < -15 ? "text-red-300" :
-              data.exposure_adjustment < 0 ? "text-yellow-300" : "text-emerald-300"
+              data.exposure_adjustment < -15 ? "text-red-300" : data.exposure_adjustment < 0 ? "text-yellow-300" : "text-emerald-300"
             }`}>{data.adjustment_label}</div>
             <div className="text-sm text-gray-300 mt-1">{data.adjustment_message}</div>
           </div>
@@ -5475,33 +4221,20 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock }) {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4 mt-3">
-          <div>
-            <div className="text-xs text-zinc-500">Exposure Before</div>
-            <div className="text-lg font-semibold text-white">{data.exposure_before_event}%</div>
-          </div>
-          <div>
-            <div className="text-xs text-zinc-500">Adjusted Exposure</div>
-            <div className={`text-lg font-semibold ${
-              data.exposure_adjusted < data.exposure_before_event ? "text-yellow-400" : "text-emerald-400"
-            }`}>{data.exposure_adjusted}%</div>
-          </div>
+          <div><div className="text-xs text-zinc-500">Exposure Before</div><div className="text-lg font-semibold text-white">{data.exposure_before_event}%</div></div>
+          <div><div className="text-xs text-zinc-500">Adjusted Exposure</div><div className={`text-lg font-semibold ${data.exposure_adjusted < data.exposure_before_event ? "text-yellow-400" : "text-emerald-400"}`}>{data.exposure_adjusted}%</div></div>
         </div>
       </div>
 
-      {/* Imminent events */}
       {data.imminent_events?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Imminent Events (within 48h)</div>
           <div className="grid md:grid-cols-2 gap-3">
             {data.imminent_events.map((e, i) => (
-              <div key={i} className={`border rounded-lg p-4 space-y-2 ${
-                e.impact === "High" ? "border-red-900 bg-red-950/50" : "border-yellow-900 bg-yellow-950/50"
-              }`}>
+              <div key={i} className={`border rounded-lg p-4 space-y-2 ${e.impact === "High" ? "border-red-900 bg-red-950/50" : "border-yellow-900 bg-yellow-950/50"}`}>
                 <div className="flex justify-between items-start">
                   <div className="text-sm font-semibold text-white">{e.name}</div>
-                  <div className={`text-xs px-2 py-0.5 rounded-full border ${
-                    e.impact === "High" ? "border-red-700 text-red-300" : "border-yellow-700 text-yellow-300"
-                  }`}>{e.impact}</div>
+                  <div className={`text-xs px-2 py-0.5 rounded-full border ${e.impact === "High" ? "border-red-700 text-red-300" : "border-yellow-700 text-yellow-300"}`}>{e.impact}</div>
                 </div>
                 <div className="text-xs text-zinc-400">~{e.hours_until}h away · Vol mult: {e.vol_multiplier}x</div>
               </div>
@@ -5510,12 +4243,11 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock }) {
         </div>
       )}
 
-      {/* Event guidance */}
       {data.event_guidance?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Event-Specific Guidance</div>
           {data.event_guidance.map((g, i) => (
-            <div key={i} className="border border-white/5 px-4 py-3 text-sm text-gray-300 space-y-1">
+            <div key={i} className="border border-white/5 px-4 py-3 text-sm text-gray-300 space-y-1 rounded-lg">
               <div className="font-medium text-white">{g.event}</div>
               <div>{g.action}</div>
               <div className="text-xs text-zinc-500">{g.stop_guidance}</div>
@@ -5528,23 +4260,18 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock }) {
     <div className="text-sm text-zinc-400">Computing event risk overlay...</div>
   ) : null;
 
-  if (!isPro) return (
-    <ProGate
-      label="Event Risk Overlay"
-      consequence="Without event-aware sizing, you risk being caught by macro volatility."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Event Risk Overlay" consequence="Without event-aware sizing, you risk being caught by macro volatility." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+    <CardShell>
       <Label>Event Risk Overlay</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Dynamic position adjustments based on upcoming macro events
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Dynamic position adjustments based on upcoming macro events</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -5561,24 +4288,13 @@ function TradePlanPanel({ coin, email, token, isPro, onUnlock }) {
     if (!isPro) { onUnlock(); return; }
     setLoading(true);
     try {
-      const headers = token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
-      const res = await fetch(`${BACKEND}/trade-plan`, {
+      const d = await apiFetch("/trade-plan", token, {
         method: "POST",
-        headers,
-        body: JSON.stringify({
-          email: email || "",
-          coin,
-          account_size: accountSize,
-          strategy_mode: archetype,
-        }),
+        body: JSON.stringify({ email: email || "", coin, account_size: accountSize, strategy_mode: archetype }),
       });
-      const d = await res.json();
       if (!d.error) setData(d);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
   const inner = (
@@ -5586,29 +4302,19 @@ function TradePlanPanel({ coin, email, token, isPro, onUnlock }) {
       <div className="grid md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <div className="text-xs text-zinc-400">Account Size (USD)</div>
-          <input
-            type="number" value={accountSize}
-            onChange={(e) => setAccountSize(Number(e.target.value))}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
-          />
+          <input type="number" value={accountSize} onChange={(e) => setAccountSize(Number(e.target.value))} className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500" />
         </div>
         <div className="space-y-2">
           <div className="text-xs text-zinc-400">Trader Archetype</div>
-          <select
-            value={archetype} onChange={(e) => setArchetype(e.target.value)}
-            className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
-          >
-            <option value="swing">Swing Trader</option>
-            <option value="position">Position Trader</option>
-            <option value="spot_allocator">Spot Allocator</option>
-            <option value="tactical">Tactical De-risker</option>
-            <option value="leverage">Leverage Trader</option>
+          <select value={archetype} onChange={(e) => setArchetype(e.target.value)} className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500">
+                        {/* continuing TradePlanPanel */}
+            {Object.entries(ARCHETYPE_CONFIG).map(([k, v]) => (
+              <option key={k} value={k}>{v.label}</option>
+            ))}
           </select>
         </div>
         <div className="flex items-end">
-          <button onClick={generate} disabled={loading}
-            className="w-full bg-white text-black py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
-          >
+          <button onClick={generate} disabled={loading} className="w-full bg-white text-black py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50">
             {loading ? "Generating..." : "Generate Trade Plan"}
           </button>
         </div>
@@ -5616,7 +4322,6 @@ function TradePlanPanel({ coin, email, token, isPro, onUnlock }) {
 
       {data && (
         <div className="space-y-5">
-          {/* Bias + overview */}
           <div className={`border p-5 rounded-lg space-y-3 ${
             data.bias === "Long" ? "border-emerald-800 bg-emerald-950" :
             data.bias === "Short / Cash" ? "border-red-800 bg-red-950" :
@@ -5642,7 +4347,6 @@ function TradePlanPanel({ coin, email, token, isPro, onUnlock }) {
             </div>
           </div>
 
-          {/* Tranches */}
           <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-3">
             <div className="text-xs text-zinc-400 uppercase tracking-widest">Entry Tranches</div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -5653,12 +4357,9 @@ function TradePlanPanel({ coin, email, token, isPro, onUnlock }) {
                 </div>
               ))}
             </div>
-            <div className="text-xs text-zinc-500">
-              Total deployed: ${data.tranches?.deployed_total?.toLocaleString()} · Adj exposure: {data.adjusted_exposure}%
-            </div>
+            <div className="text-xs text-zinc-500">Total deployed: ${data.tranches?.deployed_total?.toLocaleString()} · Adj exposure: {data.adjusted_exposure}%</div>
           </div>
 
-          {/* Stop + Risk */}
           <div className="grid md:grid-cols-2 gap-4">
             <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
               <div className="text-xs text-zinc-400 uppercase tracking-widest">Stop Loss</div>
@@ -5672,17 +4373,13 @@ function TradePlanPanel({ coin, email, token, isPro, onUnlock }) {
             </div>
           </div>
 
-          {/* Profit taking */}
           <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
             <div className="text-xs text-zinc-400 uppercase tracking-widest">Profit Taking Rules</div>
             {data.profit_taking?.map((r, i) => (
-              <div key={i} className="text-sm text-gray-300 flex items-start gap-2">
-                <span className="text-emerald-400 shrink-0">→</span>{r}
-              </div>
+              <div key={i} className="text-sm text-gray-300 flex items-start gap-2"><span className="text-emerald-400 shrink-0">→</span>{r}</div>
             ))}
           </div>
 
-          {/* Conditional actions */}
           <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
             <div className="text-xs text-zinc-400 uppercase tracking-widest">If-Then Actions</div>
             {data.conditional_actions?.map((ca, i) => (
@@ -5693,13 +4390,10 @@ function TradePlanPanel({ coin, email, token, isPro, onUnlock }) {
             ))}
           </div>
 
-          {/* Invalidation */}
           <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
             <div className="text-xs text-zinc-400 uppercase tracking-widest">Invalidation Conditions</div>
             {data.invalidation?.map((inv, i) => (
-              <div key={i} className="text-sm text-red-300 flex items-start gap-2">
-                <span className="text-red-400 shrink-0">✕</span>{inv}
-              </div>
+              <div key={i} className="text-sm text-red-300 flex items-start gap-2"><span className="text-red-400 shrink-0">✕</span>{inv}</div>
             ))}
           </div>
         </div>
@@ -5707,23 +4401,18 @@ function TradePlanPanel({ coin, email, token, isPro, onUnlock }) {
     </div>
   );
 
-  if (!isPro) return (
-    <ProGate
-      label="Trade Plan Generator"
-      consequence="Without a trade plan, you're entering positions without defined risk parameters."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="Trade Plan Generator" consequence="Without a trade plan, you're entering positions without defined risk parameters." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+    <CardShell>
       <Label>Trade Plan Generator</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Complete trade plan with tranches, stops, targets, and if-then actions
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Complete trade plan with tranches, stops, targets, and if-then actions</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
@@ -5737,9 +4426,7 @@ function WhatChangedPanel({ token, isPro, onUnlock }) {
   useEffect(() => {
     if (!isPro) return;
     setLoading(true);
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    fetch(`${BACKEND}/what-changed?lookback_hours=24`, { headers })
-      .then((r) => r.json())
+    apiFetch("/what-changed?lookback_hours=24", token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -5754,10 +4441,7 @@ function WhatChangedPanel({ token, isPro, onUnlock }) {
 
   const inner = data ? (
     <div className="space-y-5">
-      <div className={`text-lg font-semibold ${toneColor[data.tone] || "text-zinc-400"}`}>
-        {data.headline}
-      </div>
-
+      <div className={`text-lg font-semibold ${toneColor[data.tone] || "text-zinc-400"}`}>{data.headline}</div>
       <div className="flex gap-3 text-xs">
         <span className="text-emerald-400">{data.upgrades} upgrades</span>
         <span className="text-red-400">{data.downgrades} downgrades</span>
@@ -5767,7 +4451,7 @@ function WhatChangedPanel({ token, isPro, onUnlock }) {
       {data.changes?.length > 0 && (
         <div className="space-y-2">
           {data.changes.map((c, i) => (
-            <div key={i} className={`border px-4 py-3 flex items-center justify-between ${
+            <div key={i} className={`border px-4 py-3 flex items-center justify-between rounded-lg ${
               c.severity === "positive" ? "border-emerald-900 bg-emerald-950/50" : "border-red-900 bg-red-950/50"
             }`}>
               <div className="flex items-center gap-3">
@@ -5803,92 +4487,362 @@ function WhatChangedPanel({ token, isPro, onUnlock }) {
     <div className="text-sm text-zinc-400">Loading intelligence brief...</div>
   ) : null;
 
-  if (!isPro) return (
-    <ProGate
-      label="What Changed (24H)"
-      consequence="Without change tracking, you start each session without knowing what shifted."
-      onUnlock={onUnlock}
-    >
-      {inner}
-    </ProGate>
-  );
+  if (!isPro)
+    return (
+      <ProGate label="What Changed (24H)" consequence="Without change tracking, you start each session without knowing what shifted." onUnlock={onUnlock}>
+        {inner}
+      </ProGate>
+    );
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+    <CardShell>
       <Label>What Changed — Last 24 Hours</Label>
-      <p className="text-xs text-zinc-400 mb-4">
-        Regime shifts, upgrades, and downgrades across all assets
-      </p>
+      <p className="text-xs text-zinc-400 mb-4">Regime shifts, upgrades, and downgrades across all assets</p>
       {inner}
-    </div>
+    </CardShell>
   );
 }
 
-
 // ─────────────────────────────────────────
-// MARKET TICKER 
+// LIVE PRICE TICKER
 // ─────────────────────────────────────────
-function MarketTicker() {
-  const [prices,  setPrices]  = useState({});
+function LivePriceTicker({ activeCoin, onCoinSelect }) {
+  const [prices, setPrices] = useState({});
   const [changes, setChanges] = useState({});
+  const [prev, setPrev] = useState({});
 
   useEffect(() => {
     const fetchPrices = async () => {
       try {
         const symbols = SUPPORTED_COINS.map((c) => `${c}USDT`);
-        const res  = await fetch(
-          `https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`
-        );
+        const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`);
         const data = await res.json();
         const p = {}, ch = {};
         data.forEach((item) => {
           const coin = item.symbol.replace("USDT", "");
-          p[coin]  = parseFloat(item.lastPrice);
+          p[coin] = parseFloat(item.lastPrice);
           ch[coin] = parseFloat(item.priceChangePercent);
         });
+        setPrev(prices);
         setPrices(p);
         setChanges(ch);
-      } catch (err) {
-        console.error("MarketTicker fetch error:", err);
-      }
+      } catch (err) { console.error("Price fetch error:", err); }
     };
-
     fetchPrices();
     const iv = setInterval(fetchPrices, 30_000);
     return () => clearInterval(iv);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fmt = (price) => {
     if (!price) return "—";
     if (price >= 1000) return price.toLocaleString("en-US", { maximumFractionDigits: 0 });
-    if (price >= 1)    return price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (price >= 1) return price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     return price.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
   };
 
   return (
-    <div className="flex gap-6 overflow-x-auto scrollbar-hide flex-wrap">
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide py-0.5 flex-wrap">
       {SUPPORTED_COINS.map((coin) => {
-        const price  = prices[coin];
+        const price = prices[coin];
         const change = changes[coin];
-        const isPos  = (change ?? 0) >= 0;
-
+        const isPos = (change ?? 0) >= 0;
+        const isActive = coin === activeCoin;
+        const flash = prev[coin] && price && price !== prev[coin];
         return (
-          <div key={coin} className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-semibold text-zinc-300">
-              {coin}
-            </span>
-            <span className="text-xs text-zinc-400 tabular-nums font-mono">
-              ${fmt(price)}
-            </span>
+          <button
+            key={coin}
+            onClick={() => onCoinSelect?.(coin)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 shrink-0 border ${
+              isActive
+                ? "bg-white/8 border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+                : "bg-white/2 border-white/5 hover:bg-white/5 hover:border-white/10"
+            } ${flash ? "animate-pulse" : ""}`}
+          >
+            <span className={`text-xs font-semibold ${isActive ? "text-white" : "text-zinc-300"}`}>{coin}</span>
+            <span className="text-xs text-zinc-400 tabular-nums font-mono">${fmt(price)}</span>
             {change !== undefined && (
-              <span className={`text-xs font-medium tabular-nums ${
-                isPos ? "text-emerald-400" : "text-red-400"
-              }`}>
+              <span className={`text-xs font-medium tabular-nums ${isPos ? "text-emerald-400" : "text-red-400"}`}>
                 {isPos ? "+" : ""}{change?.toFixed(2)}%
               </span>
             )}
-          </div>
+          </button>
         );
       })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// SITE HEADER
+// ─────────────────────────────────────────
+function SiteHeader({ coin, onCoinSelect, isPro, onUnlock }) {
+  return (
+    <header className="sticky top-0 z-40 w-full bg-zinc-950/80 backdrop-blur-md border-b border-white/5">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex items-center justify-between h-14 gap-6">
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-6 h-6 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-emerald-400" />
+            </div>
+            <span className="text-sm font-semibold text-white tracking-tight">ChainPulse</span>
+            <span className="text-xs text-zinc-600 hidden sm:block">Quant</span>
+          </div>
+          <nav className="hidden md:flex items-center gap-1">
+            {[
+              { label: "Home", href: "/" },
+              { label: "Dashboard", href: "/app" },
+              { label: "Pricing", href: "/pricing" },
+              { label: "Methodology", href: "/methodology" },
+            ].map(({ label, href }) => (
+              <a key={label} href={href} className="px-3 py-1.5 text-sm text-zinc-400 hover:text-white transition-colors rounded-xl hover:bg-white/4">
+                {label}
+              </a>
+            ))}
+          </nav>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-zinc-500">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />Live
+            </div>
+            {isPro ? (
+              <span className="text-xs text-emerald-400 border border-emerald-900/60 bg-emerald-950/40 px-3 py-1.5 rounded-xl">Pro Active</span>
+            ) : (
+              <button onClick={onUnlock} className="bg-white text-black text-xs font-semibold px-4 py-2 rounded-lg hover:bg-zinc-100 transition-colors shadow-sm">Go Pro</button>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="border-t border-white/4 bg-zinc-950/40">
+        <div className="max-w-7xl mx-auto px-6 py-2">
+          <LivePriceTicker activeCoin={coin} onCoinSelect={onCoinSelect} />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ─────────────────────────────────────────
+// EMAIL CAPTURE
+// ─────────────────────────────────────────
+function EmailCapture({ onEmailSet }) {
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState(null);
+
+  const submit = async () => {
+    const email = input.trim().toLowerCase();
+    if (!email || !email.includes("@")) { setError("Enter a valid email address."); return; }
+    setLoading(true);
+    setError(null);
+    try {
+      await fetch(`${BACKEND}/subscribe`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+      setDone(true);
+      if (typeof window !== "undefined") localStorage.setItem("cp_email", email);
+      onEmailSet(email);
+    } catch { setError("Something went wrong. Please try again."); }
+    finally { setLoading(false); }
+  };
+
+  if (done) return (
+    <div className="border border-emerald-800 bg-emerald-950 px-6 py-4 text-emerald-300 text-sm rounded-2xl">✓ Daily regime brief confirmed. Check your inbox.</div>
+  );
+
+  return (
+    <CardShell>
+      <div className="space-y-1">
+        <div className="text-sm font-medium text-white">Get the daily regime brief</div>
+        <div className="text-xs text-zinc-400">Regime verdict, shift risk, and directive — delivered every morning. Free.</div>
+      </div>
+      <div className="flex gap-2">
+        <input type="email" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="your@email.com" className="flex-1 bg-zinc-800 border border-zinc-700 text-white px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-zinc-500 placeholder-zinc-600" />
+        <button onClick={submit} disabled={loading} className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-100 disabled:opacity-50 whitespace-nowrap">
+          {loading ? "..." : "Get Brief"}
+        </button>
+      </div>
+      {error && <div className="text-xs text-red-400">{error}</div>}
+    </CardShell>
+  );
+}
+
+// ─────────────────────────────────────────
+// ADVANCED ANALYTICS
+// ─────────────────────────────────────────
+function AdvancedAnalytics({ children, isPro }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-4">
+      <button onClick={() => setOpen((v) => !v)} className="w-full border border-white/5 px-6 py-4 flex justify-between items-center hover:border-zinc-600 transition-colors rounded-2xl">
+        <div className="text-left space-y-0.5">
+          <div className="text-sm font-medium text-white">Advanced Analytics</div>
+          <div className="text-xs text-zinc-400">Correlation · Heatmap · Transition matrix · Timeline · Breadth · Risk events</div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 ml-4">
+          {!isPro && <span className="text-xs text-zinc-500 flex items-center gap-1"><Lock />Some require Pro</span>}
+          <svg className={`w-4 h-4 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+      {open && <div className="space-y-4">{children}</div>}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// PRO INTELLIGENCE PREVIEW
+// ─────────────────────────────────────────
+function ProIntelligencePreview({ onUnlock }) {
+  return (
+    <CardShell>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <Label>Pro Intelligence</Label>
+          <h2 className="text-lg font-semibold">8 analytics panels locked</h2>
+          <p className="text-sm text-zinc-500 leading-relaxed">Unlock the full regime intelligence stack</p>
+        </div>
+        <button onClick={onUnlock} className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2.5 rounded-lg text-sm font-semibold shrink-0 shadow-sm">
+          Unlock Pro — \$39/mo
+        </button>
+      </div>
+      <div className="relative rounded-lg overflow-hidden">
+        <div className="blur-md pointer-events-none opacity-40 space-y-3 p-4 bg-white/2 border border-white/5 rounded-lg">
+          <div className="grid grid-cols-3 gap-4">
+            {["Decision Engine", "Survival Curve", "Stress Meter"].map((l) => (
+              <div key={l} className="bg-white/5 rounded-lg p-4 space-y-2">
+                <div className="text-xs text-zinc-500">{l}</div>
+                <div className="text-2xl font-semibold text-emerald-400">{l === "Decision Engine" ? "Hold" : l === "Survival Curve" ? "74%" : "32"}</div>
+                <div className="w-full bg-white/5 rounded-full h-1"><div className="h-1 rounded-full bg-emerald-500" style={{ width: "74%" }} /></div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/95 via-zinc-950/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <div className="text-sm text-zinc-400">Full regime intelligence suite</div>
+            <button onClick={onUnlock} className="mt-2 bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all text-sm font-semibold hover:bg-zinc-100">
+              Unlock Pro — \$39/month
+            </button>
+            <div className="text-xs text-zinc-700">7-day risk-free · Cancel anytime</div>
+          </div>
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+// ─────────────────────────────────────────
+// TODAY PANEL
+// ─────────────────────────────────────────
+function TodayPanel({ stack, decision, isPro, onUnlock }) {
+  if (!stack) return null;
+  const execLabel = stack.execution?.label ?? "—";
+  const exposure = stack.exposure ?? 0;
+  const shiftRisk = stack.shift_risk ?? 0;
+  const regimeAge = stack.regime_age_hours ?? 0;
+
+  return (
+    <CardShell>
+      <div className="flex items-center justify-between">
+        <Label>Today at a glance</Label>
+        <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />Live
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Regime</div>
+          <div className={`text-lg font-semibold ${regimeText(execLabel)}`}>{execLabel}</div>
+          <div className="text-xs text-zinc-600">{regimeAge.toFixed(1)}h active</div>
+        </div>
+        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Exposure</div>
+          {isPro ? (
+            <div className={`text-lg font-semibold tabular-nums ${exposureColor(exposure)}`}>{exposure}%</div>
+          ) : (
+            <div className="text-lg font-semibold text-zinc-700 blur-sm select-none">00%</div>
+          )}
+          <div className="text-xs text-zinc-600">recommended</div>
+        </div>
+        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Shift Risk</div>
+          {isPro ? (
+            <div className={`text-lg font-semibold tabular-nums ${riskColor(shiftRisk)}`}>{shiftRisk}%</div>
+          ) : (
+            <div className="text-lg font-semibold text-zinc-700 blur-sm select-none">00%</div>
+          )}
+          <div className="text-xs text-zinc-600">deterioration signal</div>
+        </div>
+        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Directive</div>
+          {isPro && decision ? (
+            <div className="text-lg font-semibold text-white">{decision.directive}</div>
+          ) : (
+            <button onClick={onUnlock} className="text-xs text-zinc-500 hover:text-white transition-colors flex items-center gap-1"><Lock />Unlock</button>
+          )}
+          <div className="text-xs text-zinc-600">today's action</div>
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+// ─────────────────────────────────────────
+// PRO MODAL
+// ─────────────────────────────────────────
+function ProModal({ onClose }) {
+  const [billingCycle, setBillingCycle] = useState("annual");
+  const [loading, setLoading] = useState(false);
+
+  const checkout = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${BACKEND}/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ billing_cycle: billingCycle }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center px-4 py-8 overflow-y-auto">
+      <div className="bg-zinc-950 border border-white/8 rounded-2xl max-w-md w-full p-8 space-y-6 relative shadow-2xl shadow-black/50">
+        <button onClick={onClose} className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+        <div className="space-y-2 pr-6">
+          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /><Label>ChainPulse Pro</Label></div>
+          <h2 className="text-2xl font-semibold leading-tight tracking-tight">Trade with a systematic risk framework</h2>
+          <p className="text-zinc-500 text-sm leading-relaxed">Survival modeling, hazard rate, and a daily directive — so you always know your exposure.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { key: "monthly", label: "Monthly", sub: "\$39/mo", badge: null },
+            { key: "annual", label: "Annual", sub: "\$29/mo · \$348/yr", badge: "SAVE 26%" },
+          ].map(({ key, label, sub, badge }) => (
+            <button key={key} onClick={() => setBillingCycle(key)} className={`py-3 rounded-xl text-sm font-medium border transition-all relative ${billingCycle === key ? "bg-white text-black border-white" : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"}`}>
+              {badge && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">{badge}</div>}
+              <div>{label}</div>
+              <div className="text-xs font-normal opacity-70">{sub}</div>
+            </button>
+          ))}
+        </div>
+        <div className="bg-white/2 border border-white/5 rounded-xl p-5 space-y-3">
+          {["Daily Directive — what to do today", "Exposure % — regime-adjusted sizing", "Survival + Hazard — persistence modeling", "Drawdown + PnL simulation", "Discipline score + mistake replay", "All 7 assets · Real-time alerts"].map((text) => (
+            <div key={text} className="flex items-center gap-3 text-sm text-zinc-300"><span className="text-emerald-400 shrink-0">→</span>{text}</div>
+          ))}
+        </div>
+        <div className="space-y-3">
+          <button onClick={checkout} disabled={loading} className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all disabled:opacity-50 text-sm shadow-lg">
+            {loading ? "Redirecting..." : billingCycle === "annual" ? "Start Pro — \$348/year" : "Start Pro — \$39/month"}
+          </button>
+          <div className="text-center text-zinc-600 text-xs">7-day risk-free evaluation · Cancel anytime · Instant access</div>
+        </div>
+        <div className="border-t border-white/5 pt-4 text-center"><div className="text-xs text-zinc-600">For swing traders managing \$5,000+</div></div>
+      </div>
     </div>
   );
 }
@@ -5897,105 +4851,61 @@ function MarketTicker() {
 // MAIN DASHBOARD
 // ─────────────────────────────────────────
 export default function Dashboard() {
-  const [stack,        setStack]        = useState(null);
-  const [latest,       setLatest]       = useState(null);
-  const [curveData,    setCurveData]    = useState([]);
-  const [historyData,  setHistoryData]  = useState([]);
-  const [overview,     setOverview]     = useState([]);
-  const [breadth,      setBreadth]      = useState(null);
-  const [confidence,   setConfidence]   = useState(null);
-  const [volEnv,       setVolEnv]       = useState(null);
-  const [transitions,  setTransitions]  = useState(null);
-  const [correlation,  setCorrelation]  = useState(null);
-  const [riskEvents,   setRiskEvents]   = useState([]);
-  const [decision,     setDecision]     = useState(null);
-  const [coin,         setCoin]         = useState("BTC");
-  const [loading,      setLoading]      = useState(true);
-  const [lastUpdated,  setLastUpdated]  = useState(null);
-  const [proSuccess,   setProSuccess]   = useState(false);
-  const [showModal,    setShowModal]    = useState(false);
-  const [token,        setToken]        = useState(null);
-  const [email,        setEmail]        = useState("");
+  const [stack, setStack] = useState(null);
+  const [latest, setLatest] = useState(null);
+  const [curveData, setCurveData] = useState([]);
+  const [historyData, setHistoryData] = useState([]);
+  const [overview, setOverview] = useState([]);
+  const [breadth, setBreadth] = useState(null);
+  const [confidence, setConfidence] = useState(null);
+  const [volEnv, setVolEnv] = useState(null);
+  const [transitions, setTransitions] = useState(null);
+  const [correlation, setCorrelation] = useState(null);
+  const [riskEvents, setRiskEvents] = useState([]);
+  const [decision, setDecision] = useState(null);
+  const [coin, setCoin] = useState("BTC");
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [proSuccess, setProSuccess] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [token, setToken] = useState(null);
+  const [email, setEmail] = useState("");
 
-  // ── Init token + email from URL / localStorage ──
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const params      = new URLSearchParams(window.location.search);
-    const urlToken    = params.get("token");
-    const urlEmail    = params.get("email");
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("token");
+    const urlEmail = params.get("email");
     const successFlag = params.get("success");
-
-    if (urlToken) {
-      saveToken(urlToken);
-      setToken(urlToken);
-      window.history.replaceState({}, "", "/app");
-    } else {
-      const stored = getToken();
-      if (stored) setToken(stored);
-    }
-
-    if (urlEmail) {
-      setEmail(urlEmail);
-    } else {
-      const storedEmail = localStorage.getItem("cp_email");
-      if (storedEmail) setEmail(storedEmail);
-    }
-
+    if (urlToken) { saveToken(urlToken); setToken(urlToken); window.history.replaceState({}, "", "/app"); }
+    else { const stored = getToken(); if (stored) setToken(stored); }
+    if (urlEmail) setEmail(urlEmail);
+    else { const storedEmail = localStorage.getItem("cp_email"); if (storedEmail) setEmail(storedEmail); }
     if (successFlag === "true") setProSuccess(true);
   }, []);
-  const safeFetch = async (url, options = {}, fallback = null) => {
-    try {
-      const res = await fetch(url, options);
-      if (!res.ok) {
-  console.error("Fetch failed:", url, res.status);
-  throw new Error("Fetch failed");
-}
-      return await res.json();
-    } catch {
-      return fallback;
-    }
-  };
 
-  // ── Data fetch ──
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
-  try {
-    const headers = {};
-    if (currentToken) {
-      headers["Authorization"] = `Bearer ${currentToken}`;
-    }
-
-    const res = await fetch(
-      `${BACKEND}/dashboard?coin=${selectedCoin}`,
-      { headers }
-    );
-
-    if (!res.ok) {
-      console.error("Dashboard fetch failed:", res.status);
-      throw new Error("Fetch failed");
-    }
-
-    const data = await res.json();
-
-    setStack(data.stack || null);
-    setLatest(data.latest || null);
-    setCurveData(data.curve || []);
-    setHistoryData(data.history || []);
-    setOverview(data.overview || []);
-    setBreadth(data.breadth || null);
-    setConfidence(data.confidence || null);
-    setVolEnv(data.volEnv || null);
-    setTransitions(data.transitions || null);
-    setCorrelation(data.correlation || null);
-    setRiskEvents(data.events || []);
-
-    setLastUpdated(new Date());
-
-  } catch (err) {
-    console.error("Dashboard fetch error:", err);
-  } finally {
-    setLoading(false);
-  }
-}, []);
+    try {
+      const headers = {};
+      if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
+      const res = await fetch(`${BACKEND}/dashboard?coin=${selectedCoin}`, { headers });
+      if (!res.ok) throw new Error("Fetch failed");
+      const data = await res.json();
+      setStack(data.stack || null);
+      setLatest(data.latest || null);
+      setCurveData(data.curve || []);
+      setHistoryData(data.history || []);
+      setOverview(data.overview || []);
+      setBreadth(data.breadth || null);
+      setConfidence(data.confidence || null);
+      setVolEnv(data.volEnv || null);
+      setTransitions(data.transitions || null);
+      setCorrelation(data.correlation || null);
+      setRiskEvents(data.events || []);
+      setLastUpdated(new Date());
+    } catch (err) { console.error("Dashboard fetch error:", err); }
+    finally { setLoading(false); }
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -6004,630 +4914,329 @@ export default function Dashboard() {
     return () => clearInterval(iv);
   }, [coin, token, fetchData]);
 
-  // ── Loading state ──
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4 text-zinc-400">
-        <div className="w-8 h-8 border-2 border-zinc-700 border-t-white rounded-full animate-spin" />
-        <div className="text-sm">Initialising Regime Model...</div>
-      </div>
-    );
-  }
+  const onUnlock = () => setShowModal(true);
 
-  // ── No data state ──
-  if (!stack || stack.message) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4 text-gray-400">
-        <div className="text-center space-y-3">
-          <div>No regime data available yet.</div>
-          <div className="text-sm text-zinc-500">
-            Model is initialising. Run /update-all to seed data.
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4 text-zinc-400">
+      <div className="w-8 h-8 border-2 border-zinc-700 border-t-white rounded-full animate-spin" />
+      <div className="text-sm">Initialising Regime Model...</div>
+    </div>
+  );
 
-  // ── Derived state ──
-  const isPro       = !stack.pro_required;
-  const exposure    = stack.exposure          ?? 0;
-  const shiftRisk   = stack.shift_risk        ?? 0;
-  const alignment   = stack.alignment         ?? 0;
-  const direction   = stack.direction         ?? "mixed";
-  const regimeAge   = stack.regime_age_hours  ?? 0;
-  const maturity    = stack.trend_maturity    ?? null;
-  const survival    = stack.survival          ?? null;
-  const hazard      = stack.hazard            ?? null;
-  const percentile  = stack.percentile        ?? null;
-  const execLabel   = stack.execution?.label  ?? null;
+  if (!stack || stack.message) return (
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4 text-gray-400">
+      <div className="text-center space-y-3">
+        <div>No regime data available yet.</div>
+        <div className="text-sm text-zinc-500">Model is initialising. Run /update-all to seed data.</div>
+      </div>
+    </div>
+  );
+
+  const isPro = !stack.pro_required;
+  const exposure = stack.exposure ?? 0;
+  const shiftRisk = stack.shift_risk ?? 0;
+  const alignment = stack.alignment ?? 0;
+  const direction = stack.direction ?? "mixed";
+  const regimeAge = stack.regime_age_hours ?? 0;
+  const maturity = stack.trend_maturity ?? null;
+  const survival = stack.survival ?? null;
+  const hazard = stack.hazard ?? null;
+  const percentile = stack.percentile ?? null;
+  const execLabel = stack.execution?.label ?? null;
   const avgDuration = stack.avg_regime_duration_hours ?? 48;
-
-  const maturityLabel =
-    maturity > 75 ? "Overextended" :
-    maturity > 50 ? "Late Phase"   :
-    maturity > 25 ? "Mid Phase"    : "Early Phase";
+  const maturityLabel = maturity > 75 ? "Overextended" : maturity > 50 ? "Late Phase" : maturity > 25 ? "Mid Phase" : "Early Phase";
 
   return (
     <main className="min-h-screen bg-black text-white">
       {showModal && <ProModal onClose={() => setShowModal(false)} />}
-{/* Bottom row: ticker */}
-<div className="border-t border-white/5 bg-zinc-950/30 backdrop-blur-md">
-  <div className="max-w-7xl mx-auto px-6 py-3">
-    <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-2">
-      <LivePriceTicker
-  activeCoin={coin}
-  onCoinSelect={setCoin}
-/>
-    </div>
-  </div>
-</div>
+
+      {/* ── SITE HEADER (replaces inline header) ── */}
+      <SiteHeader coin={coin} onCoinSelect={setCoin} isPro={isPro} onUnlock={onUnlock} />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-5">
 
         {/* ── Pro success banner ── */}
         {proSuccess && (
           <div className="border border-emerald-800/60 bg-emerald-950/40 text-emerald-300 px-5 py-3.5 rounded-lg text-sm flex items-center gap-2">
-            <span className="text-emerald-400">✓</span>
-            Pro access activated. Welcome to ChainPulse.
+            <span className="text-emerald-400">✓</span>Pro access activated. Welcome to ChainPulse.
           </div>
         )}
 
-        {/* ── Header ── */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-2">
-          <div>
-            <div className="text-[11px] text-zinc-500 uppercase tracking-[0.2em] mb-1.5">
-              ChainPulse
-            </div>
-            <h1 className="text-xl font-semibold tracking-tight">
-              Regime Intelligence System
-            </h1>
-            {lastUpdated && (
-              <div className="text-xs text-zinc-600 mt-1 tabular-nums">
-                Updated {lastUpdated.toLocaleTimeString()} · auto-refresh 60s
-              </div>
-            )}
-          </div>
-                    <div className="flex items-center gap-3 text-xs flex-wrap">
-            {[
-              { label: "Data", value: "Binance" },
-              { label: "Refresh", value: "Hourly" },
-              { label: "Assets", value: "7 tracked" },
-              { label: "Model", value: "Survival + Hazard" },
-            ].map(({ label, value }) => (
-              <div
-                key={label}
-                className="bg-white/2 border border-white/5 rounded-xl px-3 py-1.5 flex items-center gap-2"
-              >
-                <span className="text-zinc-600">{label}:</span>
-                <span className="text-zinc-300 font-medium">{value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* ── Model Version Badge ── */}
+        <ModelVersionBadge version={stack.model_version} durationMs={stack.computation_ms} />
 
         {/* ── TODAY'S VERDICT ── */}
-        <TodaysVerdict
-          stack={stack}
-          decision={decision}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
-        
-         {/* ── TODAY PANEL ── */}
-        <TodayPanel
-          stack={stack}
-          decision={decision}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <TodaysVerdict stack={stack} decision={decision} isPro={isPro} onUnlock={onUnlock} />
 
+        {/* ── TODAY PANEL ── */}
+        <TodayPanel stack={stack} decision={decision} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── Free tier banner ── */}
-        {!isPro && (
-          <FreeTierBanner onUnlock={() => setShowModal(true)} />
-        )}
+        {!isPro && <FreeTierBanner onUnlock={onUnlock} />}
 
         {/* ── Shift risk alert ── */}
-        <ShiftRiskAlert
-          shiftRisk={shiftRisk}
-          coin={coin}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <ShiftRiskAlert shiftRisk={shiftRisk} coin={coin} isPro={isPro} />
+
+        {/* ── WHAT CHANGED (24H) ── */}
+        <WhatChangedPanel token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── HERO GRID ── */}
         <div className="grid md:grid-cols-3 gap-4">
-
-          {/* Exposure hero */}
-          <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 text-center space-y-3 flex flex-col justify-center">
+          <CardShell>
             <Label>Exposure Recommendation</Label>
             {isPro ? (
               <>
-                <div className={`text-7xl font-semibold ${exposureColor(exposure)}`}>
-                  {exposure}%
-                </div>
-                <div className="text-xs text-zinc-400">
-                  {alignment >= 80 ? "High conviction"      :
-                   alignment >= 50 ? "Moderate conviction"  : "Low conviction"}
-                </div>
-                <Bar
-                  value={exposure}
-                  cls={
-                    exposure > 60 ? "bg-emerald-500" :
-                    exposure > 35 ? "bg-yellow-500"  : "bg-red-500"
-                  }
-                />
+                <div className={`text-7xl font-semibold ${exposureColor(exposure)}`}>{exposure}%</div>
+                <div className="text-xs text-zinc-400">{alignment >= 80 ? "High conviction" : alignment >= 50 ? "Moderate conviction" : "Low conviction"}</div>
+                <Bar value={exposure} cls={exposure > 60 ? "bg-emerald-500" : exposure > 35 ? "bg-yellow-500" : "bg-red-500"} />
               </>
             ) : (
               <>
-                <div
-                  className="text-7xl font-semibold text-zinc-700 blur-sm select-none cursor-pointer"
-                  onClick={() => setShowModal(true)}
-                >
-                  00%
-                </div>
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="text-xs text-zinc-500 hover:text-white transition-colors flex items-center gap-1 justify-center"
-                >
-                  <Lock />Unlock exposure — Pro
-                </button>
+                <div className="text-7xl font-semibold text-zinc-700 blur-sm select-none cursor-pointer" onClick={onUnlock}>00%</div>
+                <button onClick={onUnlock} className="text-xs text-zinc-500 hover:text-white transition-colors flex items-center gap-1 justify-center"><Lock />Unlock exposure — Pro</button>
                 <Bar value={50} cls="bg-zinc-700" />
               </>
             )}
-          </div>
+          </CardShell>
 
-          {/* Regime context */}
-          <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-white/5 rounded-xl p-8 space-y-5 md:col-span-2">
-            <div className="flex justify-between items-start">
-              <div>
-                <Label>Current Regime</Label>
-                <div className={`text-2xl font-semibold ${regimeText(execLabel)}`}>
-                  {execLabel ?? "—"}
+          <div className="md:col-span-2">
+            <CardShell>
+              <div className="flex justify-between items-start">
+                <div>
+                  <Label>Current Regime</Label>
+                  <div className={`text-2xl font-semibold ${regimeText(execLabel)}`}>{execLabel ?? "—"}</div>
+                  <div className="text-xs text-zinc-400 mt-1">Execution (1H) · Active {regimeAge.toFixed(1)}h</div>
                 </div>
-                <div className="text-xs text-zinc-400 mt-1">
-                  Execution (1H) · Active {regimeAge.toFixed(1)}h
-                </div>
+                <span className={`text-xs font-medium px-3 py-1 rounded-full border ${dirBadge(direction)}`}>
+                  {direction === "bullish" ? "↑ Bullish" : direction === "bearish" ? "↓ Bearish" : "→ Mixed"}
+                </span>
               </div>
-              <span className={`text-xs font-medium px-3 py-1 rounded-full border ${dirBadge(direction)}`}>
-                {direction === "bullish" ? "↑ Bullish" :
-                 direction === "bearish" ? "↓ Bearish" : "→ Mixed"}
-              </span>
-            </div>
-
-            {/* Timeframe stack mini */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: "Macro (1D)",     data: stack.macro     },
-                { label: "Trend (4H)",     data: stack.trend     },
-                { label: "Execution (1H)", data: stack.execution },
-              ].map(({ label, data }) => (
-                <div
-                  key={label}
-                  className={`border p-3 rounded-sm text-center ${
-                    data ? regimeBorder(data.label) : "border-white/5"
-                  }`}
-                >
-                  <div className="text-xs text-zinc-400 mb-1">{label}</div>
-                  <div className={`text-xs font-semibold ${data ? regimeText(data.label) : "text-zinc-500"}`}>
-                    {data?.label ?? "—"}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Macro (1D)", data: stack.macro },
+                  { label: "Trend (4H)", data: stack.trend },
+                  { label: "Execution (1H)", data: stack.execution },
+                ].map(({ label, data }) => (
+                  <div key={label} className={`border p-3 rounded-lg text-center ${data ? regimeBorder(data.label) : "border-white/5"}`}>
+                    <div className="text-xs text-zinc-400 mb-1">{label}</div>
+                    <div className={`text-xs font-semibold ${data ? regimeText(data.label) : "text-zinc-500"}`}>{data?.label ?? "—"}</div>
                   </div>
+                ))}
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-zinc-400">
+                  <span>Timeframe Alignment</span>
+                  <span className={alignColor(alignment)}>{alignment}%</span>
                 </div>
-              ))}
-            </div>
-
-            {/* Alignment bar */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs text-zinc-400">
-                <span>Timeframe Alignment</span>
-                <span className={alignColor(alignment)}>{alignment}%</span>
+                <div className="w-full bg-zinc-800 rounded-full h-1">
+                  <div className={`h-1 rounded-full transition-all ${alignment >= 80 ? "bg-emerald-500" : alignment >= 50 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${alignment}%` }} />
+                </div>
+                <div className="text-xs text-zinc-500">
+                  {alignment >= 80 ? "All timeframes agree — high conviction" : alignment >= 50 ? "Partial alignment — moderate conviction" : "Conflicting timeframes — reduce position size"}
+                </div>
               </div>
-              <div className="w-full bg-zinc-800 rounded-full h-1">
-                <div
-                  className={`h-1 rounded-full transition-all ${
-                    alignment >= 80 ? "bg-emerald-500" :
-                    alignment >= 50 ? "bg-yellow-500"  : "bg-red-500"
-                  }`}
-                  style={{ width: `${alignment}%` }}
-                />
-              </div>
-              <div className="text-xs text-zinc-500">
-                {alignment >= 80 ? "All timeframes agree — high conviction"     :
-                 alignment >= 50 ? "Partial alignment — moderate conviction"    :
-                                   "Conflicting timeframes — reduce position size"}
-              </div>
-            </div>
+            </CardShell>
           </div>
         </div>
 
         {/* ── STATS GRID ── */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <StatCard
-            label="Survival Probability"
-            value={isPro ? survival : null}
-            color={isPro ? riskColor(100 - (survival || 0)) : ""}
-            barCls={isPro ? (survival > 60 ? "bg-green-500" : survival > 40 ? "bg-yellow-500" : "bg-red-500") : ""}
-            hint="Probability current regime continues"
-            locked={!isPro}
-            consequence="Survival probability quantifies regime decay risk."
-            onUnlock={() => setShowModal(true)}
-          />
-          <StatCard
-            label="Regime Shift Risk"
-            value={isPro ? shiftRisk : null}
-            color={isPro ? riskColor(shiftRisk) : ""}
-            barCls={isPro ? (shiftRisk > 70 ? "bg-red-500" : shiftRisk > 45 ? "bg-yellow-500" : "bg-green-500") : ""}
-            hint="Composite deterioration signal"
-            locked={!isPro}
-            consequence="Shift risk identifies breakdown probability before price moves."
-            onUnlock={() => setShowModal(true)}
-          />
-          <StatCard
-            label="Hazard Rate"
-            value={isPro ? hazard : null}
-            color={isPro ? riskColor(hazard || 0) : ""}
-            barCls={isPro ? (hazard > 70 ? "bg-red-500" : hazard > 45 ? "bg-yellow-500" : "bg-green-500") : ""}
-            hint="Failure risk vs historical norm"
-            locked={!isPro}
-            consequence="Hazard rate measures how fragile this regime is vs history."
-            onUnlock={() => setShowModal(true)}
-          />
-          <StatCard
-            label="Macro Coherence"
-            value={isPro ? stack.macro_coherence?.toFixed(1) : null}
-            color={isPro ? ((stack.macro_coherence || 0) > 60 ? "text-emerald-400" : "text-yellow-400") : ""}
-            barCls={isPro ? ((stack.macro_coherence || 0) > 60 ? "bg-emerald-500" : "bg-yellow-500") : ""}
-            hint="1D timeframe signal strength"
-            locked={!isPro}
-            consequence="Coherence measures whether the signal is strong or noisy."
-            onUnlock={() => setShowModal(true)}
-          />
-          <StatCard
-            label="Strength Percentile"
-            value={isPro ? percentile : null}
-            color="text-blue-400"
-            barCls="bg-blue-500"
-            hint="Relative to historical scores"
-            locked={!isPro}
-            consequence="Percentile rank shows how extreme the current regime is historically."
-            onUnlock={() => setShowModal(true)}
-          />
-          <StatCard
-            label="Execution Score"
-            value={stack.execution?.score?.toFixed(1) ?? "—"}
-            suffix=""
-            color={regimeText(execLabel)}
-            hint="Raw 1H momentum-vol composite"
-            locked={false}
-          />
+          <StatCard label="Survival Probability" value={isPro ? survival : null} color={isPro ? riskColor(100 - (survival || 0)) : ""} barCls={isPro ? (survival > 60 ? "bg-green-500" : survival > 40 ? "bg-yellow-500" : "bg-red-500") : ""} hint="Probability current regime continues" locked={!isPro} consequence="Survival probability quantifies regime decay risk." onUnlock={onUnlock} />
+          <StatCard label="Regime Shift Risk" value={isPro ? shiftRisk : null} color={isPro ? riskColor(shiftRisk) : ""} barCls={isPro ? (shiftRisk > 70 ? "bg-red-500" : shiftRisk > 45 ? "bg-yellow-500" : "bg-green-500") : ""} hint="Composite deterioration signal" locked={!isPro} consequence="Shift risk identifies breakdown probability before price moves." onUnlock={onUnlock} />
+          <StatCard label="Hazard Rate" value={isPro ? hazard : null} color={isPro ? riskColor(hazard || 0) : ""} barCls={isPro ? (hazard > 70 ? "bg-red-500" : hazard > 45 ? "bg-yellow-500" : "bg-green-500") : ""} hint="Failure risk vs historical norm" locked={!isPro} consequence="Hazard rate measures how fragile this regime is vs history." onUnlock={onUnlock} />
+          <StatCard label="Macro Coherence" value={isPro ? stack.macro_coherence?.toFixed(1) : null} color={isPro ? ((stack.macro_coherence || 0) > 60 ? "text-emerald-400" : "text-yellow-400") : ""} barCls={isPro ? ((stack.macro_coherence || 0) > 60 ? "bg-emerald-500" : "bg-yellow-500") : ""} hint="1D timeframe signal strength" locked={!isPro} consequence="Coherence measures whether the signal is strong or noisy." onUnlock={onUnlock} />
+          <StatCard label="Strength Percentile" value={isPro ? percentile : null} color="text-blue-400" barCls="bg-blue-500" hint="Relative to historical scores" locked={!isPro} consequence="Percentile rank shows how extreme the current regime is historically." onUnlock={onUnlock} />
+          <StatCard label="Execution Score" value={stack.execution?.score?.toFixed(1) ?? "—"} suffix="" color={regimeText(execLabel)} hint="Raw 1H momentum-vol composite" locked={false} />
         </div>
 
         {/* ── PORTFOLIO HEALTH SCORE ── */}
-        <PortfolioHealthScore
-          stack={stack}
-          email={email}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <PortfolioHealthScore stack={stack} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── DECISION ENGINE ── */}
-        <DecisionEnginePanel
-          stack={stack}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-          onDecisionLoaded={setDecision}
-        />
+        <DecisionEnginePanel stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} onDecisionLoaded={setDecision} />
+
+        {/* ── SETUP QUALITY ── */}
+        <SetupQualityPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+
+        {/* ── OPPORTUNITY RANKING ── */}
+        <OpportunityRankingPanel token={token} isPro={isPro} onUnlock={onUnlock} />
+
+        {/* ── SCENARIOS ── */}
+        <ScenariosPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+
+        {/* ── TRADE PLAN ── */}
+        <TradePlanPanel coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── CONSEQUENCE SIMULATOR ── */}
-        <IfNothingPanel
-          stack={stack}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <IfNothingPanel stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── PNL IMPACT ESTIMATOR ── */}
-        <PnLImpactEstimator
-          stack={stack}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <PnLImpactEstimator stack={stack} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── DRAWDOWN SIMULATOR ── */}
-        <DrawdownSimulator
-          stack={stack}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <DrawdownSimulator stack={stack} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── PRO INTELLIGENCE PREVIEW (free users only) ── */}
-        {!isPro && (
-          <ProIntelligencePreview onUnlock={() => setShowModal(true)} />
-        )}
+        {!isPro && <ProIntelligencePreview onUnlock={onUnlock} />}
+
+        {/* ── INTERNAL DAMAGE ── */}
+        <InternalDamagePanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+
+        {/* ── EVENT RISK OVERLAY ── */}
+        <EventRiskOverlayPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── STRESS + COUNTDOWN ── */}
         <div className="grid md:grid-cols-2 gap-4">
-          <StressMeter
-            stack={stack}
-            isPro={isPro}
-            onUnlock={() => setShowModal(true)}
-          />
-          <RegimeCountdown
-            stack={stack}
-            isPro={isPro}
-            onUnlock={() => setShowModal(true)}
-          />
+          <StressMeter stack={stack} isPro={isPro} onUnlock={onUnlock} />
+          <RegimeCountdown stack={stack} isPro={isPro} onUnlock={onUnlock} />
         </div>
 
         {/* ── QUALITY + CONFIDENCE TREND ── */}
         <div className="grid md:grid-cols-2 gap-4">
-          <RegimeQualityCard
-            stack={stack}
-            isPro={isPro}
-            onUnlock={() => setShowModal(true)}
-          />
-          <ConfidenceTrend
-            history={historyData}
-            confidence={confidence}
-            isPro={isPro}
-            onUnlock={() => setShowModal(true)}
-          />
+          <RegimeQualityCard stack={stack} isPro={isPro} onUnlock={onUnlock} />
+          <ConfidenceTrend history={historyData} confidence={confidence} isPro={isPro} onUnlock={onUnlock} />
         </div>
 
         {/* ── PLAYBOOK ── */}
-        <RegimePlaybook
-          stack={stack}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <RegimePlaybook stack={stack} isPro={isPro} onUnlock={onUnlock} />
+
+        {/* ── HISTORICAL ANALOGS ── */}
+        <HistoricalAnalogsPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+
+        {/* ── ARCHETYPE OVERLAY ── */}
+        <ArchetypeOverlayPanel coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── EXPOSURE TRACKER ── */}
-        <ExposureTracker
-          stack={stack}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <ExposureTracker stack={stack} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── RISK PROFILE ── */}
-        <RiskProfilePanel
-          email={email}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-          onProfileSaved={(profile) => console.log("Profile saved:", profile)}
-        />
+        <RiskProfilePanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} onProfileSaved={(profile) => console.log("Profile saved:", profile)} />
+
+        {/* ── ALERT THRESHOLDS ── */}
+        <AlertThresholdsPanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+
+        {/* ── ALERT INBOX ── */}
+        <UserAlertsInbox email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── EXPOSURE LOGGER ── */}
-        <ExposureLogger
-          stack={stack}
-          email={email}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <ExposureLogger stack={stack} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+
+        {/* ── PERFORMANCE LOGGER ── */}
+        <PerformanceLogger coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── STREAK TRACKER ── */}
-        <StreakTracker
-          email={email}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <StreakTracker email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── DISCIPLINE SCORE ── */}
-        <DisciplinePanel
-          email={email}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <DisciplinePanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+
+        {/* ── BEHAVIORAL ALPHA ── */}
+        <BehavioralAlphaPanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── MISTAKE REPLAY ── */}
-        <MistakeReplayPanel
-          email={email}
-          coin={coin}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <MistakeReplayPanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── PERFORMANCE COMPARISON ── */}
-        <PerformancePanel
-          email={email}
-          coin={coin}
-          token={token}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <PerformancePanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── EDGE PROFILE ── */}
-        <EdgeProfilePanel
-          email={email}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <EdgeProfilePanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── WEEKLY REPORT ── */}
-        <WeeklyReportPanel
-          email={email}
-          coin={coin}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <WeeklyReportPanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── REGIME STACK DETAIL ── */}
-        <RegimeStackCard
-          stack={stack}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <RegimeStackCard stack={stack} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── CONFIDENCE PANEL ── */}
-        <ConfidencePanel
-          confidence={confidence}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <ConfidencePanel confidence={confidence} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── REGIME MATURITY ── */}
-        <RegimeMaturity
-          regimeAge={regimeAge}
-          avgDuration={avgDuration}
-          maturityLabel={maturityLabel}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <RegimeMaturity regimeAge={regimeAge} avgDuration={avgDuration} maturityLabel={maturityLabel} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── VOL ENVIRONMENT ── */}
-        <VolEnvironment
-          env={volEnv}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <VolEnvironment env={volEnv} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── SURVIVAL CURVE ── */}
-        <SurvivalCurve
-          curve={curveData}
-          regimeAge={regimeAge}
-          isPro={isPro}
-          onUnlock={() => setShowModal(true)}
-        />
+        <SurvivalCurve curve={curveData} regimeAge={regimeAge} isPro={isPro} onUnlock={onUnlock} />
 
         {/* ── SIGNAL INTERPRETATION ── */}
-        <InterpretationPanel
-          stack={stack}
-          latest={latest}
-          isPro={isPro}
-        />
+        <InterpretationPanel stack={stack} latest={latest} isPro={isPro} />
 
         {/* ── EMAIL CAPTURE ── */}
-        {!email && (
-          <EmailCapture onEmailSet={setEmail} />
-        )}
+        {!email && <EmailCapture onEmailSet={setEmail} />}
 
         {/* ── ADVANCED ANALYTICS — collapsed ── */}
         <AdvancedAnalytics isPro={isPro}>
-          <TransitionMatrix
-            transitions={transitions}
-            isPro={isPro}
-            onUnlock={() => setShowModal(true)}
-          />
-          <RegimeHeatmap
-            overview={overview}
-            isPro={isPro}
-            onUnlock={() => setShowModal(true)}
-          />
-          <CorrelationPanel
-            correlation={correlation}
-            isPro={isPro}
-            onUnlock={() => setShowModal(true)}
-          />
-          <PortfolioAllocator
-            stack={stack}
-            isPro={isPro}
-            onUnlock={() => setShowModal(true)}
-          />
+          <TransitionMatrix transitions={transitions} isPro={isPro} onUnlock={onUnlock} />
+          <RegimeHeatmap overview={overview} isPro={isPro} onUnlock={onUnlock} />
+          <CorrelationPanel correlation={correlation} isPro={isPro} onUnlock={onUnlock} />
+          <PortfolioAllocator stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} />
           <BreadthPanel breadth={breadth} />
-          <RegimeMap
-            overview={overview}
-            activeCoin={coin}
-            onSelect={setCoin}
-          />
-          <RegimeTimeline
-            history={historyData}
-            coin={coin}
-          />
+          <RegimeMap overview={overview} activeCoin={coin} onSelect={setCoin} />
+          <RegimeTimeline history={historyData} coin={coin} />
           <RiskEvents events={riskEvents} />
         </AdvancedAnalytics>
 
         {/* ── PRO UPSELL FOOTER ── */}
         {!isPro && (
-          <div
-            className="border border-zinc-700 p-10 text-center space-y-6 cursor-pointer hover:border-zinc-500 transition-colors"
-            onClick={() => setShowModal(true)}
-          >
+          <div className="border border-zinc-700 p-10 text-center space-y-6 cursor-pointer hover:border-zinc-500 transition-colors rounded-2xl" onClick={onUnlock}>
             <div>
               <Label>ChainPulse Pro</Label>
-              <h3 className="text-2xl font-semibold mt-2">
-                Avoid one late-cycle breakdown.
-That alone pays for this.
-              </h3>
+              <h3 className="text-2xl font-semibold mt-2">Avoid one late-cycle breakdown.<br />That alone pays for this.</h3>
               <p className="text-gray-400 max-w-lg mx-auto text-sm leading-relaxed mt-3">
-                Exposure modeling, survival analysis, hazard rate, decision engine,
-                discipline tracking, drawdown simulation, PnL impact estimation,
-                and real-time alerts. Everything you need to trade with a
-                systematic risk framework.
+                Exposure modeling, survival analysis, hazard rate, decision engine, discipline tracking, drawdown simulation, PnL impact estimation, and real-time alerts. Everything you need to trade with a systematic risk framework.
               </p>
             </div>
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto text-left">
               {[
-                { icon: "→", label: "Daily Directive",      desc: "Decision engine tells you what to do"  },
-                { icon: "→", label: "Survival Modeling",    desc: "Quantify regime decay probability"      },
-                { icon: "→", label: "Discipline Score",     desc: "Track protocol adherence over time"     },
-                { icon: "→", label: "Drawdown Simulation",  desc: "Model loss at any price decline"        },
-                { icon: "→", label: "PnL Impact Estimator", desc: "Expected value of your exposure"        },
-                { icon: "→", label: "Edge Profile",         desc: "Your best and worst regime types"       },
-                { icon: "→", label: "Regime Playbook",      desc: "Protocol for current conditions"        },
-                { icon: "→", label: "Real-time Alerts",     desc: "Shift alerts direct to your inbox"      },
+                { icon: "→", label: "Daily Directive", desc: "Decision engine tells you what to do" },
+                { icon: "→", label: "Survival Modeling", desc: "Quantify regime decay probability" },
+                { icon: "→", label: "Discipline Score", desc: "Track protocol adherence over time" },
+                { icon: "→", label: "Drawdown Simulation", desc: "Model loss at any price decline" },
+                { icon: "→", label: "PnL Impact Estimator", desc: "Expected value of your exposure" },
+                { icon: "→", label: "Edge Profile", desc: "Your best and worst regime types" },
+                { icon: "→", label: "Regime Playbook", desc: "Protocol for current conditions" },
+                { icon: "→", label: "Real-time Alerts", desc: "Shift alerts direct to your inbox" },
               ].map(({ icon, label, desc }) => (
                 <div key={label} className="bg-white/2 border border-white/5 rounded-lg p-3 space-y-1 text-left">
-                  <div className="text-xs font-medium text-white flex items-center gap-1.5">
-                    <span className="text-emerald-400">{icon}</span>
-                    {label}
-                  </div>
+                  <div className="text-xs font-medium text-white flex items-center gap-1.5"><span className="text-emerald-400">{icon}</span>{label}</div>
                   <div className="text-xs text-zinc-500">{desc}</div>
                 </div>
               ))}
             </div>
-
             <div className="space-y-2">
               <div className="flex justify-center gap-6 text-sm">
-                <div className="border border-zinc-700 px-5 py-3 space-y-0.5">
-                  <div className="text-white font-semibold">$39 / month</div>
-                  <div className="text-xs text-zinc-500">Billed monthly</div>
-                </div>
-                <div className="border border-zinc-500 px-5 py-3 space-y-0.5 relative">
-                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">
-                    Save 26%
-                  </div>
-                  <div className="text-white font-semibold">$29 / month</div>
-                  <div className="text-xs text-zinc-500">Billed annually — $348</div>
+                <div className="border border-zinc-700 px-5 py-3 space-y-0.5 rounded-xl"><div className="text-white font-semibold">\$39 / month</div><div className="text-xs text-zinc-500">Billed monthly</div></div>
+                <div className="border border-zinc-500 px-5 py-3 space-y-0.5 relative rounded-xl">
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">Save 26%</div>
+                  <div className="text-white font-semibold">\$29 / month</div><div className="text-xs text-zinc-500">Billed annually — \$348</div>
                 </div>
               </div>
             </div>
-
             <div className="space-y-2">
-              <button
-                className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-10 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm"
-                onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
-              >
+              <button className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-10 py-4 rounded-xl font-semibold hover:bg-gray-100 text-sm" onClick={(e) => { e.stopPropagation(); setShowModal(true); }}>
                 Start Using Full Regime Intelligence
               </button>
-              <div className="text-zinc-500 text-xs">
-                7-day risk-free evaluation · Cancel anytime · Instant access
-              </div>
-              <div className="text-gray-700 text-xs">
-                For swing traders managing $5,000+
-              </div>
+              <div className="text-zinc-500 text-xs">7-day risk-free evaluation · Cancel anytime · Instant access</div>
+              <div className="text-gray-700 text-xs">For swing traders managing \$5,000+</div>
             </div>
           </div>
         )}
 
         {/* ── PRO FOOTER — logged in ── */}
         {isPro && (
-          <div className="border border-white/5 px-6 py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="border border-white/5 px-6 py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 rounded-2xl">
             <div className="space-y-0.5">
               <div className="text-xs text-zinc-400 uppercase tracking-widest">ChainPulse Pro</div>
-              <div className="text-sm text-gray-400">
-                Full regime intelligence active · All signals live
-              </div>
+              <div className="text-sm text-gray-400">Full regime intelligence active · All signals live</div>
             </div>
             <div className="flex gap-4 text-xs text-zinc-500">
-              <span>Auto-refresh: 60s</span>
-              <span>·</span>
-              <span>7 assets tracked</span>
-              <span>·</span>
-              <span>3 timeframes</span>
+              <span>Auto-refresh: 60s</span><span>·</span><span>7 assets tracked</span><span>·</span><span>3 timeframes</span>
             </div>
           </div>
         )}
-
       </div>
     </main>
   );
 }
-          
