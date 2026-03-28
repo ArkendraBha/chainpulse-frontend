@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   AreaChart, Area, LineChart, Line, RadialBarChart, RadialBar,
   XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -15,6 +15,24 @@ const REFRESH_MS = 60_000;
 // ─────────────────────────────────────────
 function getToken() { return typeof window !== "undefined" ? localStorage.getItem("cp_token") : null; }
 function saveToken(t) { if (typeof window !== "undefined") localStorage.setItem("cp_token", t); }
+
+// ─────────────────────────────────────────
+// AUTHENTICATED FETCH HELPER
+// ─────────────────────────────────────────
+function authHeaders(token) {
+  const h = { "Content-Type": "application/json" };
+  if (token) h["Authorization"] = `Bearer ${token}`;
+  return h;
+}
+async function apiFetch(path, token, opts = {}) {
+  const url = path.startsWith("http") ? path : `${BACKEND}${path}`;
+  const res = await fetch(url, {
+    ...opts,
+    headers: { ...authHeaders(token), ...(opts.headers || {}) },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
 
 // ─────────────────────────────────────────
 // COLOUR HELPERS
@@ -3872,6 +3890,512 @@ function PortfolioHealthScore({ stack, email, isPro, onUnlock }) {
         Composite score across regime quality, discipline, and exposure alignment
       </p>
       {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// HISTORICAL ANALOGS PANEL
+// ─────────────────────────────────────────
+function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPro || !coin) return;
+    setLoading(true);
+    apiFetch(`/historical-analogs?coin=${coin}`, token)
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [coin, isPro, token]);
+
+  const inner = data ? (
+    <div className="space-y-6">
+      {!data.data_sufficient ? (
+        <div className="border border-yellow-900 bg-yellow-950 px-4 py-3 text-yellow-300 text-sm">
+          {data.message || `Only ${data.sample_size} matching periods found. Need more history.`}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Matching Periods</div>
+              <div className="text-2xl font-semibold text-white">{data.sample_size}</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Avg Continuation</div>
+              <div className="text-2xl font-semibold text-white">{data.continuation?.avg_hours?.toFixed(1)}h</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">24H Continuation Prob</div>
+              <div className={`text-2xl font-semibold ${data.continuation?.prob_24h_pct > 60 ? "text-emerald-400" : "text-yellow-400"}`}>
+                {data.continuation?.prob_24h_pct}%
+              </div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">72H Continuation Prob</div>
+              <div className={`text-2xl font-semibold ${data.continuation?.prob_72h_pct > 50 ? "text-emerald-400" : "text-yellow-400"}`}>
+                {data.continuation?.prob_72h_pct}%
+              </div>
+            </div>
+          </div>
+
+          {/* Forward Returns */}
+          <div className="space-y-2">
+            <div className="text-xs text-zinc-400 uppercase tracking-widest">Forward Returns (Historical)</div>
+            <div className="grid grid-cols-3 gap-4">
+              {["1d", "3d", "7d"].map((horizon) => {
+                const fr = data.forward_returns?.[horizon];
+                if (!fr) return null;
+                return (
+                  <div key={horizon} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+                    <div className="text-xs text-zinc-400 uppercase">{horizon} Forward</div>
+                    <div className={`text-xl font-semibold ${fr.avg >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                      {fr.avg > 0 ? "+" : ""}{fr.avg}%
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div><span className="text-zinc-500">Best: </span><span className="text-emerald-400">+{fr.best}%</span></div>
+                      <div><span className="text-zinc-500">Worst: </span><span className="text-red-400">{fr.worst}%</span></div>
+                      <div><span className="text-zinc-500">Median: </span><span className="text-white">{fr.median}%</span></div>
+                      <div><span className="text-zinc-500">Win%: </span><span className="text-white">{fr.positive_pct}%</span></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Max Adverse Excursion */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Avg MAE</div>
+              <div className="text-xl font-semibold text-red-400">{data.max_adverse_excursion?.avg_pct}%</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Worst MAE</div>
+              <div className="text-xl font-semibold text-red-400">{data.max_adverse_excursion?.worst_pct}%</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">DD &gt;3% Prob</div>
+              <div className="text-xl font-semibold text-yellow-400">{data.max_adverse_excursion?.drawdown_gt_3pct_prob}%</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">DD &gt;5% Prob</div>
+              <div className="text-xl font-semibold text-red-400">{data.max_adverse_excursion?.drawdown_gt_5pct_prob}%</div>
+            </div>
+          </div>
+
+          {/* Target Regime Context */}
+          <div className="border border-white/5 px-4 py-3 text-xs text-zinc-500 flex gap-4 flex-wrap">
+            <span>Matching: <span className={regimeText(data.target_regime?.execution)}>{data.target_regime?.execution}</span></span>
+            <span>Macro: <span className={regimeText(data.target_regime?.macro)}>{data.target_regime?.macro}</span></span>
+            <span>Trend: <span className={regimeText(data.target_regime?.trend)}>{data.target_regime?.trend}</span></span>
+            <span>Price: ${data.current_price?.toLocaleString()}</span>
+          </div>
+        </>
+      )}
+    </div>
+  ) : loading ? (
+    <div className="text-sm text-zinc-400">Searching historical analogs...</div>
+  ) : null;
+
+  if (!isPro) return (
+    <ProGate label="Historical Analogs" consequence="Without historical context, you cannot estimate forward return probabilities." onUnlock={onUnlock}>
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>Historical Analogs</Label>
+      <p className="text-xs text-zinc-400 mb-4">Forward returns and continuation probability from similar regime periods</p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// ARCHETYPE OVERLAY PANEL
+// ─────────────────────────────────────────
+function ArchetypeOverlayPanel({ coin, email, token, isPro, onUnlock }) {
+  const [archetype, setArchetype] = useState("swing");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saveMsg, setSaveMsg] = useState(null);
+
+  const load = useCallback(() => {
+    if (!isPro || !coin) return;
+    setLoading(true);
+    apiFetch(`/archetype-overlay?coin=${coin}&archetype=${archetype}&email=${encodeURIComponent(email || "")}`, token)
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [coin, archetype, email, isPro, token]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const saveArchetype = async () => {
+    if (!email) return;
+    try {
+      await apiFetch("/save-archetype", token, {
+        method: "POST",
+        body: JSON.stringify({ email, archetype }),
+      });
+      setSaveMsg("Archetype saved!");
+      setTimeout(() => setSaveMsg(null), 3000);
+    } catch { setSaveMsg("Save failed"); }
+  };
+
+  const inner = (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        {Object.entries(ARCHETYPES).map(([key, cfg]) => (
+          <button key={key} onClick={() => setArchetype(key)}
+            className={`py-3 px-2 rounded-xl text-xs font-medium border transition-all text-center space-y-0.5 ${
+              archetype === key ? "bg-white text-black border-white" : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"
+            }`}>
+            <div>{cfg.label}</div>
+          </button>
+        ))}
+      </div>
+      <div className="text-xs text-zinc-500">{ARCHETYPES[archetype]?.description}</div>
+
+      {data && !data.error && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Adjusted Exposure</div>
+              <div className={`text-2xl font-semibold ${exposureColor(data.adjusted_exposure)}`}>{data.adjusted_exposure}%</div>
+              <div className="text-xs text-zinc-500">Base: {data.base_exposure}% × {data.exposure_multiplier}</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Max Hold</div>
+              <div className="text-2xl font-semibold text-white">{data.max_hold_days}d</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Stop Width</div>
+              <div className="text-2xl font-semibold text-white">{data.stop_width_multiplier}x</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Alert Now?</div>
+              <div className={`text-2xl font-semibold ${data.should_alert_now ? "text-red-400" : "text-green-400"}`}>
+                {data.should_alert_now ? "YES" : "No"}
+              </div>
+            </div>
+          </div>
+
+          {data.archetype_actions?.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs text-zinc-400 uppercase tracking-widest">Archetype-Specific Actions</div>
+              {data.archetype_actions.map((a, i) => (
+                <div key={i} className="border border-white/5 px-4 py-3 text-sm text-gray-300 flex items-start gap-2">
+                  <span className="text-blue-400 shrink-0">→</span>{a}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="border border-white/5 px-4 py-3 text-xs text-zinc-500 flex gap-4 flex-wrap">
+            <span>Sensitivity: <span className="text-gray-300">{data.alert_sensitivity}</span></span>
+            <span>Timeframe: <span className="text-gray-300">{data.preferred_timeframe}</span></span>
+            <span>Playbook: <span className="text-gray-300">{data.playbook_bias}</span></span>
+          </div>
+        </>
+      )}
+
+      {loading && <div className="text-sm text-zinc-400">Loading archetype overlay...</div>}
+
+      <div className="flex gap-3 items-center">
+        <button onClick={saveArchetype} disabled={!email}
+          className="bg-white text-black px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50">
+          Save as My Archetype
+        </button>
+        {saveMsg && <span className="text-xs text-emerald-400">{saveMsg}</span>}
+      </div>
+    </div>
+  );
+
+  if (!isPro) return (
+    <ProGate label="Trader Archetype Overlay" consequence="Without archetype personalization, exposure recommendations don't match your trading style." onUnlock={onUnlock}>
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>Trader Archetype Overlay</Label>
+      <p className="text-xs text-zinc-400 mb-4">Personalized regime interpretation for your trading style</p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// ALERT THRESHOLDS PANEL
+// ─────────────────────────────────────────
+function AlertThresholdsPanel({ email, token, isPro, onUnlock }) {
+  const [thresholds, setThresholds] = useState([]);
+  const [coin, setCoin] = useState("BTC");
+  const [shiftRisk, setShiftRisk] = useState(70);
+  const [exposureChange, setExposureChange] = useState(10);
+  const [setupQuality, setSetupQuality] = useState(70);
+  const [regimeQuality, setRegimeQuality] = useState(50);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!isPro || !email) return;
+    apiFetch(`/alert-thresholds?email=${encodeURIComponent(email)}`, token)
+      .then((d) => { if (d.thresholds) setThresholds(d.thresholds); })
+      .catch(console.error);
+  }, [email, isPro, token]);
+
+  const save = async () => {
+    if (!email) return;
+    setSaving(true);
+    try {
+      await apiFetch("/alert-thresholds", token, {
+        method: "POST",
+        body: JSON.stringify({
+          email, coin,
+          shift_risk_threshold: shiftRisk,
+          exposure_change_threshold: exposureChange,
+          setup_quality_threshold: setupQuality,
+          regime_quality_threshold: regimeQuality,
+        }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      // Refresh
+      const d = await apiFetch(`/alert-thresholds?email=${encodeURIComponent(email)}`, token);
+      if (d.thresholds) setThresholds(d.thresholds);
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
+  };
+
+  const inner = (
+    <div className="space-y-6">
+      {saved && (
+        <div className="border border-emerald-800 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm">
+          ✓ Alert thresholds saved for {coin}.
+        </div>
+      )}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400">Coin</div>
+          <select value={coin} onChange={(e) => setCoin(e.target.value)}
+            className="w-full bg-zinc-950 border border-zinc-700 text-white px-3 py-2.5 rounded-xl text-sm">
+            {SUPPORTED_COINS.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        {[
+          { l: "Shift Risk ≥", v: shiftRisk, s: setShiftRisk },
+          { l: "Exposure Δ ≥", v: exposureChange, s: setExposureChange },
+          { l: "Setup Quality ≥", v: setupQuality, s: setSetupQuality },
+          { l: "Regime Quality ≤", v: regimeQuality, s: setRegimeQuality },
+        ].map(({ l, v, s }) => (
+          <div key={l} className="space-y-2">
+            <div className="text-xs text-zinc-400">{l}</div>
+            <input type="number" value={v} onChange={(e) => s(Number(e.target.value))} min={0} max={100}
+              className="w-full bg-zinc-950 border border-zinc-700 text-white px-3 py-2.5 rounded-xl text-sm" />
+          </div>
+        ))}
+      </div>
+      <button onClick={save} disabled={saving || !email}
+        className="bg-white text-black px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50">
+        {saving ? "Saving..." : "Save Thresholds"}
+      </button>
+
+      {thresholds.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-400 uppercase tracking-widest">Current Thresholds</div>
+          <div className="space-y-1">
+            {thresholds.map((t, i) => (
+              <div key={i} className="border border-white/5 px-4 py-2.5 text-xs flex justify-between items-center">
+                <span className="font-semibold text-white">{t.coin}</span>
+                <div className="flex gap-4 text-zinc-400">
+                  <span>Shift≥{t.shift_risk_threshold}%</span>
+                  <span>ExpΔ≥{t.exposure_change_threshold}%</span>
+                  <span>Setup≥{t.setup_quality_threshold}</span>
+                  <span>Quality≤{t.regime_quality_threshold}</span>
+                  <span className={t.enabled ? "text-emerald-400" : "text-red-400"}>{t.enabled ? "ON" : "OFF"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {!email && <div className="text-xs text-zinc-500">Sign in to configure alert thresholds.</div>}
+    </div>
+  );
+
+  if (!isPro) return (
+    <ProGate label="Dynamic Alert Thresholds" consequence="Without custom alerts, you miss critical regime shifts." onUnlock={onUnlock}>
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>Dynamic Alert Thresholds</Label>
+      <p className="text-xs text-zinc-400 mb-4">Configure per-coin alert triggers for shift risk, setup quality, and more</p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// USER ALERTS INBOX
+// ─────────────────────────────────────────
+function UserAlertsInbox({ email, token, isPro, onUnlock }) {
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPro || !email) return;
+    setLoading(true);
+    apiFetch(`/evaluate-alerts?email=${encodeURIComponent(email)}`, token)
+      .then((d) => { if (d.alerts) setAlerts(d.alerts); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [email, isPro, token]);
+
+  const sevStyle = (s) => {
+    if (s === "high") return "border-red-800 bg-red-950 text-red-300";
+    if (s === "medium") return "border-yellow-800 bg-yellow-950 text-yellow-300";
+    if (s === "positive") return "border-emerald-800 bg-emerald-950 text-emerald-300";
+    return "border-white/5 text-zinc-400";
+  };
+
+  const inner = (
+    <div className="space-y-3">
+      {loading && <div className="text-sm text-zinc-400">Evaluating alerts...</div>}
+      {!loading && alerts.length === 0 && (
+        <div className="border border-emerald-900 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm">
+          ✓ No active alerts. All conditions within thresholds.
+        </div>
+      )}
+      {alerts.map((a, i) => (
+        <div key={i} className={`border rounded-lg p-4 space-y-2 ${sevStyle(a.severity)}`}>
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="text-sm font-semibold">{a.coin} — {a.type?.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</div>
+              <div className="text-xs opacity-80 mt-0.5">{a.message}</div>
+            </div>
+            <span className="text-xs capitalize opacity-60 shrink-0">{a.severity}</span>
+          </div>
+          {a.action && <div className="text-xs opacity-70">→ {a.action}</div>}
+          {a.signals?.length > 0 && (
+            <div className="text-xs opacity-60 space-y-0.5 border-t border-white/10 pt-2">
+              {a.signals.map((s, j) => <div key={j}>• {s}</div>)}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  if (!isPro) return (
+    <ProGate label="Alert Inbox" consequence="Without alert evaluation, you miss actionable regime warnings." onUnlock={onUnlock}>
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>Alert Inbox</Label>
+      <p className="text-xs text-zinc-400 mb-4">Active alerts based on your custom thresholds</p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// PERFORMANCE LOGGER
+// ─────────────────────────────────────────
+function PerformanceLogger({ coin, email, token, isPro, onUnlock }) {
+  const [userExp, setUserExp] = useState(50);
+  const [priceOpen, setPriceOpen] = useState(0);
+  const [priceClose, setPriceClose] = useState(0);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const log = async () => {
+    if (!email || priceOpen <= 0 || priceClose <= 0) return;
+    setLoading(true);
+    try {
+      const d = await apiFetch("/log-performance", token, {
+        method: "POST",
+        body: JSON.stringify({ email, coin, user_exposure_pct: userExp, price_open: priceOpen, price_close: priceClose }),
+      });
+      if (!d.error) setResult(d);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  const inner = (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { l: "Your Exposure %", v: userExp, s: setUserExp },
+          { l: "Entry Price", v: priceOpen, s: setPriceOpen },
+          { l: "Exit Price", v: priceClose, s: setPriceClose },
+        ].map(({ l, v, s }) => (
+          <div key={l} className="space-y-2">
+            <div className="text-xs text-zinc-400">{l}</div>
+            <input type="number" value={v} onChange={(e) => s(Number(e.target.value))}
+              className="w-full bg-zinc-950 border border-zinc-700 text-white px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-zinc-500" />
+          </div>
+        ))}
+        <div className="flex items-end">
+          <button onClick={log} disabled={loading || !email}
+            className="w-full bg-white text-black py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50">
+            {loading ? "Logging..." : "Log Period"}
+          </button>
+        </div>
+      </div>
+      {result && (
+        <div className={`border p-4 text-sm space-y-1 ${result.alpha >= 0 ? "border-emerald-900 bg-emerald-950 text-emerald-300" : "border-red-900 bg-red-950 text-red-300"}`}>
+          <div className="font-semibold">Period logged: {result.price_return > 0 ? "+" : ""}{result.price_return}% price move</div>
+          <div className="text-xs opacity-80">
+            Your return: {result.user_return > 0 ? "+" : ""}{result.user_return}% · Model: {result.model_return > 0 ? "+" : ""}{result.model_return}% · Alpha: {result.alpha > 0 ? "+" : ""}{result.alpha}%
+          </div>
+          {result.discipline_flags?.length > 0 && (
+            <div className="text-xs opacity-60 flex gap-2 flex-wrap pt-1">
+              {result.discipline_flags.map((f, i) => (
+                <span key={i} className="px-2 py-0.5 border border-white/10 rounded-full">{f.replace(/_/g, " ")}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {!email && <div className="text-xs text-zinc-500">Sign in to log performance.</div>}
+    </div>
+  );
+
+  if (!isPro) return (
+    <ProGate label="Performance Logger" consequence="Without logging trades, you cannot measure alpha vs the model." onUnlock={onUnlock}>
+      {inner}
+    </ProGate>
+  );
+  return (
+    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-2">
+      <Label>Performance Logger</Label>
+      <p className="text-xs text-zinc-400 mb-4">Log trade periods to build your performance comparison and edge profile</p>
+      {inner}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// MODEL VERSION BADGE
+// ─────────────────────────────────────────
+function ModelVersionBadge({ version, durationMs }) {
+  if (!version) return null;
+  return (
+    <div className="flex items-center gap-3 text-xs text-zinc-600 border border-white/5 px-4 py-2 rounded-lg">
+      <span>Model v{version}</span>
+      {durationMs && <span>·</span>}
+      {durationMs && <span>Computed in {durationMs}ms</span>}
+      <span>·</span>
+      <span>{new Date().toLocaleTimeString()}</span>
     </div>
   );
 }
