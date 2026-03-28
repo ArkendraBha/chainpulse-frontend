@@ -236,7 +236,7 @@ function ProGate({ label, consequence, children, onUnlock }) {
             onClick={onUnlock}
             className="w-full bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all text-xs font-semibold hover:bg-zinc-100"
           >
-            Unlock — \$39/month
+            Unlock — $39/month
           </button>
           <div className="text-xs text-zinc-700">7-day risk-free · Cancel anytime</div>
         </div>
@@ -345,7 +345,7 @@ function TodaysVerdict({ stack, decision, isPro, onUnlock }) {
               onClick={onUnlock}
               className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2 rounded-xl text-sm font-semibold hover:bg-gray-100 whitespace-nowrap"
             >
-              Unlock Pro — \$39/mo
+              Unlock Pro — $39/mo
             </button>
           )}
         </div>
@@ -373,7 +373,7 @@ function FreeTierBanner({ onUnlock }) {
           onClick={onUnlock}
           className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap hover:bg-gray-100 shrink-0"
         >
-          Unlock Full System — \$39/mo
+          Unlock Full System — $39/mo
         </button>
       </div>
     </div>
@@ -1886,7 +1886,7 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
             <div className="text-sm font-medium">Survival Curve</div>
             <div className="text-xs text-zinc-400 max-w-xs">Without survival modeling, you cannot quantify regime decay probability.</div>
             <button className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-4 py-2.5 rounded-xl text-xs font-semibold">
-              Unlock Pro — \$39/month
+              Unlock Pro — $39/month
             </button>
           </div>
         </div>
@@ -4709,7 +4709,7 @@ function ProIntelligencePreview({ onUnlock }) {
           <p className="text-sm text-zinc-500 leading-relaxed">Unlock the full regime intelligence stack</p>
         </div>
         <button onClick={onUnlock} className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2.5 rounded-lg text-sm font-semibold shrink-0 shadow-sm">
-          Unlock Pro — \$39/mo
+          Unlock Pro — $39/mo
         </button>
       </div>
       <div className="relative rounded-lg overflow-hidden">
@@ -4729,7 +4729,7 @@ function ProIntelligencePreview({ onUnlock }) {
           <div className="text-center space-y-3">
             <div className="text-sm text-zinc-400">Full regime intelligence suite</div>
             <button onClick={onUnlock} className="mt-2 bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all text-sm font-semibold hover:bg-zinc-100">
-              Unlock Pro — \$39/month
+              Unlock Pro — $39/month
             </button>
             <div className="text-xs text-zinc-700">7-day risk-free · Cancel anytime</div>
           </div>
@@ -4829,8 +4829,8 @@ function ProModal({ onClose }) {
         </div>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { key: "monthly", label: "Monthly", sub: "\$39/mo", badge: null },
-            { key: "annual", label: "Annual", sub: "\$29/mo · \$348/yr", badge: "SAVE 26%" },
+            { key: "monthly", label: "Monthly", sub: "$39/mo", badge: null },
+            { key: "annual", label: "Annual", sub: "$29/mo · $348/yr", badge: "SAVE 26%" },
           ].map(({ key, label, sub, badge }) => (
             <button key={key} onClick={() => setBillingCycle(key)} className={`py-3 rounded-xl text-sm font-medium border transition-all relative ${billingCycle === key ? "bg-white text-black border-white" : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"}`}>
               {badge && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">{badge}</div>}
@@ -4846,7 +4846,7 @@ function ProModal({ onClose }) {
         </div>
         <div className="space-y-3">
           <button onClick={checkout} disabled={loading} className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all disabled:opacity-50 text-sm shadow-lg">
-            {loading ? "Redirecting..." : billingCycle === "annual" ? "Start Pro — \$348/year" : "Start Pro — \$39/month"}
+            {loading ? "Redirecting..." : billingCycle === "annual" ? "Start Pro — $348/year" : "Start Pro — $39/month"}
           </button>
           <div className="text-center text-zinc-600 text-xs">7-day risk-free evaluation · Cancel anytime · Instant access</div>
         </div>
@@ -5216,10 +5216,10 @@ export default function Dashboard() {
             </div>
             <div className="space-y-2">
               <div className="flex justify-center gap-6 text-sm">
-                <div className="border border-zinc-700 px-5 py-3 space-y-0.5 rounded-xl"><div className="text-white font-semibold">\$39 / month</div><div className="text-xs text-zinc-500">Billed monthly</div></div>
+                <div className="border border-zinc-700 px-5 py-3 space-y-0.5 rounded-xl"><div className="text-white font-semibold">$39 / month</div><div className="text-xs text-zinc-500">Billed monthly</div></div>
                 <div className="border border-zinc-500 px-5 py-3 space-y-0.5 relative rounded-xl">
                   <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">Save 26%</div>
-                  <div className="text-white font-semibold">\$29 / month</div><div className="text-xs text-zinc-500">Billed annually — \$348</div>
+                  <div className="text-white font-semibold">$29 / month</div><div className="text-xs text-zinc-500">Billed annually — $348</div>
                 </div>
               </div>
             </div>
