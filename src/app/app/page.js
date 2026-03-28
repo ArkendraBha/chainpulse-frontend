@@ -5057,101 +5057,52 @@ export default function Dashboard() {
           <StatCard label="Execution Score" value={stack.execution?.score?.toFixed(1) ?? "—"} suffix="" color={regimeText(execLabel)} hint="Raw 1H momentum-vol composite" locked={false} />
         </div>
 
-        {/* ── PORTFOLIO HEALTH SCORE ── */}
-        <PortfolioHealthScore stack={stack} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── DECISION ENGINE ── */}
-        <DecisionEnginePanel stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} onDecisionLoaded={setDecision} />
-
-        {/* ── SETUP QUALITY ── */}
-        <SetupQualityPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── OPPORTUNITY RANKING ── */}
-        <OpportunityRankingPanel token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── SCENARIOS ── */}
-        <ScenariosPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── TRADE PLAN ── */}
-        <TradePlanPanel coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── CONSEQUENCE SIMULATOR ── */}
-        <IfNothingPanel stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── PNL IMPACT ESTIMATOR ── */}
-        <PnLImpactEstimator stack={stack} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── DRAWDOWN SIMULATOR ── */}
-        <DrawdownSimulator stack={stack} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── PRO INTELLIGENCE PREVIEW (free users only) ── */}
-        {!isPro && <ProIntelligencePreview onUnlock={onUnlock} />}
-
-        {/* ── INTERNAL DAMAGE ── */}
-        <InternalDamagePanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── EVENT RISK OVERLAY ── */}
-        <EventRiskOverlayPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── STRESS + COUNTDOWN ── */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <StressMeter stack={stack} isPro={isPro} onUnlock={onUnlock} />
-          <RegimeCountdown stack={stack} isPro={isPro} onUnlock={onUnlock} />
-        </div>
-
-        {/* ── QUALITY + CONFIDENCE TREND ── */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <RegimeQualityCard stack={stack} isPro={isPro} onUnlock={onUnlock} />
-          <ConfidenceTrend history={historyData} confidence={confidence} isPro={isPro} onUnlock={onUnlock} />
-        </div>
-
-        {/* ── PLAYBOOK ── */}
-        <RegimePlaybook stack={stack} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── HISTORICAL ANALOGS ── */}
-        <HistoricalAnalogsPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── ARCHETYPE OVERLAY ── */}
-        <ArchetypeOverlayPanel coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── EXPOSURE TRACKER ── */}
-        <ExposureTracker stack={stack} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── RISK PROFILE ── */}
-        <RiskProfilePanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} onProfileSaved={(profile) => console.log("Profile saved:", profile)} />
-
-        {/* ── ALERT THRESHOLDS ── */}
-        <AlertThresholdsPanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── ALERT INBOX ── */}
-        <UserAlertsInbox email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── EXPOSURE LOGGER ── */}
-        <ExposureLogger stack={stack} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── PERFORMANCE LOGGER ── */}
-        <PerformanceLogger coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── STREAK TRACKER ── */}
-        <StreakTracker email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── DISCIPLINE SCORE ── */}
-        <DisciplinePanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── BEHAVIORAL ALPHA ── */}
-        <BehavioralAlphaPanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── MISTAKE REPLAY ── */}
-        <MistakeReplayPanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── PERFORMANCE COMPARISON ── */}
-        <PerformancePanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── EDGE PROFILE ── */}
-        <EdgeProfilePanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-
-        {/* ── WEEKLY REPORT ── */}
-        <WeeklyReportPanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+     {isPro ? (
+  <>
+    <PortfolioHealthScore stack={stack} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <DecisionEnginePanel stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} onDecisionLoaded={setDecision} />
+    <SetupQualityPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <OpportunityRankingPanel token={token} isPro={isPro} onUnlock={onUnlock} />
+    <ScenariosPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <TradePlanPanel coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <IfNothingPanel stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <PnLImpactEstimator stack={stack} isPro={isPro} onUnlock={onUnlock} />
+    <DrawdownSimulator stack={stack} isPro={isPro} onUnlock={onUnlock} />
+    <InternalDamagePanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <EventRiskOverlayPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <div className="grid md:grid-cols-2 gap-4">
+      <StressMeter stack={stack} isPro={isPro} onUnlock={onUnlock} />
+      <RegimeCountdown stack={stack} isPro={isPro} onUnlock={onUnlock} />
+    </div>
+    <div className="grid md:grid-cols-2 gap-4">
+      <RegimeQualityCard stack={stack} isPro={isPro} onUnlock={onUnlock} />
+      <ConfidenceTrend history={historyData} confidence={confidence} isPro={isPro} onUnlock={onUnlock} />
+    </div>
+    <RegimePlaybook stack={stack} isPro={isPro} onUnlock={onUnlock} />
+    <HistoricalAnalogsPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <ArchetypeOverlayPanel coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <ExposureTracker stack={stack} isPro={isPro} onUnlock={onUnlock} />
+    <RiskProfilePanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} onProfileSaved={(p) => console.log("Saved:", p)} />
+    <AlertThresholdsPanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <UserAlertsInbox email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <ExposureLogger stack={stack} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <PerformanceLogger coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <StreakTracker email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <DisciplinePanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <BehavioralAlphaPanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <MistakeReplayPanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <PerformancePanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <EdgeProfilePanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <WeeklyReportPanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+  </>
+) : (
+  <>
+    {/* FREE USERS: only 3 strategic gates instead of 20+ blurred panels */}
+    <DecisionEnginePanel stack={stack} token={token} isPro={false} onUnlock={onUnlock} onDecisionLoaded={setDecision} />
+    <RegimePlaybook stack={stack} isPro={false} onUnlock={onUnlock} />
+    <ProIntelligencePreview onUnlock={onUnlock} />
+  </>
+)}
 
         {/* ── REGIME STACK DETAIL ── */}
         <RegimeStackCard stack={stack} isPro={isPro} onUnlock={onUnlock} />
