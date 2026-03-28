@@ -15,9 +15,6 @@ export default function Pricing() {
   const annualPrice = 29;
   const annualTotal = annualPrice * 12;
 
-<div className="text-xs text-emerald-400 font-medium pt-2">
-  Less than 1% risk misallocation can cost more.
-</div>
 
   const handleCheckout = async () => {
     try {
@@ -38,9 +35,6 @@ export default function Pricing() {
     }
   }
 ;
-<div className="text-xs text-zinc-500">
-  Secure checkout via Stripe · Instant access
-</div>
   return (
     <main className="min-h-screen bg-black text-white px-8 py-24">
       <div className="max-w-5xl mx-auto space-y-16">
@@ -282,7 +276,7 @@ export default function Pricing() {
         </div>
 
         {/* PSYCHOLOGY ANCHOR */}
-        <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 space-y-4 text-sm text-zinc-400 shadow-[0_10p_40px_rgba(0,0,0,0.4)]">
+        <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 space-y-4 text-sm text-zinc-400 shadow-[0_10px_40px_rgba(0,0,0,0.4)]">
           <div className="text-white font-medium">
             The Real Cost of Getting It Wrong
           </div>
