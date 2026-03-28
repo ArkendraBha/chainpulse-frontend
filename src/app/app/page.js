@@ -2633,21 +2633,9 @@ function ExposureLogger({ stack, email, token, isPro, onUnlock }) {
 }
 
 // ─────────────────────────────────────────
-// STREAK TRACKER — FIX: uses token + apiFetch
+// STREAK TRACKER 
 // ─────────────────────────────────────────
-function StreakTracker({ email, token, isPro, onUnlock }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!email || !isPro) return;
-    setLoading(true);
-    apiFetch(`/discipline-score?email=${encodeURIComponent(email)}`, token)
-      .then((d) => { if (!d.error) setData(d); })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [email, isPro, token]);
-
+function StreakTracker({ disciplineData: data, isPro, onUnlock }) {
   const streak = data?.followed ?? 0;
   const total = data?.total ?? 0;
   const streakColor = streak >= 7 ? "text-emerald-400" : streak >= 3 ? "text-yellow-400" : "text-red-400";
@@ -2690,7 +2678,7 @@ function StreakTracker({ email, token, isPro, onUnlock }) {
     <CardShell>
       <Label>Discipline Streak</Label>
       <p className="text-xs text-zinc-400 mb-4">Consecutive sessions where your exposure aligned with regime recommendation</p>
-      {loading ? <div className="text-sm text-zinc-400">Loading streak...</div> : inner}
+      {!data ? <div className="text-sm text-zinc-400">Loading streak...</div> : inner}
     </CardShell>
   );
 }
@@ -2698,19 +2686,7 @@ function StreakTracker({ email, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // DISCIPLINE PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function DisciplinePanel({ email, token, isPro, onUnlock }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!email || !isPro) return;
-    setLoading(true);
-    apiFetch(`/discipline-score?email=${encodeURIComponent(email)}`, token)
-      .then(setData)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [email, isPro, token]);
-
+function DisciplinePanel({ disciplineData: data, isPro, onUnlock }) {
   const scoreColor = (s) => {
     if (s === null) return "text-zinc-400";
     if (s >= 85) return "text-emerald-400";
@@ -2719,7 +2695,6 @@ function DisciplinePanel({ email, token, isPro, onUnlock }) {
     if (s >= 30) return "text-orange-400";
     return "text-red-400";
   };
-
   const inner = data ? (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-6">
@@ -3166,16 +3141,7 @@ function WeeklyReportPanel({ email, coin, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // PORTFOLIO HEALTH SCORE — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function PortfolioHealthScore({ stack, email, token, isPro, onUnlock }) {
-  const [disciplineData, setDisciplineData] = useState(null);
-
-  useEffect(() => {
-    if (!email || !isPro) return;
-    apiFetch(`/discipline-score?email=${encodeURIComponent(email)}`, token)
-      .then((d) => { if (!d.error) setDisciplineData(d); })
-      .catch(console.error);
-  }, [email, isPro, token]);
-
+function PortfolioHealthScore({ stack, disciplineData, isPro, onUnlock }) {
   const regimeQuality = deriveQuality(stack);
   const disciplineScore = disciplineData?.score ?? null;
   const exposureDelta = Math.abs((stack?.exposure ?? 50) - 50);
@@ -4832,7 +4798,12 @@ function ProModal({ onClose, email }) {
             { key: "monthly", label: "Monthly", sub: "$39/mo", badge: null },
             { key: "annual", label: "Annual", sub: "$29/mo · $348/yr", badge: "SAVE 26%" },
           ].map(({ key, label, sub, badge }) => (
-            <button key={key} onClick={() => setBillingCycle(key)} className={`py-3 rounded-xl text-sm font-medium border transition-all relative ${billingCycle === key ? "bg-white text-black border-white" : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"}`}>
+            <button key={key} onClick={() => setBillingCycle(key)} 
+className={["py-3 rounded-xl text-sm font-medium border transition-all relative", 
+billingCycle === key
+    ? "bg-white text-black border-white"
+    : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"
+].join(" ")}
               {badge && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">{badge}</div>}
               <div>{label}</div>
               <div className="text-xs font-normal opacity-70">{sub}</div>
@@ -4879,6 +4850,7 @@ export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const [token, setToken] = useState(null);
   const [email, setEmail] = useState("");
+  const [disciplineData, setDisciplineData] = useState(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -4922,6 +4894,12 @@ export default function Dashboard() {
     const iv = setInterval(() => fetchData(coin, token), REFRESH_MS);
     return () => clearInterval(iv);
   }, [coin, token, fetchData]);
+useEffect(() => {
+  if (!email || !token || !stack || stack.pro_required) return;
+  apiFetch(`/discipline-score?email=${encodeURIComponent(email)}`, token)
+    .then((d) => { if (!d.error) setDisciplineData(d); })
+    .catch(console.error);
+}, [email, token, stack]);
 
   const onUnlock = () => setShowModal(true);
 
@@ -5060,11 +5038,19 @@ export default function Dashboard() {
 
      {isPro ? (
   <>
-    <PortfolioHealthScore stack={stack} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <DecisionEnginePanel stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} onDecisionLoaded={setDecision} />
-    <SetupQualityPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <OpportunityRankingPanel token={token} isPro={isPro} onUnlock={onUnlock} />
-    <ScenariosPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <PortfolioHealthScore stack={stack} disciplineData={disciplineData} isPro={isPro} onUnlock={onUnlock} />
+    <ErrorBoundary>
+  <DecisionEnginePanel stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} onDecisionLoaded={setDecision} />
+</ErrorBoundary>
+    <ErrorBoundary>
+  <SetupQualityPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+</ErrorBoundary>	
+    <ErrorBoundary>
+  <OpportunityRankingPanel token={token} isPro={isPro} onUnlock={onUnlock} />
+</ErrorBoundary>
+    <ErrorBoundary>
+  <ScenariosPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+</ErrorBoundary>
     <TradePlanPanel coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
     <IfNothingPanel stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} />
     <PnLImpactEstimator stack={stack} isPro={isPro} onUnlock={onUnlock} />
@@ -5088,8 +5074,8 @@ export default function Dashboard() {
     <UserAlertsInbox email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
     <ExposureLogger stack={stack} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
     <PerformanceLogger coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <StreakTracker email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <DisciplinePanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
+   <StreakTracker disciplineData={disciplineData} isPro={isPro} onUnlock={onUnlock} />
+<DisciplinePanel disciplineData={disciplineData} isPro={isPro} onUnlock={onUnlock} />
     <BehavioralAlphaPanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
     <MistakeReplayPanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
     <PerformancePanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
@@ -5179,7 +5165,7 @@ export default function Dashboard() {
                 Start Using Full Regime Intelligence
               </button>
               <div className="text-zinc-500 text-xs">7-day risk-free evaluation · Cancel anytime · Instant access</div>
-              <div className="text-gray-700 text-xs">For swing traders managing \$5,000+</div>
+              <div className="text-gray-700 text-xs">For swing traders managing $5,000+</div>
             </div>
           </div>
         )}
@@ -5196,6 +5182,9 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+<div className="text-center text-[10px] text-zinc-700 pt-6 pb-2 border-t border-white/5">
+  ChainPulse is a decision-support tool, not financial advice. Past regime behavior does not predict future results. Trade at your own risk.
+</div>
       </div>
     </main>
   );
