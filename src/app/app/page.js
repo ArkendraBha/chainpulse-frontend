@@ -368,7 +368,7 @@ function ShiftRiskAlert({ shiftRisk, coin, isPro, onUnlock }) {
 }
 
 // ─────────────────────────────────────────
-// REGIME QUALITY RATING
+// REGIME QUALITY CARD
 // ─────────────────────────────────────────
 function deriveQuality(stack) {
   if (!stack) return null;
@@ -479,6 +479,226 @@ function RegimeQualityCard({ stack, isPro, onUnlock }) {
       {inner}
     </div>
   );
+}
+
+/* ═══════════════════════════════════════
+   HISTORICAL ANALOGS PANEL (🆕 NEW)
+   ═══════════════════════════════════════ */
+function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPro || !coin) return;
+    setLoading(true);
+    fetch(`${BACKEND}/historical-analogs?coin=${coin}`, { headers: authHeaders(token) })
+      .then((r) => r.json())
+      .then((d) => { if (!d.error) setData(d); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [coin, isPro, token]);
+
+  const inner = data ? (
+    <div className="space-y-6">
+      {!data.data_sufficient && (
+        <div className="border border-yellow-900 bg-yellow-950 px-4 py-3 text-yellow-300 text-sm">{data.message}</div>
+      )}
+
+      {data.data_sufficient && (
+        <>
+          {/* Continuation stats */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[
+              { l: "Sample Size", v: data.sample_size, s: "" },
+              { l: "Avg Continuation", v: `${data.continuation?.avg_hours?.toFixed(1)}h`, s: "" },
+              { l: "Max Continuation", v: `${data.continuation?.max_hours}h`, s: "" },
+              { l: "24h Cont. Prob", v: data.continuation?.prob_24h_pct, s: "%", c: data.continuation?.prob_24h_pct > 60 ? "text-emerald-400" : "text-yellow-400" },
+              { l: "72h Cont. Prob", v: data.continuation?.prob_72h_pct, s: "%", c: data.continuation?.prob_72h_pct > 40 ? "text-emerald-400" : "text-yellow-400" },
+            ].map(({ l, v, s, c }) => (
+              <div key={l} className="bg-white/2 border border-white/5 rounded-lg p-3 space-y-1">
+                <div className="text-xs text-zinc-400">{l}</div>
+                <div className={`text-xl font-semibold ${c || "text-white"}`}>{v}{s}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Forward returns */}
+          <div className="space-y-2">
+            <div className="text-xs text-zinc-400 uppercase tracking-widest">Forward Return Distribution</div>
+            <div className="grid grid-cols-3 gap-4">
+              {["1d", "3d", "7d"].map((horizon) => {
+                const fr = data.forward_returns?.[horizon];
+                if (!fr) return null;
+                return (
+                  <div key={horizon} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+                    <div className="text-sm font-semibold text-white">{horizon.toUpperCase()} Forward</div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div><span className="text-zinc-500">Avg: </span><span className={fr.avg >= 0 ? "text-emerald-400" : "text-red-400"}>{fr.avg > 0 ? "+" : ""}{fr.avg}%</span></div>
+                      <div><span className="text-zinc-500">Median: </span><span className="text-white">{fr.median}%</span></div>
+                      <div><span className="text-zinc-500">Best: </span><span className="text-emerald-400">+{fr.best}%</span></div>
+                      <div><span className="text-zinc-500">Worst: </span><span className="text-red-400">{fr.worst}%</span></div>
+                    </div>
+                    <div className="text-xs text-zinc-500">Positive: {fr.positive_pct}%</div>
+                    <Bar value={fr.positive_pct} cls={fr.positive_pct > 60 ? "bg-emerald-500" : fr.positive_pct > 45 ? "bg-yellow-500" : "bg-red-500"} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Max adverse excursion */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+              <div className="text-xs text-zinc-400 uppercase tracking-widest">Max Adverse Excursion</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><div className="text-xs text-zinc-500">Average MAE</div><div className="text-xl font-semibold text-red-400">{data.max_adverse_excursion?.avg_pct}%</div></div>
+                <div><div className="text-xs text-zinc-500">Worst MAE</div><div className="text-xl font-semibold text-red-400">{data.max_adverse_excursion?.worst_pct}%</div></div>
+              </div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+              <div className="text-xs text-zinc-400 uppercase tracking-widest">Drawdown Probability</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><div className="text-xs text-zinc-500">&gt;3% Drawdown</div><div className="text-xl font-semibold text-orange-400">{data.max_adverse_excursion?.drawdown_gt_3pct_prob}%</div></div>
+                <div><div className="text-xs text-zinc-500">&gt;5% Drawdown</div><div className="text-xl font-semibold text-red-400">{data.max_adverse_excursion?.drawdown_gt_5pct_prob}%</div></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Matching periods preview */}
+          {data.matching_periods?.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs text-zinc-400 uppercase tracking-widest">Recent Matching Periods (top 5)</div>
+              <div className="space-y-1">
+                {data.matching_periods.slice(0, 5).map((mp, i) => (
+                  <div key={i} className="flex items-center justify-between border border-white/5 px-4 py-2 text-xs">
+                    <span className="text-zinc-400">{mp.date}</span>
+                    <span className={regimeText(mp.label)}>{mp.label}</span>
+                    <span className="text-white">Score: {mp.score?.toFixed(1)}</span>
+                    <span className="text-zinc-500">Continued: {mp.continuation_hours}h</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  ) : loading ? (
+    <div className="text-sm text-zinc-400">Searching historical analogs...</div>
+  ) : (
+    <div className="text-sm text-zinc-400">No analog data available</div>
+  );
+
+  if (!isPro) return <ProGate label="Historical Analogs" consequence="Without historical analogs, you have no statistical context for current regime conditions." onUnlock={onUnlock}>{inner}</ProGate>;
+  return <CardShell><Label>Historical Analogs</Label><p className="text-xs text-zinc-400 mb-4">Forward return statistics from similar historical regime conditions</p>{inner}</CardShell>;
+}
+
+/* ═══════════════════════════════════════
+   ARCHETYPE SELECTOR PANEL (🆕 NEW)
+   ═══════════════════════════════════════ */
+function ArchetypeSelectorPanel({ coin, email, token, isPro, onUnlock }) {
+  const [selectedArchetype, setSelectedArchetype] = useState("swing");
+  const [overlay, setOverlay] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const fetchOverlay = useCallback(async (arch) => {
+    if (!isPro) return;
+    setLoading(true);
+    try {
+      const emailParam = email ? `&email=${encodeURIComponent(email)}` : "";
+      const res = await fetch(`${BACKEND}/archetype-overlay?coin=${coin}&archetype=${arch}${emailParam}`, { headers: authHeaders(token) });
+      const d = await res.json();
+      if (!d.error) setOverlay(d);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  }, [coin, email, token, isPro]);
+
+  useEffect(() => { fetchOverlay(selectedArchetype); }, [selectedArchetype, fetchOverlay]);
+
+  const saveArchetype = async () => {
+    if (!email || !isPro) return;
+    setSaving(true);
+    try {
+      await fetch(`${BACKEND}/save-archetype`, {
+        method: "POST",
+        headers: authHeaders(token),
+        body: JSON.stringify({ email, archetype: selectedArchetype }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
+  };
+
+  const inner = (
+    <div className="space-y-6">
+      {/* Archetype selector */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        {Object.entries(ARCHETYPE_CONFIG).map(([key, cfg]) => (
+          <button key={key} onClick={() => setSelectedArchetype(key)}
+            className={`border p-3 rounded-xl text-left space-y-1 transition-all ${selectedArchetype === key ? "border-white bg-white/5" : "border-white/5 hover:border-zinc-600"}`}>
+            <div className="text-sm font-semibold text-white">{cfg.label}</div>
+            <div className="text-xs text-zinc-500 line-clamp-2">{cfg.description}</div>
+          </button>
+        ))}
+      </div>
+
+      {saved && <div className="border border-emerald-800 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm">✓ Archetype saved. Exposure recommendations personalised.</div>}
+
+      {/* Overlay data */}
+      {loading ? (
+        <div className="text-sm text-zinc-400">Loading archetype overlay...</div>
+      ) : overlay ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Base Exposure</div>
+              <div className={`text-xl font-semibold ${exposureColor(overlay.base_exposure)}`}>{overlay.base_exposure}%</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Adjusted Exposure</div>
+              <div className={`text-xl font-semibold ${exposureColor(overlay.adjusted_exposure)}`}>{overlay.adjusted_exposure}%</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Alert Sensitivity</div>
+              <div className="text-xl font-semibold text-white capitalize">{overlay.alert_sensitivity}</div>
+            </div>
+            <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
+              <div className="text-xs text-zinc-400">Should Alert?</div>
+              <div className={`text-xl font-semibold ${overlay.should_alert_now ? "text-red-400" : "text-emerald-400"}`}>{overlay.should_alert_now ? "Yes ⚠" : "No"}</div>
+            </div>
+          </div>
+
+          {overlay.archetype_actions?.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs text-zinc-400 uppercase tracking-widest">Archetype-Specific Actions</div>
+              {overlay.archetype_actions.map((a, i) => (
+                <div key={i} className="text-sm text-gray-300 flex items-start gap-2"><span className="text-blue-400 shrink-0">→</span>{a}</div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-3 text-xs text-zinc-500">
+            <span>Preferred TF: {overlay.preferred_timeframe}</span>
+            <span>Max Hold: {overlay.max_hold_days}d</span>
+            <span>Stop Width: {overlay.stop_width_multiplier}x</span>
+            <span>Playbook: {overlay.playbook_bias}</span>
+          </div>
+
+          {email && (
+            <button onClick={saveArchetype} disabled={saving} className="bg-white text-black px-6 py-3 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50">
+              {saving ? "Saving..." : `Save ${ARCHETYPE_CONFIG[selectedArchetype]?.label} as My Archetype`}
+            </button>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+
+  if (!isPro) return <ProGate label="Trader Archetype" consequence="Without archetype personalisation, exposure recommendations are generic." onUnlock={onUnlock}>{inner}</ProGate>;
+  return <CardShell><Label>Trader Archetype</Label><p className="text-xs text-zinc-400 mb-4">Personalise your experience — exposure, alerts, and actions adapted to your trading style</p>{inner}</CardShell>;
 }
 
 // ─────────────────────────────────────────
