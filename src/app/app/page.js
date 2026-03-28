@@ -1,4 +1,5 @@
 "use client";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   AreaChart, Area, LineChart, Line, RadialBarChart, RadialBar,
@@ -5097,7 +5098,7 @@ export default function Dashboard() {
   </>
 ) : (
   <>
-    {/* FREE USERS: only 3 strategic gates instead of 20+ blurred panels */}
+    {/* FREE USERS: only 3 strategic gates */}
     <DecisionEnginePanel stack={stack} token={token} isPro={false} onUnlock={onUnlock} onDecisionLoaded={setDecision} />
     <RegimePlaybook stack={stack} isPro={false} onUnlock={onUnlock} />
     <ProIntelligencePreview onUnlock={onUnlock} />
