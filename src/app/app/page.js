@@ -70,6 +70,13 @@ function gradeColor(g) {
   return "text-red-400";
 }
 
+function damageColor(score) {
+  if (score >= 70) return "text-red-400";
+  if (score >= 50) return "text-orange-400";
+  if (score >= 30) return "text-yellow-400";
+  return "text-green-400";
+}
+
 // ─────────────────────────────────────────
 // PLAYBOOK DATA
 // ─────────────────────────────────────────
@@ -140,6 +147,15 @@ const PLAYBOOKS = {
     avoid: ["Catching falling knives", "Any leveraged long exposure", "Averaging down"],
     context: "Strong risk-off has the highest historical drawdown for buy-and-hold. Cash outperforms.",
   },
+};
+
+
+const ARCHETYPES = {
+  swing: { label: "Swing Trader", description: "Holds positions for days to weeks." },
+  position: { label: "Position Trader", description: "Longer-term conviction trades. Macro regime driven." },
+  spot_allocator: { label: "Spot Allocator", description: "DCA-oriented. Uses regime data for timing." },
+  tactical: { label: "Tactical De-risker", description: "Active risk management. Quick exposure adjustments." },
+  leverage: { label: "Leverage Trader", description: "Uses leverage. Tightest risk controls needed." },
 };
 
 // ─────────────────────────────────────────
