@@ -34,6 +34,13 @@ async function apiFetch(path, token, opts = {}) {
       ...(opts.headers || {}),
     },
   });
+  if (res.status === 401 || res.status === 403) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cp_token");
+      window.location.href = "/pricing?expired=true";
+    }
+    throw new Error("Session expired");
+  }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
