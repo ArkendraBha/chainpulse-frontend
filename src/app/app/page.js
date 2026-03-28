@@ -3632,15 +3632,14 @@ function PerformanceLogger({ coin, email, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // MODEL VERSION BADGE
 // ─────────────────────────────────────────
-function ModelVersionBadge({ version, durationMs }) {
+function ModelVersionBadge({ version, durationMs, lastUpdated }) {
   if (!version) return null;
   return (
     <div className="flex items-center gap-3 text-xs text-zinc-600 border border-white/5 px-4 py-2 rounded-lg">
       <span>Model v{version}</span>
-      {durationMs && <span>·</span>}
-      {durationMs && <span>Computed in {durationMs}ms</span>}
+      {durationMs && <><span>·</span><span>Computed in {durationMs}ms</span></>}
       <span>·</span>
-      <span>{new Date().toLocaleTimeString()}</span>
+      <span>{lastUpdated ? lastUpdated.toLocaleTimeString() : new Date().toLocaleTimeString()}</span>
     </div>
   );
 }
@@ -4972,7 +4971,7 @@ export default function Dashboard() {
         )}
 
         {/* ── Model Version Badge ── */}
-        <ModelVersionBadge version={stack.model_version} durationMs={stack.computation_ms} />
+        <ModelVersionBadge version={stack.model_version} durationMs={stack.computation_ms} lastUpdated={lastUpdated} />
 
         {/* ── TODAY'S VERDICT ── */}
         <TodaysVerdict stack={stack} decision={decision} isPro={isPro} onUnlock={onUnlock} />
