@@ -4787,27 +4787,20 @@ function ProModal({ onClose, email }) {
       <div className="bg-zinc-950 border border-white/8 rounded-2xl max-w-md w-full p-8 space-y-6 relative shadow-2xl shadow-black/50">
         <button onClick={onClose} className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-        </button>
-        <div className="space-y-2 pr-6">
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /><Label>ChainPulse Pro</Label></div>
-          <h2 className="text-2xl font-semibold leading-tight tracking-tight">Trade with a systematic risk framework</h2>
-          <p className="text-zinc-500 text-sm leading-relaxed">Survival modeling, hazard rate, and a daily directive — so you always know your exposure.</p>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { key: "monthly", label: "Monthly", sub: "$39/mo", badge: null },
-            { key: "annual", label: "Annual", sub: "$29/mo · $348/yr", badge: "SAVE 26%" },
-          ].map(({ key, label, sub, badge }) => (
-            <button key={key} onClick={() => setBillingCycle(key)} 
-className={["py-3 rounded-xl text-sm font-medium border transition-all relative", 
-billingCycle === key
-    ? "bg-white text-black border-white"
-    : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"
-].join(" ")}
-              {badge && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">{badge}</div>}
-              <div>{label}</div>
-              <div className="text-xs font-normal opacity-70">{sub}</div>
-            </button>
+        <button
+  key={key}
+  onClick={() => setBillingCycle(key)}
+  className={[
+    "py-3 rounded-xl text-sm font-medium border transition-all relative",
+    billingCycle === key
+      ? "bg-white text-black border-white"
+      : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"
+  ].join(" ")}
+>
+  {badge && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">{badge}</div>}
+  <div>{label}</div>
+  <div className="text-xs font-normal opacity-70">{sub}</div>
+</button>
           ))}
         </div>
         <div className="bg-white/2 border border-white/5 rounded-xl p-5 space-y-3">
