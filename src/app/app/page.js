@@ -4798,7 +4798,7 @@ function TodayPanel({ stack, decision, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // PRO MODAL
 // ─────────────────────────────────────────
-function ProModal({ onClose }) {
+function ProModal({ onClose, email }) {
   const [billingCycle, setBillingCycle] = useState("annual");
   const [loading, setLoading] = useState(false);
 
@@ -4957,7 +4957,7 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      {showModal && <ProModal onClose={() => setShowModal(false)} />}
+      {showModal && <ProModal onClose={() => setShowModal(false)} email={email} />}
 
       {/* ── SITE HEADER (replaces inline header) ── */}
       <SiteHeader coin={coin} onCoinSelect={setCoin} isPro={isPro} onUnlock={onUnlock} />
