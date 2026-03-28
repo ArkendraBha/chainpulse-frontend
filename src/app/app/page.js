@@ -4511,26 +4511,28 @@ function LivePriceTicker({ activeCoin, onCoinSelect }) {
   const [prev, setPrev] = useState({});
 
   useEffect(() => {
-    const fetchPrices = async () => {
-      try {
-        const symbols = SUPPORTED_COINS.map((c) => `${c}USDT`);
-        const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`);
-        const data = await res.json();
-        const p = {}, ch = {};
-        data.forEach((item) => {
-          const coin = item.symbol.replace("USDT", "");
-          p[coin] = parseFloat(item.lastPrice);
-          ch[coin] = parseFloat(item.priceChangePercent);
-        });
-        setPrev(prices);
-        setPrices(p);
-        setChanges(ch);
-      } catch (err) { console.error("Price fetch error:", err); }
-    };
-    fetchPrices();
-    const iv = setInterval(fetchPrices, 30_000);
-    return () => clearInterval(iv);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const fetchPrices = async () => {
+    try {
+      const symbols = SUPPORTED_COINS.map((c) => `${c}USDT`);
+      const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`);
+      const data = await res.json();
+      const p = {}, ch = {};
+      data.forEach((item) => {
+        const coin = item.symbol.replace("USDT", "");
+        p[coin] = parseFloat(item.lastPrice);
+        ch[coin] = parseFloat(item.priceChangePercent);
+      });
+      setPrices((current) => {
+        setPrev(current);  // ← captures actual previous
+        return p;
+      });
+      setChanges(ch);
+    } catch (err) { console.error("Price fetch error:", err); }
+  };
+  fetchPrices();
+  const iv = setInterval(fetchPrices, 30_000);
+  return () => clearInterval(iv);
+}, []);
 
   const fmt = (price) => {
     if (!price) return "—";
