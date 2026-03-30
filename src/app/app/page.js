@@ -2809,8 +2809,7 @@ function DisciplinePanel({ disciplineData: data, isPro, onUnlock }) {
     </div>
   ) : (
     <div className="text-sm text-zinc-400">No data yet. Log your exposure to start building your discipline score.</div>
-);
-    <div className="text-sm text-zinc-400">No data yet. Log your exposure to start building your discipline score.</div>
+
   );
 
   if (!isPro)
@@ -4836,9 +4835,79 @@ function TodayPanel({ stack, decision, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // PRO MODAL
 // ─────────────────────────────────────────
+// ─────────────────────────────────────────
+// PRO MODAL — MULTI-TIER
+// ─────────────────────────────────────────
 function ProModal({ onClose, email }) {
+  const [selectedTier, setSelectedTier] = useState("pro");
   const [billingCycle, setBillingCycle] = useState("annual");
   const [loading, setLoading] = useState(false);
+
+  const tiers = {
+    essential: {
+      name: "Essential",
+      monthlyPrice: 39,
+      annualPrice: 29,
+      annualTotal: 348,
+      badge: null,
+      color: "text-blue-400",
+      borderActive: "border-blue-500",
+      features: [
+        "Full regime stack (all timeframes)",
+        "Exposure guidance — regime-adjusted sizing",
+        "Shift risk warnings",
+        "Hazard assessment",
+        "Playbook recommendations",
+        "Survival curve",
+        "Decision engine directive",
+      ],
+      description: "Complete regime intelligence for disciplined traders.",
+    },
+    pro: {
+      name: "Pro",
+      monthlyPrice: 79,
+      annualPrice: 59,
+      annualTotal: 708,
+      badge: "MOST POPULAR",
+      color: "text-emerald-400",
+      borderActive: "border-emerald-500",
+      features: [
+        "Everything in Essential",
+        "Setup quality scoring + entry zones",
+        "Probabilistic scenarios (Bull/Base/Bear)",
+        "Internal damage monitor",
+        "Behavioral alpha leak detection",
+        "Trade plan generator with tranches",
+        "Historical analog matching",
+        "PnL impact estimator",
+        "Drawdown simulator",
+        "Mistake replay engine",
+      ],
+      description: "Full analytical suite for serious traders.",
+    },
+    institutional: {
+      name: "Institutional",
+      monthlyPrice: 149,
+      annualPrice: 119,
+      annualTotal: 1428,
+      badge: null,
+      color: "text-purple-400",
+      borderActive: "border-purple-500",
+      features: [
+        "Everything in Pro",
+        "API access for custom integrations",
+        "Custom alert thresholds per coin",
+        "Archetype personalization",
+        "Priority alert delivery",
+        "Webhook integrations (coming soon)",
+      ],
+      description: "For power users and teams who need API access.",
+    },
+  };
+
+  const tier = tiers[selectedTier];
+  const price = billingCycle === "annual" ? tier.annualPrice : tier.monthlyPrice;
+  const savingsPct = Math.round((1 - tier.annualPrice / tier.monthlyPrice) * 100);
 
   const checkout = async () => {
     setLoading(true);
@@ -4848,30 +4917,55 @@ function ProModal({ onClose, email }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           billing_cycle: billingCycle,
+          tier: selectedTier,
           email: email || undefined,
         }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center px-4 py-8 overflow-y-auto">
-      <div className="bg-zinc-950 border border-white/8 rounded-2xl max-w-md w-full p-8 space-y-6 relative shadow-2xl shadow-black/50">
-        <button onClick={onClose} className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+      <div className="bg-zinc-950 border border-white/8 rounded-2xl max-w-2xl w-full p-8 space-y-6 relative shadow-2xl shadow-black/50">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
+
+        {/* Header */}
         <div className="space-y-2 pr-6">
-          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /><Label>ChainPulse Pro</Label></div>
-          <h2 className="text-2xl font-semibold leading-tight tracking-tight">Trade with a systematic risk framework</h2>
-          <p className="text-zinc-500 text-sm leading-relaxed">Survival modeling, hazard rate, and a daily directive — so you always know your exposure.</p>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <Label>ChainPulse Pro</Label>
+          </div>
+          <h2 className="text-2xl font-semibold leading-tight tracking-tight">
+            Choose your edge
+          </h2>
+          <p className="text-zinc-500 text-sm leading-relaxed">
+            Institutional-grade regime intelligence for every level of trader.
+          </p>
         </div>
+
+        {/* Billing toggle */}
         <div className="grid grid-cols-2 gap-2">
           {[
-            { key: "monthly", label: "Monthly", sub: "$39/mo", badge: null },
-            { key: "annual", label: "Annual", sub: "$29/mo · $348/yr", badge: "SAVE 26%" },
+            { key: "monthly", label: "Monthly", sub: `
+$$
+{tier.monthlyPrice}/mo` },
+            { key: "annual", label: "Annual", sub: `
+$$
+{tier.annualPrice}/mo`, badge: `SAVE ${savingsPct}%` },
           ].map(({ key, label, sub, badge }) => (
             <button
               key={key}
@@ -4880,7 +4974,7 @@ function ProModal({ onClose, email }) {
                 "py-3 rounded-xl text-sm font-medium border transition-all relative",
                 billingCycle === key
                   ? "bg-white text-black border-white"
-                  : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"
+                  : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20",
               ].join(" ")}
             >
               {badge && (
@@ -4893,23 +4987,83 @@ function ProModal({ onClose, email }) {
             </button>
           ))}
         </div>
-        <div className="bg-white/2 border border-white/5 rounded-xl p-5 space-y-3">
-          {["Daily Directive — what to do today", "Exposure % — regime-adjusted sizing", "Survival + Hazard — persistence modeling", "Drawdown + PnL simulation", "Discipline score + mistake replay", "All 7 assets · Real-time alerts"].map((text) => (
-            <div key={text} className="flex items-center gap-3 text-sm text-zinc-300"><span className="text-emerald-400 shrink-0">→</span>{text}</div>
+
+        {/* Tier selector */}
+        <div className="grid grid-cols-3 gap-2">
+          {Object.entries(tiers).map(([key, t]) => (
+            <button
+              key={key}
+              onClick={() => setSelectedTier(key)}
+              className={[
+                "py-4 px-3 rounded-xl border transition-all text-center space-y-1 relative",
+                selectedTier === key
+                  ? `${t.borderActive} bg-white/5`
+                  : "border-white/10 hover:border-white/20",
+              ].join(" ")}
+            >
+              {t.badge && (
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+                  {t.badge}
+                </div>
+              )}
+              <div className={`text-sm font-semibold ${selectedTier === key ? t.color : "text-zinc-400"}`}>
+                {t.name}
+              </div>
+              <div className="text-lg font-bold text-white">
+                ${billingCycle === "annual" ? t.annualPrice : t.monthlyPrice}
+                <span className="text-xs text-zinc-500 font-normal">/mo</span>
+              </div>
+              {billingCycle === "annual" && (
+                <div className="text-[10px] text-zinc-600">${t.annualTotal}/yr</div>
+              )}
+            </button>
           ))}
         </div>
-        <div className="space-y-3">
-          <button onClick={checkout} disabled={loading} className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all disabled:opacity-50 text-sm shadow-lg">
-            {loading ? "Redirecting..." : billingCycle === "annual" ? "Start Pro — $348/year" : "Start Pro — $39/month"}
-          </button>
-          <div className="text-center text-zinc-600 text-xs">7-day risk-free evaluation · Cancel anytime · Instant access</div>
+
+        {/* Tier description */}
+        <div className="text-sm text-zinc-400">{tier.description}</div>
+
+        {/* Feature list */}
+        <div className="bg-white/2 border border-white/5 rounded-xl p-5 space-y-3 max-h-60 overflow-y-auto">
+          {tier.features.map((text) => (
+            <div key={text} className="flex items-center gap-3 text-sm text-zinc-300">
+              <span className="text-emerald-400 shrink-0">→</span>
+              {text}
+            </div>
+          ))}
         </div>
-        <div className="border-t border-white/5 pt-4 text-center"><div className="text-xs text-zinc-600">For swing traders managing $5,000+</div></div>
+
+        {/* Checkout button */}
+        <div className="space-y-3">
+          <button
+            onClick={checkout}
+            disabled={loading}
+            className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all disabled:opacity-50 text-sm shadow-lg"
+          >
+            {loading
+              ? "Redirecting..."
+              : billingCycle === "annual"
+                ? `Start ${tier.name} — 
+$$
+{tier.annualTotal}/year`
+                : `Start ${tier.name} —
+$$
+{tier.monthlyPrice}/month`
+            }
+          </button>
+          <div className="text-center text-zinc-600 text-xs">
+            7-day risk-free evaluation · Cancel anytime · Instant access
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-white/5 pt-4 text-center">
+          <div className="text-xs text-zinc-600">For swing traders managing \$5,000+</div>
+        </div>
       </div>
     </div>
   );
-}
-// ─────────────────────────────────────────
+}// ─────────────────────────────────────────
 // MAIN DASHBOARD
 // ─────────────────────────────────────────
 export default function Dashboard() {
@@ -5237,12 +5391,12 @@ useEffect(() => {
             </div>
             <div className="space-y-2">
               <div className="flex justify-center gap-6 text-sm">
-                <div className="border border-zinc-700 px-5 py-3 space-y-0.5 rounded-xl"><div className="text-white font-semibold">$39 / month</div><div className="text-xs text-zinc-500">Billed monthly</div></div>
-                <div className="border border-zinc-500 px-5 py-3 space-y-0.5 relative rounded-xl">
-                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">Save 26%</div>
-                  <div className="text-white font-semibold">$29 / month</div><div className="text-xs text-zinc-500">Billed annually — $348</div>
-                </div>
-              </div>
+  <div className="border border-zinc-700 px-5 py-3 space-y-0.5 rounded-xl"><div className="text-white font-semibold">$39 / month</div><div className="text-xs text-zinc-500">Billed monthly</div></div>
+  <div className="border border-zinc-500 px-5 py-3 space-y-0.5 relative rounded-xl">
+    <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">Save 26%</div>
+    <div className="text-white font-semibold">$29 / month</div><div className="text-xs text-zinc-500">Billed annually — $348</div>
+  </div>
+</div>
             </div>
             <div className="space-y-2">
               <button className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-10 py-4 rounded-xl font-semibold hover:bg-gray-100 text-sm" onClick={(e) => { e.stopPropagation(); setShowModal(true); }}>
