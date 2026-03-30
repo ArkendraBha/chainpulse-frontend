@@ -28,13 +28,20 @@ function authHeaders(token) {
 
 async function apiFetch(path, token, opts = {}) {
   const url = path.startsWith("http") ? path : `${BACKEND}${path}`;
-  const res = await fetch(url, {
-    ...opts,
-    headers: {
-      ...authHeaders(token),
-      ...(opts.headers || {}),
-    },
-  });
+  let res;
+  try {
+    res = await fetch(url, {
+      ...opts,
+      headers: {
+        ...authHeaders(token),
+        ...(opts.headers || {}),
+      },
+    });
+  } catch (networkError) {
+    console.error("Network error:", networkError);
+    throw new Error("Network error — check your connection");
+  }
+
   if (res.status === 401 || res.status === 403) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("cp_token");
@@ -42,10 +49,14 @@ async function apiFetch(path, token, opts = {}) {
     }
     throw new Error("Session expired");
   }
+
+  if (res.status === 429) {
+    throw new Error("Rate limited — please wait a moment");
+  }
+
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
-
 // ─────────────────────────────────────────
 // COLOUR HELPERS
 // ─────────────────────────────────────────
@@ -287,6 +298,38 @@ function StatCard({ label, value, suffix = "%", color, barCls, hint, locked, con
 }
 
 // ─────────────────────────────────────────
+// SESSION EXPIRY WARNING
+// ─────────────────────────────────────────
+function SessionExpiryWarning({ tokenCreatedAt }) {
+  const [daysRemaining, setDaysRemaining] = useState(null);
+
+  useEffect(() => {
+    if (!tokenCreatedAt) return;
+    const created = new Date(tokenCreatedAt);
+    const expiresAt = new Date(created.getTime() + 90 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const remaining = Math.floor((expiresAt - now) / (1000 * 60 * 60 * 24));
+    setDaysRemaining(remaining);
+  }, [tokenCreatedAt]);
+
+  if (daysRemaining === null || daysRemaining > 14) return null;
+
+  return (
+    <div className="border border-yellow-900 bg-yellow-950/60 px-6 py-4 rounded-2xl">
+      <div className="text-sm text-yellow-200 flex items-center justify-between">
+        <span>⚠ Your session expires in <strong>{daysRemaining} days</strong>.</span>
+        <a
+          href="/pricing?restore=true"
+          className="text-yellow-400 hover:text-yellow-300 underline text-xs ml-4"
+        >
+          Refresh access
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
 // TODAY'S VERDICT
 // ─────────────────────────────────────────
 function TodaysVerdict({ stack, decision, isPro, onUnlock }) {
@@ -410,6 +453,33 @@ function ShiftRiskAlert({ shiftRisk, coin, isPro }) {
           : severity === "elevated"
           ? "Shift risk elevated. Consider reducing exposure and tightening stops."
           : "Early deterioration detected. Monitor closely before adding new positions."}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// STALE DATA BANNER
+// ─────────────────────────────────────────
+function StaleDataBanner({ isStale, dataTimestamp }) {
+  if (!isStale) return null;
+
+  const minutesAgo = dataTimestamp
+    ? Math.floor((Date.now() - new Date(dataTimestamp).getTime()) / 60000)
+    : null;
+
+  return (
+    <div className="border border-orange-900 bg-orange-950/60 px-6 py-4 rounded-2xl flex items-center gap-3">
+      <span className="text-orange-400 text-lg">⚠️</span>
+      <div>
+        <div className="text-sm text-orange-200 font-medium">Live data temporarily unavailable</div>
+        <div className="text-xs text-orange-300/60">
+          {minutesAgo !== null
+            ? `Showing cached data from ${minutesAgo} minutes ago.`
+            : "Showing cached data."
+          }
+          {" "}Market data source may be experiencing issues.
+        </div>
       </div>
     </div>
   );
@@ -2737,9 +2807,9 @@ function DisciplinePanel({ disciplineData: data, isPro, onUnlock }) {
         </div>
       )}
     </div>
-  ) : loading ? (
-    <div className="text-sm text-zinc-400">Loading discipline score...</div>
   ) : (
+    <div className="text-sm text-zinc-400">No data yet. Log your exposure to start building your discipline score.</div>
+);
     <div className="text-sm text-zinc-400">No data yet. Log your exposure to start building your discipline score.</div>
   );
 
@@ -4605,7 +4675,9 @@ function EmailCapture({ onEmailSet }) {
 
   const submit = async () => {
     const email = input.trim().toLowerCase();
-    if (!email || !email.includes("@")) { setError("Enter a valid email address."); return; }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+if (!email || !emailRegex.test(email)) { setError("Enter a valid email address."); return; }
+if (email.length > 254) { setError("Email address is too long."); return; }
     setLoading(true);
     setError(null);
     try {
@@ -4958,6 +5030,7 @@ useEffect(() => {
             <span className="text-emerald-400">✓</span>Pro access activated. Welcome to ChainPulse.
           </div>
         )}
+        <SessionExpiryWarning tokenCreatedAt={stack?.token_created_at} />
 
         {/* ── Model Version Badge ── */}
         <ModelVersionBadge version={stack.model_version} durationMs={stack.computation_ms} lastUpdated={lastUpdated} />
@@ -4973,6 +5046,7 @@ useEffect(() => {
 
         {/* ── Shift risk alert ── */}
         <ShiftRiskAlert shiftRisk={shiftRisk} coin={coin} isPro={isPro} />
+        <StaleDataBanner isStale={stack?.is_stale || stack?.data_source === "cache"} dataTimestamp={stack?.data_timestamp} />
 
         {/* ── WHAT CHANGED (24H) ── */}
         <WhatChangedPanel token={token} isPro={isPro} onUnlock={onUnlock} />
