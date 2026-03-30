@@ -5390,11 +5390,19 @@ useEffect(() => {
               ))}
             </div>
             <div className="space-y-2">
-              <div className="flex justify-center gap-6 text-sm">
-  <div className="border border-zinc-700 px-5 py-3 space-y-0.5 rounded-xl"><div className="text-white font-semibold">$39 / month</div><div className="text-xs text-zinc-500">Billed monthly</div></div>
-  <div className="border border-zinc-500 px-5 py-3 space-y-0.5 relative rounded-xl">
-    <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">Save 26%</div>
-    <div className="text-white font-semibold">$29 / month</div><div className="text-xs text-zinc-500">Billed annually — $348</div>
+              <div className="flex justify-center gap-4 text-sm">
+  <div className="border border-zinc-700 px-5 py-3 space-y-0.5 rounded-xl">
+    <div className="text-blue-400 text-xs font-medium">Essential</div>
+    <div className="text-white font-semibold">$39/mo</div>
+  </div>
+  <div className="border border-emerald-700 px-5 py-3 space-y-0.5 relative rounded-xl">
+    <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">Most Popular</div>
+    <div className="text-emerald-400 text-xs font-medium">Pro</div>
+    <div className="text-white font-semibold">$79/mo</div>
+  </div>
+  <div className="border border-zinc-700 px-5 py-3 space-y-0.5 rounded-xl">
+    <div className="text-purple-400 text-xs font-medium">Institutional</div>
+    <div className="text-white font-semibold">$149/mo</div>
   </div>
 </div>
             </div>
