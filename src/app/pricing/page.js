@@ -274,25 +274,23 @@ export default function Pricing() {
 
                 {/* CTA */}
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCheckout(key);
-                  }}
-                  disabled={loading}
-                  className={[
-                    "w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50",
-                    isSelected
-                      ? "bg-white text-black hover:bg-zinc-100 hover:-translate-y-[1px] shadow-lg"
-                      : "bg-white/5 text-zinc-300 border border-white/10 hover:bg-white/10",
-                  ].join(" ")}
-                >
-                  {loading
-                    ? "Redirecting..."
-                    : `Start ${tier.name} — 
-$$
-{price}/mo`
-                  }
-                </button>
+  onClick={(e) => {
+    e.stopPropagation();
+    handleCheckout(key);
+  }}
+  disabled={loading}
+  className={[
+    "w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50",
+    isSelected
+      ? "bg-white text-black hover:bg-zinc-100 hover:-translate-y-[1px] shadow-lg"
+      : "bg-white/5 text-zinc-300 border border-white/10 hover:bg-white/10",
+  ].join(" ")}
+>
+  {loading
+    ? "Redirecting..."
+    : "Start " + tier.name + " — $" + price + "/mo"
+  }
+</button>
 
                 <div className="text-center text-zinc-600 text-[10px]">
                   7-day free trial · Cancel anytime
@@ -364,19 +362,15 @@ $$
           ))}
 
           <button
-            onClick={() => handleCheckout(selectedTier)}
-            disabled={loading}
-            className="w-full bg-white text-black py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl hover:-translate-y-[1px] transition-all disabled:opacity-50"
-          >
-            {loading
-              ? "Redirecting..."
-              : `Start ${TIERS[selectedTier].name} —
-$$
-{
-                  annual ? TIERS[selectedTier].annualPrice : TIERS[selectedTier].monthlyPrice
-                }/month`
-            }
-          </button>
+  onClick={() => handleCheckout(selectedTier)}
+  disabled={loading}
+  className="w-full bg-white text-black py-4 rounded-2xl font-semibold shadow-xl hover:shadow-2xl hover:-translate-y-[1px] transition-all disabled:opacity-50"
+>
+  {loading
+    ? "Redirecting..."
+    : "Start " + TIERS[selectedTier].name + " — $" + (annual ? TIERS[selectedTier].annualPrice : TIERS[selectedTier].monthlyPrice) + "/month"
+  }
+</button>
           <div className="text-center text-zinc-600 text-xs space-y-1">
             <div>7-day risk-free evaluation · Cancel anytime</div>
             <div>Secure checkout via Stripe</div>
@@ -456,8 +450,8 @@ $$
             The Real Cost of Getting It Wrong
           </div>
           <p>
-            Designed for traders managing \$5,000 or more. At that size, one
-            avoided late-stage overexposure event of 3% saves \$150 — nearly
+            Designed for traders managing $5,000 or more. At that size, one
+            avoided late-stage overexposure event of 3% saves $150 — nearly
             two months of Essential or one month of Pro.
           </p>
           <p>
