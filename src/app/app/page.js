@@ -4960,13 +4960,9 @@ function ProModal({ onClose, email }) {
         {/* Billing toggle */}
         <div className="grid grid-cols-2 gap-2">
           {[
-            { key: "monthly", label: "Monthly", sub: `
-$$
-{tier.monthlyPrice}/mo` },
-            { key: "annual", label: "Annual", sub: `
-$$
-{tier.annualPrice}/mo`, badge: `SAVE ${savingsPct}%` },
-          ].map(({ key, label, sub, badge }) => (
+  { key: "monthly", label: "Monthly", sub: "$" + tier.monthlyPrice + "/mo" },
+  { key: "annual", label: "Annual", sub: "$" + tier.annualPrice + "/mo", badge: "SAVE " + savingsPct + "%" },
+].map(({ key, label, sub, badge }) => (
             <button
               key={key}
               onClick={() => setBillingCycle(key)}
@@ -5014,7 +5010,7 @@ $$
                 <span className="text-xs text-zinc-500 font-normal">/mo</span>
               </div>
               {billingCycle === "annual" && (
-                <div className="text-[10px] text-zinc-600">${t.annualTotal}/yr</div>
+                <div className="text-[10px] text-zinc-600">{"$" + t.annualTotal + "/yr"}</div>
               )}
             </button>
           ))}
@@ -5041,15 +5037,11 @@ $$
             className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all disabled:opacity-50 text-sm shadow-lg"
           >
             {loading
-              ? "Redirecting..."
-              : billingCycle === "annual"
-                ? `Start ${tier.name} — 
-$$
-{tier.annualTotal}/year`
-                : `Start ${tier.name} —
-$$
-{tier.monthlyPrice}/month`
-            }
+  ? "Redirecting..."
+  : billingCycle === "annual"
+    ? "Start " + tier.name + " — $" + tier.annualTotal + "/year"
+    : "Start " + tier.name + " — $" + tier.monthlyPrice + "/month"
+}
           </button>
           <div className="text-center text-zinc-600 text-xs">
             7-day risk-free evaluation · Cancel anytime · Instant access
@@ -5058,7 +5050,7 @@ $$
 
         {/* Footer */}
         <div className="border-t border-white/5 pt-4 text-center">
-          <div className="text-xs text-zinc-600">For swing traders managing \$5,000+</div>
+          <div className="text-xs text-zinc-600">For swing traders managing $5,000+</div>
         </div>
       </div>
     </div>
