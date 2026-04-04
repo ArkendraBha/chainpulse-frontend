@@ -1209,7 +1209,7 @@ function ConfidenceTrend({ history, confidence, isPro, onUnlock, requiredTier })
 // ─────────────────────────────────────────
 // REGIME STACK CARD
 // ─────────────────────────────────────────
-function RegimeStackCard({ stack, isPro, onUnlock }) {
+function RegimeStackCard({ stack, isPro, onUnlock, requiredTier }) {
   if (!stack) return null;
   const layers = [
     { label: "Macro", tf: "1D", data: stack.macro },
@@ -5254,13 +5254,13 @@ const isInstitutional = hasTier(activeTier, "institutional");
         <div className="grid md:grid-cols-3 gap-4">
           <CardShell>
             <Label>Exposure Recommendation</Label>
-            {isPro ? (
-              <>
-                <div className={`text-7xl font-semibold ${exposureColor(exposure)}`}>{exposure}%</div>
-                <div className="text-xs text-zinc-400">{alignment >= 80 ? "High conviction" : alignment >= 50 ? "Moderate conviction" : "Low conviction"}</div>
-                <Bar value={exposure} cls={exposure > 60 ? "bg-emerald-500" : exposure > 35 ? "bg-yellow-500" : "bg-red-500"} />
-              </>
-            ) : (
+            {isEssential ? (
+  <>
+    <div className={`text-7xl font-semibold ${exposureColor(exposure)}`}>{exposure}%</div>
+    <div className="text-xs text-zinc-400">{alignment >= 80 ? "High conviction" : alignment >= 50 ? "Moderate conviction" : "Low conviction"}</div>
+    <Bar value={exposure} cls={exposure > 60 ? "bg-emerald-500" : exposure > 35 ? "bg-yellow-500" : "bg-red-500"} />
+  </>
+) : (
               <>
                 <div className="text-7xl font-semibold text-zinc-700 blur-sm select-none cursor-pointer" onClick={onUnlock}>00%</div>
                 <button onClick={onUnlock} className="text-xs text-zinc-500 hover:text-white transition-colors flex items-center gap-1 justify-center"><Lock />Unlock exposure — Pro</button>
@@ -5311,11 +5311,11 @@ const isInstitutional = hasTier(activeTier, "institutional");
 
         {/* ── STATS GRID ── */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <StatCard label="Survival Probability" value={isPro ? survival : null} color={isPro ? riskColor(100 - (survival || 0)) : ""} barCls={isPro ? (survival > 60 ? "bg-green-500" : survival > 40 ? "bg-yellow-500" : "bg-red-500") : ""} hint="Probability current regime continues" locked={!isPro} consequence="Survival probability quantifies regime decay risk." onUnlock={onUnlock} />
-          <StatCard label="Regime Shift Risk" value={isPro ? shiftRisk : null} color={isPro ? riskColor(shiftRisk) : ""} barCls={isPro ? (shiftRisk > 70 ? "bg-red-500" : shiftRisk > 45 ? "bg-yellow-500" : "bg-green-500") : ""} hint="Composite deterioration signal" locked={!isPro} consequence="Shift risk identifies breakdown probability before price moves." onUnlock={onUnlock} />
-          <StatCard label="Hazard Rate" value={isPro ? hazard : null} color={isPro ? riskColor(hazard || 0) : ""} barCls={isPro ? (hazard > 70 ? "bg-red-500" : hazard > 45 ? "bg-yellow-500" : "bg-green-500") : ""} hint="Failure risk vs historical norm" locked={!isPro} consequence="Hazard rate measures how fragile this regime is vs history." onUnlock={onUnlock} />
-          <StatCard label="Macro Coherence" value={isPro ? stack.macro_coherence?.toFixed(1) : null} color={isPro ? ((stack.macro_coherence || 0) > 60 ? "text-emerald-400" : "text-yellow-400") : ""} barCls={isPro ? ((stack.macro_coherence || 0) > 60 ? "bg-emerald-500" : "bg-yellow-500") : ""} hint="1D timeframe signal strength" locked={!isPro} consequence="Coherence measures whether the signal is strong or noisy." onUnlock={onUnlock} />
-          <StatCard label="Strength Percentile" value={isPro ? percentile : null} color="text-blue-400" barCls="bg-blue-500" hint="Relative to historical scores" locked={!isPro} consequence="Percentile rank shows how extreme the current regime is historically." onUnlock={onUnlock} />
+          <StatCard label="Survival Probability" value={isEssential ? survival : null} color={isEssential ? riskColor(100 - (survival || 0)) : ""} barCls={isEssential ? (survival > 60 ? "bg-green-500" : survival > 40 ? "bg-yellow-500" : "bg-red-500") : ""} hint="Probability current regime continues" locked={!isEssential} consequence="Survival probability quantifies regime decay risk." onUnlock={onUnlock} />
+<StatCard label="Regime Shift Risk" value={isEssential ? shiftRisk : null} color={isEssential ? riskColor(shiftRisk) : ""} barCls={isEssential ? (shiftRisk > 70 ? "bg-red-500" : shiftRisk > 45 ? "bg-yellow-500" : "bg-green-500") : ""} hint="Composite deterioration signal" locked={!isEssential} consequence="Shift risk identifies breakdown probability before price moves." onUnlock={onUnlock} />
+<StatCard label="Hazard Rate" value={isEssential ? hazard : null} color={isEssential ? riskColor(hazard || 0) : ""} barCls={isEssential ? (hazard > 70 ? "bg-red-500" : hazard > 45 ? "bg-yellow-500" : "bg-green-500") : ""} hint="Failure risk vs historical norm" locked={!isEssential} consequence="Hazard rate measures how fragile this regime is vs history." onUnlock={onUnlock} />
+<StatCard label="Macro Coherence" value={isEssential ? stack.macro_coherence?.toFixed(1) : null} color={isEssential ? ((stack.macro_coherence || 0) > 60 ? "text-emerald-400" : "text-yellow-400") : ""} barCls={isEssential ? ((stack.macro_coherence || 0) > 60 ? "bg-emerald-500" : "bg-yellow-500") : ""} hint="1D timeframe signal strength" locked={!isEssential} consequence="Coherence measures whether the signal is strong or noisy." onUnlock={onUnlock} />
+<StatCard label="Strength Percentile" value={isEssential ? percentile : null} color="text-blue-400" barCls="bg-blue-500" hint="Relative to historical scores" locked={!isEssential} consequence="Percentile rank shows how extreme the current regime is historically." onUnlock={onUnlock} />
           <StatCard label="Execution Score" value={stack.execution?.score?.toFixed(1) ?? "—"} suffix="" color={regimeText(execLabel)} hint="Raw 1H momentum-vol composite" locked={false} />
         </div>
 
@@ -5386,7 +5386,7 @@ const isInstitutional = hasTier(activeTier, "institutional");
 )}
 
         {/* ── REGIME STACK DETAIL ── */}
-        <RegimeStackCard stack={stack} isPro={isPro} onUnlock={onUnlock} />
+        <RegimeStackCard stack={stack} isPro={isEssential} onUnlock={onUnlock} requiredTier="essential" />
 
         {/* ── CONFIDENCE PANEL ── */}
         <ConfidencePanel confidence={confidence} isPro={isPro} onUnlock={onUnlock} />
@@ -5408,15 +5408,15 @@ const isInstitutional = hasTier(activeTier, "institutional");
 
         {/* ── ADVANCED ANALYTICS — collapsed ── */}
         <AdvancedAnalytics isPro={isPro}>
-          <TransitionMatrix transitions={transitions} isPro={isPro} onUnlock={onUnlock} />
-          <RegimeHeatmap overview={overview} isPro={isPro} onUnlock={onUnlock} />
-          <CorrelationPanel correlation={correlation} isPro={isPro} onUnlock={onUnlock} />
-          <PortfolioAllocator stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} />
-          <BreadthPanel breadth={breadth} />
-          <RegimeMap overview={overview} activeCoin={coin} onSelect={setCoin} />
-          <RegimeTimeline history={historyData} coin={coin} />
-          <RiskEvents events={riskEvents} />
-        </AdvancedAnalytics>
+  <TransitionMatrix transitions={transitions} isPro={isEssential} onUnlock={onUnlock} requiredTier="essential" />
+  <RegimeHeatmap overview={overview} isPro={isEssential} onUnlock={onUnlock} requiredTier="essential" />
+  <CorrelationPanel correlation={correlation} isPro={isEssential} onUnlock={onUnlock} requiredTier="essential" />
+  <PortfolioAllocator stack={stack} token={token} isPro={isEssential} onUnlock={onUnlock} requiredTier="essential" />
+  <BreadthPanel breadth={breadth} />
+  <RegimeMap overview={overview} activeCoin={coin} onSelect={setCoin} />
+  <RegimeTimeline history={historyData} coin={coin} />
+  <RiskEvents events={riskEvents} />
+</AdvancedAnalytics>
 
         {/* ── PRO UPSELL FOOTER ── */}
         {!isPro && (
