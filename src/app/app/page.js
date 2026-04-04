@@ -5223,10 +5223,11 @@ const isInstitutional = hasTier(activeTier, "institutional");
 
         {/* ── Pro success banner ── */}
         {proSuccess && (
-          <div className="border border-emerald-800/60 bg-emerald-950/40 text-emerald-300 px-5 py-3.5 rounded-lg text-sm flex items-center gap-2">
-            <span className="text-emerald-400">✓</span>Pro access activated. Welcome to ChainPulse.
-          </div>
-        )}
+                    <div className="border border-emerald-800/60 bg-emerald-950/40 text-emerald-300 px-5 py-3.5 rounded-lg text-sm flex items-center gap-2">
+    		 <span className="text-emerald-400">✓</span>
+    {activeTier ? tierName(activeTier) + " access activated. Welcome to ChainPulse." : "Pro access activated. Welcome to ChainPulse."}
+  </div>
+)}
         <SessionExpiryWarning tokenCreatedAt={stack?.token_created_at} />
 
         {/* ── Model Version Badge ── */}
@@ -5365,9 +5366,9 @@ const isInstitutional = hasTier(activeTier, "institutional");
   </>
 ) : (
   <>
-    {/* FREE USERS: only 3 strategic gates */}
-    <DecisionEnginePanel stack={stack} token={token} isPro={false} onUnlock={onUnlock} onDecisionLoaded={setDecision} />
-    <RegimePlaybook stack={stack} isPro={false} onUnlock={onUnlock} />
+    {/* FREE USERS: strategic gates showing what they're missing */}
+    <DecisionEnginePanel stack={stack} token={token} isPro={false} onUnlock={onUnlock} onDecisionLoaded={setDecision} requiredTier="essential" />
+    <RegimePlaybook stack={stack} isPro={false} onUnlock={onUnlock} requiredTier="essential" />
     <ProIntelligencePreview onUnlock={onUnlock} />
   </>
 )}
