@@ -112,34 +112,55 @@ const TIERS = {
     ],
   },
   institutional: {
-    name: "Institutional",
-    monthlyPrice: 149,
-    annualPrice: 119,
-    annualTotal: 1428,
-    color: "text-purple-400",
-    borderColor: "border-purple-500",
-    bgGlow: "shadow-purple-500/5",
-    badge: null,
-    description: "For power users and teams who need full customization and API access.",
-    sections: [
-      {
-        title: "Everything in Pro, plus:",
-        features: [],
-      },
-      {
-        title: "Customization & API",
-        features: [
-          "Custom alert thresholds per coin",
-          "Archetype personalization — tailored to your style",
-          "Priority alert delivery",
-          "Portfolio allocator with advanced splits",
-          "Webhook integrations (coming soon)",
-          "REST API access (coming soon)",
-        ],
-      },
-    ],
-  },
-};
+  name: "Institutional",
+  monthlyPrice: 149,
+  annualPrice: 119,
+  annualTotal: 1428,
+  color: "text-purple-400",
+  borderColor: "border-purple-500",
+  bgGlow: "shadow-purple-500/5",
+  badge: null,
+  description: "For power users and teams who need full customization and API access.",
+  sections: [
+    {
+      title: "Everything in Pro, plus:",
+      features: [],
+    },
+    {
+      title: "Customization",
+      features: [
+        "Trader archetype overlay — full style personalization",
+        "Custom per-coin alert thresholds",
+        "Priority alert delivery (1hr cooldown vs 4hr)",
+        "Up to 8 alerts per email (vs 5 on Pro)",
+        "Priority subject line prefix for alerts",
+      ],
+    },
+    {
+      title: "REST API",
+      features: [
+        "Full regime stack for any coin",
+        "Setup quality, scenarios, decision engine",
+        "Internal damage, opportunity ranking, breadth",
+        "1,000 requests per day",
+        "Up to 3 API keys with individual tracking",
+        "API usage monitoring endpoint",
+      ],
+    },
+    {
+      title: "Webhooks",
+      features: [
+        "Regime change notifications",
+        "Shift risk alerts",
+        "Setup quality alerts",
+        "Up to 5 webhook endpoints",
+        "HMAC-SHA256 payload signatures",
+        "Delivery logs with retry status",
+        "Test webhook endpoint",
+      ],
+    },
+  ],
+},
 
 export default function Pricing() {
   const [annual, setAnnual] = useState(false);
@@ -321,15 +342,16 @@ export default function Pricing() {
                     </>
                   )}
                   {key === "institutional" && (
-                    <>
-                      <Feature highlight>Everything in Pro</Feature>
-                      <Feature>Custom alert thresholds per coin</Feature>
-                      <Feature>Archetype personalization</Feature>
-                      <Feature>Priority alert delivery</Feature>
-                      <Feature>API access (coming soon)</Feature>
-                      <Feature>Webhooks (coming soon)</Feature>
-                    </>
-                  )}
+  <>
+    <Feature highlight>Everything in Pro</Feature>
+    <Feature>Custom per-coin alert thresholds</Feature>
+    <Feature>Trader archetype overlay</Feature>
+    <Feature>Priority alert delivery (1hr cooldown)</Feature>
+    <Feature>REST API access (1,000 req/day)</Feature>
+    <Feature>Webhook delivery + HMAC signatures</Feature>
+    <Feature>Up to 3 API keys + 5 webhooks</Feature>
+  </>
+)}
                 </div>
               </div>
             );
@@ -419,10 +441,13 @@ export default function Pricing() {
                 { feat: "Discipline + performance tracking", free: false, essential: false, pro: true, institutional: true },
                 { feat: "Historical analog matching", free: false, essential: false, pro: true, institutional: true },
                 { feat: "Opportunity ranking", free: false, essential: false, pro: true, institutional: true },
-                { feat: "Custom alert thresholds", free: false, essential: false, pro: false, institutional: true },
-                { feat: "Archetype personalization", free: false, essential: false, pro: false, institutional: true },
-                { feat: "Priority alerts", free: false, essential: false, pro: false, institutional: true },
-                { feat: "API access", free: false, essential: false, pro: false, institutional: "Soon" },
+                { feat: "Custom alert thresholds per coin", free: false, essential: false, pro: false, institutional: true },
+{ feat: "Trader archetype overlay", free: false, essential: false, pro: false, institutional: true },
+{ feat: "Priority alert delivery", free: false, essential: false, pro: false, institutional: true },
+{ feat: "REST API access (1,000 req/day)", free: false, essential: false, pro: false, institutional: true },
+{ feat: "Webhook delivery + signatures", free: false, essential: false, pro: false, institutional: true },
+{ feat: "Up to 3 API keys", free: false, essential: false, pro: false, institutional: true },
+{ feat: "Up to 5 webhook endpoints", free: false, essential: false, pro: false, institutional: true },
               ].map((row) => (
                 <tr key={row.feat} className="border-b border-zinc-900/50">
                   <td className="text-zinc-300 py-3 pr-6">{row.feat}</td>
