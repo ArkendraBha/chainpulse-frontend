@@ -27,7 +27,7 @@ function authHeaders(token) {
 }
 
 async function apiFetch(path, token, opts = {}) {
-  const url = path.startsWith("http") ? path : `${BACKEND}${path}`;
+  const url = path.startsWith("http") ? path : BACKEND + path;
   let res;
   try {
     res = await fetch(url, {
@@ -42,7 +42,7 @@ async function apiFetch(path, token, opts = {}) {
     throw new Error("Network error — check your connection");
   }
 
-  if (res.status === 401 || res.status === 403) {
+  if (res.status === 401) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("cp_token");
       window.location.href = "/pricing?expired=true";
@@ -50,13 +50,28 @@ async function apiFetch(path, token, opts = {}) {
     throw new Error("Session expired");
   }
 
+  if (res.status === 403) {
+    let detail = "Upgrade required";
+    try {
+      const body = await res.json();
+      detail = body.detail || detail;
+    } catch {}
+    const err = new Error(detail);
+    err.status = 403;
+    err.requiredTier = detail.includes("institutional") ? "institutional"
+      : detail.includes("pro") ? "pro"
+      : "essential";
+    throw err;
+  }
+
   if (res.status === 429) {
     throw new Error("Rate limited — please wait a moment");
   }
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw new Error("HTTP " + res.status);
   return res.json();
 }
+
 // ─────────────────────────────────────────
 // COLOUR HELPERS
 // ─────────────────────────────────────────
@@ -97,6 +112,22 @@ function damageColor(score) {
   if (score >= 50) return "text-orange-400";
   if (score >= 30) return "text-yellow-400";
   return "text-green-400";
+}
+
+// ─────────────────────────────────────────
+// TIER HELPERS
+// ─────────────────────────────────────────
+const TIER_LEVELS = { free: 0, essential: 1, pro: 2, institutional: 3 };
+
+function hasTier(userTier, requiredTier) {
+  return (TIER_LEVELS[userTier] || 0) >= (TIER_LEVELS[requiredTier] || 0);
+}
+
+function tierName(tier) {
+  if (tier === "essential") return "Essential";
+  if (tier === "pro") return "Pro";
+  if (tier === "institutional") return "Institutional";
+  return "Free";
 }
 
 // ─────────────────────────────────────────
@@ -229,7 +260,14 @@ function Lock() {
 // ─────────────────────────────────────────
 // PRO GATE
 // ─────────────────────────────────────────
-function ProGate({ label, consequence, children, onUnlock }) {
+function ProGate({ label, consequence, children, onUnlock, requiredTier }) {
+  const tierLabel = requiredTier === "institutional" ? "Institutional"
+    : requiredTier === "pro" ? "Pro"
+    : "Essential";
+  const tierPrice = requiredTier === "institutional" ? "$149"
+    : requiredTier === "pro" ? "$79"
+    : "$39";
+
   return (
     <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-4 relative min-h-[160px]">
       <Label>{label}</Label>
@@ -248,7 +286,7 @@ function ProGate({ label, consequence, children, onUnlock }) {
             onClick={onUnlock}
             className="w-full bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all text-xs font-semibold hover:bg-zinc-100"
           >
-            Unlock — $39/month
+            {"Unlock — " + tierLabel + " " + tierPrice + "/month"}
           </button>
           <div className="text-xs text-zinc-700">7-day risk-free · Cancel anytime</div>
         </div>
@@ -5078,20 +5116,28 @@ export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const [token, setToken] = useState(null);
   const [email, setEmail] = useState("");
-  const [disciplineData, setDisciplineData] = useState(null);
+  const [activeTier, setActiveTier] = useState("free");
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get("token");
-    const urlEmail = params.get("email");
-    const successFlag = params.get("success");
-    if (urlToken) { saveToken(urlToken); setToken(urlToken); window.history.replaceState({}, "", "/app"); }
-    else { const stored = getToken(); if (stored) setToken(stored); }
-    if (urlEmail) setEmail(urlEmail);
-    else { const storedEmail = localStorage.getItem("cp_email"); if (storedEmail) setEmail(storedEmail); }
-    if (successFlag === "true") setProSuccess(true);
-  }, []);
+  if (typeof window === "undefined") return;
+  const params = new URLSearchParams(window.location.search);
+  const urlToken = params.get("token");
+  const urlEmail = params.get("email");
+  const successFlag = params.get("success");
+  const urlTier = params.get("tier");
+  if (urlToken) { saveToken(urlToken); setToken(urlToken); }
+  else { const stored = getToken(); if (stored) setToken(stored); }
+  if (urlEmail) setEmail(urlEmail);
+  else { const storedEmail = localStorage.getItem("cp_email"); if (storedEmail) setEmail(storedEmail); }
+  if (successFlag === "true") {
+    setProSuccess(true);
+    if (urlTier) setActiveTier(urlTier);
+  }
+  // Clean URL
+  if (urlToken || successFlag) {
+    window.history.replaceState({}, "", "/app");
+  }
+}, []);
 
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
     try {
@@ -5101,6 +5147,8 @@ export default function Dashboard() {
       if (!res.ok) throw new Error("Fetch failed");
       const data = await res.json();
       setStack(data.stack || null);
+	if (data.stack?.tier) setActiveTier(data.stack.tier);
+	else if (data.tier) setActiveTier(data.tier);
       setLatest(data.latest || null);
       setCurveData(data.curve || []);
       setHistoryData(data.history || []);
@@ -5148,6 +5196,9 @@ useEffect(() => {
   );
 
   const isPro = !stack.pro_required;
+  const isEssential = hasTier(activeTier, "essential");
+  const isProTier = hasTier(activeTier, "pro");
+const isInstitutional = hasTier(activeTier, "institutional");
   const exposure = stack.exposure ?? 0;
   const shiftRisk = stack.shift_risk ?? 0;
   const alignment = stack.alignment ?? 0;
