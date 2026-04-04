@@ -5321,48 +5321,59 @@ const isInstitutional = hasTier(activeTier, "institutional");
      {isPro ? (
   <>
     <PortfolioHealthScore stack={stack} disciplineData={disciplineData} isPro={isPro} onUnlock={onUnlock} />
+    
+    {/* ESSENTIAL TIER — these show for all paid users */}
     <ErrorBoundary>
-  <DecisionEnginePanel stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} onDecisionLoaded={setDecision} />
-</ErrorBoundary>
+      <DecisionEnginePanel stack={stack} token={token} isPro={isEssential} onUnlock={onUnlock} onDecisionLoaded={setDecision} />
+    </ErrorBoundary>
+    
+    {/* PRO TIER — these need Pro or higher */}
     <ErrorBoundary>
-  <SetupQualityPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-</ErrorBoundary>	
+      <SetupQualityPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
+    </ErrorBoundary>
     <ErrorBoundary>
-  <OpportunityRankingPanel token={token} isPro={isPro} onUnlock={onUnlock} />
-</ErrorBoundary>
+      <OpportunityRankingPanel token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
+    </ErrorBoundary>
     <ErrorBoundary>
-  <ScenariosPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-</ErrorBoundary>
-    <TradePlanPanel coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <IfNothingPanel stack={stack} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <PnLImpactEstimator stack={stack} isPro={isPro} onUnlock={onUnlock} />
-    <DrawdownSimulator stack={stack} isPro={isPro} onUnlock={onUnlock} />
-    <InternalDamagePanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <EventRiskOverlayPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+      <ScenariosPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
+    </ErrorBoundary>
+    <TradePlanPanel coin={coin} email={email} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
+    <IfNothingPanel stack={stack} token={token} isPro={isEssential} onUnlock={onUnlock} />
+    <PnLImpactEstimator stack={stack} isPro={isEssential} onUnlock={onUnlock} />
+    <DrawdownSimulator stack={stack} isPro={isEssential} onUnlock={onUnlock} />
+    <InternalDamagePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
+    <EventRiskOverlayPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
+    
     <div className="grid md:grid-cols-2 gap-4">
-      <StressMeter stack={stack} isPro={isPro} onUnlock={onUnlock} />
-      <RegimeCountdown stack={stack} isPro={isPro} onUnlock={onUnlock} />
+      <StressMeter stack={stack} isPro={isEssential} onUnlock={onUnlock} />
+      <RegimeCountdown stack={stack} isPro={isEssential} onUnlock={onUnlock} />
     </div>
     <div className="grid md:grid-cols-2 gap-4">
-      <RegimeQualityCard stack={stack} isPro={isPro} onUnlock={onUnlock} />
-      <ConfidenceTrend history={historyData} confidence={confidence} isPro={isPro} onUnlock={onUnlock} />
+      <RegimeQualityCard stack={stack} isPro={isEssential} onUnlock={onUnlock} />
+      <ConfidenceTrend history={historyData} confidence={confidence} isPro={isEssential} onUnlock={onUnlock} />
     </div>
-    <RegimePlaybook stack={stack} isPro={isPro} onUnlock={onUnlock} />
-    <HistoricalAnalogsPanel coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <ArchetypeOverlayPanel coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <ExposureTracker stack={stack} isPro={isPro} onUnlock={onUnlock} />
-    <RiskProfilePanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} onProfileSaved={(p) => console.log("Saved:", p)} />
-    <AlertThresholdsPanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <UserAlertsInbox email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <ExposureLogger stack={stack} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <PerformanceLogger coin={coin} email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-   <StreakTracker disciplineData={disciplineData} isPro={isPro} onUnlock={onUnlock} />
-<DisciplinePanel disciplineData={disciplineData} isPro={isPro} onUnlock={onUnlock} />
-    <BehavioralAlphaPanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <MistakeReplayPanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <PerformancePanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <EdgeProfilePanel email={email} token={token} isPro={isPro} onUnlock={onUnlock} />
-    <WeeklyReportPanel email={email} coin={coin} token={token} isPro={isPro} onUnlock={onUnlock} />
+    <RegimePlaybook stack={stack} isPro={isEssential} onUnlock={onUnlock} />
+    <HistoricalAnalogsPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
+    
+    {/* INSTITUTIONAL TIER */}
+    <ArchetypeOverlayPanel coin={coin} email={email} token={token} isPro={isInstitutional} onUnlock={onUnlock} requiredTier="institutional" />
+    
+    <ExposureTracker stack={stack} isPro={isEssential} onUnlock={onUnlock} />
+    <RiskProfilePanel email={email} token={token} isPro={isEssential} onUnlock={onUnlock} onProfileSaved={(p) => console.log("Saved:", p)} />
+    
+    {/* INSTITUTIONAL TIER */}
+    <AlertThresholdsPanel email={email} token={token} isPro={isInstitutional} onUnlock={onUnlock} requiredTier="institutional" />
+    
+    <UserAlertsInbox email={email} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
+    <ExposureLogger stack={stack} email={email} token={token} isPro={isEssential} onUnlock={onUnlock} />
+    <PerformanceLogger coin={coin} email={email} token={token} isPro={isEssential} onUnlock={onUnlock} />
+    <StreakTracker disciplineData={disciplineData} isPro={isEssential} onUnlock={onUnlock} />
+    <DisciplinePanel disciplineData={disciplineData} isPro={isEssential} onUnlock={onUnlock} />
+    <BehavioralAlphaPanel email={email} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
+    <MistakeReplayPanel email={email} coin={coin} token={token} isPro={isEssential} onUnlock={onUnlock} />
+    <PerformancePanel email={email} coin={coin} token={token} isPro={isEssential} onUnlock={onUnlock} />
+    <EdgeProfilePanel email={email} token={token} isPro={isEssential} onUnlock={onUnlock} />
+    <WeeklyReportPanel email={email} coin={coin} token={token} isPro={isEssential} onUnlock={onUnlock} />
   </>
 ) : (
   <>
