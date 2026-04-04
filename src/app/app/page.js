@@ -312,8 +312,8 @@ function StatCard({ label, value, suffix = "%", color, barCls, hint, locked, con
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
           <div className="text-center space-y-1 px-3">
             <span className="text-xs text-zinc-400 flex items-center gap-1 justify-center">
-              <Lock />Pro
-            </span>
+  <Lock />Essential
+</span>
             {consequence && (
               <div className="text-xs text-zinc-600 max-w-[140px] text-center leading-relaxed">
                 {consequence}
@@ -424,11 +424,11 @@ function TodaysVerdict({ stack, decision, isPro, onUnlock, requiredTier }) {
             </>
           ) : (
             <button
-              onClick={onUnlock}
-              className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2 rounded-xl text-sm font-semibold hover:bg-gray-100 whitespace-nowrap"
-            >
-              Unlock Pro — $39/mo
-            </button>
+  onClick={onUnlock}
+  className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2 rounded-xl text-sm font-semibold hover:bg-gray-100 whitespace-nowrap"
+>
+  Unlock Essential — $39/mo
+</button>
           )}
         </div>
       </div>
@@ -452,11 +452,11 @@ function FreeTierBanner({ onUnlock }) {
           </div>
         </div>
         <button
-          onClick={onUnlock}
-          className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap hover:bg-gray-100 shrink-0"
-        >
-          Unlock Full System — $39/mo
-        </button>
+  onClick={onUnlock}
+  className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap hover:bg-gray-100 shrink-0"
+>
+  View Plans — Starting at $39/mo
+</button>
       </div>
     </div>
   );
@@ -1255,8 +1255,8 @@ function RegimeStackCard({ stack, isPro, onUnlock, requiredTier }) {
                 <span className="text-zinc-400">Coherence {data.coherence?.toFixed(1)}%</span>
               ) : (
                 <span className="text-gray-700 flex items-center justify-end cursor-pointer" onClick={onUnlock}>
-                  <Lock />Pro
-                </span>
+  <Lock />Essential
+</span>
               )}
             </div>
           </div>
@@ -1996,8 +1996,8 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock, requiredTier }) {
             <div className="text-sm font-medium">Survival Curve</div>
             <div className="text-xs text-zinc-400 max-w-xs">Without survival modeling, you cannot quantify regime decay probability.</div>
             <button className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-4 py-2.5 rounded-xl text-xs font-semibold">
-              Unlock Pro — $39/month
-            </button>
+  Unlock — Essential $39/month
+</button>
           </div>
         </div>
       )}
@@ -4688,7 +4688,7 @@ function SiteHeader({ coin, onCoinSelect, isPro, onUnlock, requiredTier }) {
             {isPro ? (
               <span className="text-xs text-emerald-400 border border-emerald-900/60 bg-emerald-950/40 px-3 py-1.5 rounded-xl">Pro Active</span>
             ) : (
-              <button onClick={onUnlock} className="bg-white text-black text-xs font-semibold px-4 py-2 rounded-lg hover:bg-zinc-100 transition-colors shadow-sm">Go Pro</button>
+              <button onClick={onUnlock} className="bg-white text-black text-xs font-semibold px-4 py-2 rounded-lg hover:bg-zinc-100 transition-colors shadow-sm">View Plans</button>
             )}
           </div>
         </div>
@@ -4785,8 +4785,8 @@ function ProIntelligencePreview({ onUnlock }) {
           <p className="text-sm text-zinc-500 leading-relaxed">Unlock the full regime intelligence stack</p>
         </div>
         <button onClick={onUnlock} className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2.5 rounded-lg text-sm font-semibold shrink-0 shadow-sm">
-          Unlock Pro — $39/mo
-        </button>
+  View Plans — Starting at $39/mo
+</button>
       </div>
       <div className="relative rounded-lg overflow-hidden">
         <div className="blur-md pointer-events-none opacity-40 space-y-3 p-4 bg-white/2 border border-white/5 rounded-lg">
@@ -4805,8 +4805,8 @@ function ProIntelligencePreview({ onUnlock }) {
           <div className="text-center space-y-3">
             <div className="text-sm text-zinc-400">Full regime intelligence suite</div>
             <button onClick={onUnlock} className="mt-2 bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all text-sm font-semibold hover:bg-zinc-100">
-              Unlock Pro — $39/month
-            </button>
+  View Plans — Starting at $39/month
+</button>
             <div className="text-xs text-zinc-700">7-day risk-free · Cancel anytime</div>
           </div>
         </div>
@@ -4862,7 +4862,7 @@ function TodayPanel({ stack, decision, isPro, onUnlock, requiredTier }) {
           {isPro && decision ? (
             <div className="text-lg font-semibold text-white">{decision.directive}</div>
           ) : (
-            <button onClick={onUnlock} className="text-xs text-zinc-500 hover:text-white transition-colors flex items-center gap-1"><Lock />Unlock</button>
+            <button onClick={onUnlock} className="text-xs text-zinc-500 hover:text-white transition-colors flex items-center gap-1"><Lock />Essential</button>
           )}
           <div className="text-xs text-zinc-600">today's action</div>
         </div>
@@ -5263,7 +5263,7 @@ const isInstitutional = hasTier(activeTier, "institutional");
 ) : (
               <>
                 <div className="text-7xl font-semibold text-zinc-700 blur-sm select-none cursor-pointer" onClick={onUnlock}>00%</div>
-                <button onClick={onUnlock} className="text-xs text-zinc-500 hover:text-white transition-colors flex items-center gap-1 justify-center"><Lock />Unlock exposure — Pro</button>
+                <button onClick={onUnlock} className="text-xs text-zinc-500 hover:text-white transition-colors flex items-center gap-1 justify-center"><Lock />Unlock exposure — Essential</button>
                 <Bar value={50} cls="bg-zinc-700" />
               </>
             )}
