@@ -641,7 +641,7 @@ function RegimeQualityCard({ stack, isPro, onUnlock, requiredTier }) {
 // ─────────────────────────────────────────
 // HISTORICAL ANALOGS PANEL
 // ─────────────────────────────────────────
-function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock }) {
+function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -743,7 +743,7 @@ function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Historical Analogs" consequence="Without historical analogs, you have no statistical context for current regime conditions." onUnlock={onUnlock}>
+      <ProGate label="Historical Analogs" consequence="Without historical analogs, you have no statistical context for current regime conditions." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
         {inner}
       </ProGate>
     );
@@ -1476,7 +1476,7 @@ function TransitionMatrix({ transitions, isPro, onUnlock, requiredTier }) {
 // ─────────────────────────────────────────
 // PORTFOLIO ALLOCATOR — FIX: token + authHeaders
 // ─────────────────────────────────────────
-function PortfolioAllocator({ stack, token, isPro, onUnlock }) {
+function PortfolioAllocator({ stack, token, isPro, onUnlock, requiredTier }) {
   const [accountSize, setAccountSize] = useState(10000);
   const [strategyMode, setStrategyMode] = useState("balanced");
   const [allocation, setAllocation] = useState(null);
@@ -1645,7 +1645,7 @@ function CorrelationPanel({ correlation, isPro, onUnlock, requiredTier }) {
 // ─────────────────────────────────────────
 // REGIME HEATMAP
 // ─────────────────────────────────────────
-function RegimeHeatmap({ overview, isPro, onUnlock }) {
+function RegimeHeatmap({ overview, isPro, onUnlock, requiredTier }) {
   function cellStyle(label) {
     if (label === "Strong Risk-On") return "bg-emerald-900/40 text-emerald-400 border-emerald-900/50";
     if (label === "Risk-On") return "bg-green-900/30 text-green-400 border-green-900/40";
@@ -1728,7 +1728,7 @@ function RegimeHeatmap({ overview, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Regime Heatmap" consequence="Heatmap shows regime alignment across all assets simultaneously." onUnlock={onUnlock}>
+      <ProGate label="Regime Heatmap" consequence="Heatmap shows regime alignment across all assets simultaneously." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -1787,7 +1787,7 @@ function RiskEvents({ events }) {
 // ─────────────────────────────────────────
 // REGIME MATURITY
 // ─────────────────────────────────────────
-function RegimeMaturity({ regimeAge, avgDuration, maturityLabel, isPro, onUnlock }) {
+function RegimeMaturity({ regimeAge, avgDuration, maturityLabel, isPro, onUnlock, requiredTier }) {
   const maturityPct = avgDuration > 0 ? Math.min(100, (regimeAge / avgDuration) * 100) : 0;
 
   const phaseColor =
@@ -1829,7 +1829,7 @@ function RegimeMaturity({ regimeAge, avgDuration, maturityLabel, isPro, onUnlock
 
   if (!isPro)
     return (
-      <ProGate label="Regime Maturity" consequence="Regime maturity tells you how much statistical life remains in the current trend." onUnlock={onUnlock}>
+      <ProGate label="Regime Maturity" consequence="Regime maturity tells you how much statistical life remains in the current trend." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -2064,7 +2064,7 @@ function InterpretationPanel({ stack, latest, isPro }) {
 // ─────────────────────────────────────────
 // DECISION ENGINE PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function DecisionEnginePanel({ stack, token, isPro, onUnlock, onDecisionLoaded }) {
+function DecisionEnginePanel({ stack, token, isPro, onUnlock, onDecisionLoaded, requiredTier }) {
   const [decision, setDecision] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -2174,7 +2174,7 @@ function DecisionEnginePanel({ stack, token, isPro, onUnlock, onDecisionLoaded }
 
   if (!isPro)
     return (
-      <ProGate label="Decision Engine" consequence="Without the decision engine, you have no systematic directive for today's session." onUnlock={onUnlock}>
+      <ProGate label="Decision Engine" consequence="Without the decision engine, you have no systematic directive for today's session." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -2190,7 +2190,7 @@ function DecisionEnginePanel({ stack, token, isPro, onUnlock, onDecisionLoaded }
 // ─────────────────────────────────────────
 // IF YOU DO NOTHING PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function IfNothingPanel({ stack, token, isPro, onUnlock }) {
+function IfNothingPanel({ stack, token, isPro, onUnlock, requiredTier }) {
   const [userExposure, setUserExposure] = useState(50);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -2312,7 +2312,7 @@ function IfNothingPanel({ stack, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Consequence Simulator" consequence="See exactly what happens to your portfolio if you ignore regime signals." onUnlock={onUnlock}>
+      <ProGate label="Consequence Simulator" consequence="See exactly what happens to your portfolio if you ignore regime signals." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -2328,7 +2328,7 @@ function IfNothingPanel({ stack, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // PNL IMPACT ESTIMATOR
 // ─────────────────────────────────────────
-function PnLImpactEstimator({ stack, isPro, onUnlock }) {
+function PnLImpactEstimator({ stack, isPro, onUnlock, requiredTier }) {
   const [portfolioSize, setPortfolioSize] = useState(10000);
   const [userExposure, setUserExposure] = useState(50);
   const [result, setResult] = useState(null);
@@ -2449,7 +2449,7 @@ $$
 
   if (!isPro)
     return (
-      <ProGate label="PnL Impact Estimator" consequence="Without PnL modeling you cannot quantify the expected value of your exposure decision." onUnlock={onUnlock}>
+      <ProGate label="PnL Impact Estimator" consequence="Without PnL modeling you cannot quantify the expected value of your exposure decision." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -2465,7 +2465,7 @@ $$
 // ─────────────────────────────────────────
 // DRAWDOWN SIMULATOR
 // ─────────────────────────────────────────
-function DrawdownSimulator({ stack, isPro, onUnlock }) {
+function DrawdownSimulator({ stack, isPro, onUnlock, requiredTier }) {
   const [portfolioSize, setPortfolioSize] = useState(10000);
   const [userExposure, setUserExposure] = useState(50);
   const [result, setResult] = useState(null);
@@ -2563,7 +2563,7 @@ function DrawdownSimulator({ stack, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Drawdown Simulator" consequence="Without drawdown simulation you cannot quantify the real cost of your current exposure." onUnlock={onUnlock}>
+      <ProGate label="Drawdown Simulator" consequence="Without drawdown simulation you cannot quantify the real cost of your current exposure." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -2579,7 +2579,7 @@ function DrawdownSimulator({ stack, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // RISK PROFILE PANEL — FIX: uses token + authHeaders
 // ─────────────────────────────────────────
-function RiskProfilePanel({ email, token, isPro, onUnlock, onProfileSaved }) {
+function RiskProfilePanel({ email, token, isPro, onUnlock, onProfileSaved, requiredTier }) {
   const [drawdown, setDrawdown] = useState(20);
   const [leverage, setLeverage] = useState(1);
   const [holding, setHolding] = useState(10);
@@ -2663,7 +2663,7 @@ function RiskProfilePanel({ email, token, isPro, onUnlock, onProfileSaved }) {
 
   if (!isPro)
     return (
-      <ProGate label="Risk Profile Calibration" consequence="Without a risk profile, exposure recommendations cannot be personalised to your capital." onUnlock={onUnlock}>
+      <ProGate label="Risk Profile Calibration" consequence="Without a risk profile, exposure recommendations cannot be personalised to your capital." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -2679,7 +2679,7 @@ function RiskProfilePanel({ email, token, isPro, onUnlock, onProfileSaved }) {
 // ─────────────────────────────────────────
 // EXPOSURE LOGGER — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function ExposureLogger({ stack, email, token, isPro, onUnlock }) {
+function ExposureLogger({ stack, email, token, isPro, onUnlock, requiredTier }) {
   const [userExposure, setUserExposure] = useState(50);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -2729,7 +2729,7 @@ function ExposureLogger({ stack, email, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Exposure Logger" consequence="Without logging, you cannot build a discipline score or track your performance vs the model." onUnlock={onUnlock}>
+      <ProGate label="Exposure Logger" consequence="Without logging, you cannot build a discipline score or track your performance vs the model." onUnlock={onUnlock}requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -2744,7 +2744,7 @@ function ExposureLogger({ stack, email, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // STREAK TRACKER 
 // ─────────────────────────────────────────
-function StreakTracker({ disciplineData: data, isPro, onUnlock }) {
+function StreakTracker({ disciplineData: data, isPro, onUnlock, requiredTier }) {
   const streak = data?.followed ?? 0;
   const total = data?.total ?? 0;
   const streakColor = streak >= 7 ? "text-emerald-400" : streak >= 3 ? "text-yellow-400" : "text-red-400";
@@ -2779,7 +2779,7 @@ function StreakTracker({ disciplineData: data, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Discipline Streak" consequence="Streak tracking creates daily accountability and reduces impulsive deviation." onUnlock={onUnlock}>
+      <ProGate label="Discipline Streak" consequence="Streak tracking creates daily accountability and reduces impulsive deviation." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -2795,7 +2795,7 @@ function StreakTracker({ disciplineData: data, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // DISCIPLINE PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function DisciplinePanel({ disciplineData: data, isPro, onUnlock }) {
+function DisciplinePanel({ disciplineData: data, isPro, onUnlock, requiredTier }) {
   const scoreColor = (s) => {
     if (s === null) return "text-zinc-400";
     if (s >= 85) return "text-emerald-400";
@@ -2853,7 +2853,7 @@ function DisciplinePanel({ disciplineData: data, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Discipline Score" consequence="Without discipline tracking, you cannot identify the patterns that are costing you money." onUnlock={onUnlock}>
+      <ProGate label="Discipline Score" consequence="Without discipline tracking, you cannot identify the patterns that are costing you money." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -2869,7 +2869,7 @@ function DisciplinePanel({ disciplineData: data, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // MISTAKE REPLAY PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function MistakeReplayPanel({ email, coin, token, isPro, onUnlock }) {
+function MistakeReplayPanel({ email, coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -2935,7 +2935,7 @@ function MistakeReplayPanel({ email, coin, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Mistake Replay Engine" consequence="Mistake replay identifies the exact conditions where your decisions cost you money." onUnlock={onUnlock}>
+      <ProGate label="Mistake Replay Engine" consequence="Mistake replay identifies the exact conditions where your decisions cost you money." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -2951,7 +2951,7 @@ function MistakeReplayPanel({ email, coin, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // PERFORMANCE PANEL — already had token, kept clean
 // ─────────────────────────────────────────
-function PerformancePanel({ email, coin, token, isPro, onUnlock }) {
+function PerformancePanel({ email, coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -3042,7 +3042,7 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Performance Comparison" consequence="Without performance tracking, you cannot measure whether your decisions are adding or destroying alpha." onUnlock={onUnlock}>
+      <ProGate label="Performance Comparison" consequence="Without performance tracking, you cannot measure whether your decisions are adding or destroying alpha." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -3058,7 +3058,7 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // EDGE PROFILE PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function EdgeProfilePanel({ email, token, isPro, onUnlock }) {
+function EdgeProfilePanel({ email, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -3157,7 +3157,7 @@ function EdgeProfilePanel({ email, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Edge Profile" consequence="Without an edge profile you cannot identify which regimes you consistently outperform in." onUnlock={onUnlock}>
+      <ProGate label="Edge Profile" consequence="Without an edge profile you cannot identify which regimes you consistently outperform in." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -3173,7 +3173,7 @@ function EdgeProfilePanel({ email, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // WEEKLY REPORT PANEL — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function WeeklyReportPanel({ email, coin, token, isPro, onUnlock }) {
+function WeeklyReportPanel({ email, coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -3233,7 +3233,7 @@ function WeeklyReportPanel({ email, coin, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Weekly Performance Report" consequence="Weekly reports show whether your discipline is improving or deteriorating over time." onUnlock={onUnlock}>
+      <ProGate label="Weekly Performance Report" consequence="Weekly reports show whether your discipline is improving or deteriorating over time." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -3249,7 +3249,7 @@ function WeeklyReportPanel({ email, coin, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // PORTFOLIO HEALTH SCORE — FIX: uses token + apiFetch
 // ─────────────────────────────────────────
-function PortfolioHealthScore({ stack, disciplineData, isPro, onUnlock }) {
+function PortfolioHealthScore({ stack, disciplineData, isPro, onUnlock, requiredTier }) {
   const regimeQuality = deriveQuality(stack);
   const disciplineScore = disciplineData?.score ?? null;
   const exposureDelta = Math.abs((stack?.exposure ?? 50) - 50);
@@ -3319,7 +3319,7 @@ function PortfolioHealthScore({ stack, disciplineData, isPro, onUnlock }) {
   // ... continuing PortfolioHealthScore
   if (!isPro)
     return (
-      <ProGate label="Portfolio Health Score" consequence="Without a health score you have no single metric to assess your overall trading posture." onUnlock={onUnlock}>
+      <ProGate label="Portfolio Health Score" consequence="Without a health score you have no single metric to assess your overall trading posture." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -3335,7 +3335,7 @@ function PortfolioHealthScore({ stack, disciplineData, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // ARCHETYPE OVERLAY PANEL (consolidated — replaces both old panels)
 // ─────────────────────────────────────────
-function ArchetypeOverlayPanel({ coin, email, token, isPro, onUnlock }) {
+function ArchetypeOverlayPanel({ coin, email, token, isPro, onUnlock, requiredTier }) {
   const [archetype, setArchetype] = useState("swing");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -3441,7 +3441,7 @@ function ArchetypeOverlayPanel({ coin, email, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Trader Archetype Overlay" consequence="Without archetype personalization, exposure recommendations don't match your trading style." onUnlock={onUnlock}>
+      <ProGate label="Trader Archetype Overlay" consequence="Without archetype personalization, exposure recommendations don't match your trading style." onUnlock={onUnlock} requiredTier={requiredTier || "institutional"}>
         {inner}
       </ProGate>
     );
@@ -3457,7 +3457,7 @@ function ArchetypeOverlayPanel({ coin, email, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // ALERT THRESHOLDS PANEL
 // ─────────────────────────────────────────
-function AlertThresholdsPanel({ email, token, isPro, onUnlock }) {
+function AlertThresholdsPanel({ email, token, isPro, onUnlock, requiredTier }) {
   const [thresholds, setThresholds] = useState([]);
   const [coin, setCoin] = useState("BTC");
   const [shiftRisk, setShiftRisk] = useState(70);
@@ -3549,7 +3549,7 @@ function AlertThresholdsPanel({ email, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Dynamic Alert Thresholds" consequence="Without custom alerts, you miss critical regime shifts." onUnlock={onUnlock}>
+      <ProGate label="Dynamic Alert Thresholds" consequence="Without custom alerts, you miss critical regime shifts." onUnlock={onUnlock} requiredTier={requiredTier || "institutional"}>
         {inner}
       </ProGate>
     );
@@ -3565,7 +3565,7 @@ function AlertThresholdsPanel({ email, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // USER ALERTS INBOX
 // ─────────────────────────────────────────
-function UserAlertsInbox({ email, token, isPro, onUnlock }) {
+function UserAlertsInbox({ email, token, isPro, onUnlock, requiredTier }) {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -3615,7 +3615,7 @@ function UserAlertsInbox({ email, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Alert Inbox" consequence="Without alert evaluation, you miss actionable regime warnings." onUnlock={onUnlock}>
+      <ProGate label="Alert Inbox" consequence="Without alert evaluation, you miss actionable regime warnings." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
         {inner}
       </ProGate>
     );
@@ -3631,7 +3631,7 @@ function UserAlertsInbox({ email, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // PERFORMANCE LOGGER
 // ─────────────────────────────────────────
-function PerformanceLogger({ coin, email, token, isPro, onUnlock }) {
+function PerformanceLogger({ coin, email, token, isPro, onUnlock, requiredTier }) {
   const [userExp, setUserExp] = useState(50);
   const [priceOpen, setPriceOpen] = useState(0);
   const [priceClose, setPriceClose] = useState(0);
@@ -3691,7 +3691,7 @@ function PerformanceLogger({ coin, email, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Performance Logger" consequence="Without logging trades, you cannot measure alpha vs the model." onUnlock={onUnlock}>
+      <ProGate label="Performance Logger" consequence="Without logging trades, you cannot measure alpha vs the model." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -3722,7 +3722,7 @@ function ModelVersionBadge({ version, durationMs, lastUpdated }) {
 // ─────────────────────────────────────────
 // SETUP QUALITY PANEL
 // ─────────────────────────────────────────
-function SetupQualityPanel({ coin, token, isPro, onUnlock }) {
+function SetupQualityPanel({ coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -3854,7 +3854,7 @@ function SetupQualityPanel({ coin, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Setup Quality Engine" consequence="Without setup quality, you cannot distinguish good entries from chasing extended moves." onUnlock={onUnlock}>
+      <ProGate label="Setup Quality Engine" consequence="Without setup quality, you cannot distinguish good entries from chasing extended moves." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
         {inner}
       </ProGate>
     );
@@ -3870,7 +3870,7 @@ function SetupQualityPanel({ coin, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // OPPORTUNITY RANKING PANEL
 // ─────────────────────────────────────────
-function OpportunityRankingPanel({ token, isPro, onUnlock }) {
+function OpportunityRankingPanel({ token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -3956,7 +3956,7 @@ function OpportunityRankingPanel({ token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Opportunity Ranking" consequence="Without opportunity ranking, you cannot identify the best risk-adjusted entry across all assets." onUnlock={onUnlock}>
+      <ProGate label="Opportunity Ranking" consequence="Without opportunity ranking, you cannot identify the best risk-adjusted entry across all assets." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
         {inner}
       </ProGate>
     );
@@ -3972,7 +3972,7 @@ function OpportunityRankingPanel({ token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // SCENARIOS PANEL
 // ─────────────────────────────────────────
-function ScenariosPanel({ coin, token, isPro, onUnlock }) {
+function ScenariosPanel({ coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -4054,7 +4054,7 @@ function ScenariosPanel({ coin, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Probabilistic Scenarios" consequence="Without scenario analysis, you have no framework for multiple outcomes." onUnlock={onUnlock}>
+      <ProGate label="Probabilistic Scenarios" consequence="Without scenario analysis, you have no framework for multiple outcomes." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
         {inner}
       </ProGate>
     );
@@ -4070,7 +4070,7 @@ function ScenariosPanel({ coin, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // INTERNAL DAMAGE PANEL
 // ─────────────────────────────────────────
-function InternalDamagePanel({ coin, token, isPro, onUnlock }) {
+function InternalDamagePanel({ coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -4135,7 +4135,7 @@ function InternalDamagePanel({ coin, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Internal Damage Monitor" consequence="Internal damage often precedes visible regime shifts. Without it, you're blindsided." onUnlock={onUnlock}>
+      <ProGate label="Internal Damage Monitor" consequence="Internal damage often precedes visible regime shifts. Without it, you're blindsided." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
         {inner}
       </ProGate>
     );
@@ -4151,7 +4151,7 @@ function InternalDamagePanel({ coin, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // BEHAVIORAL ALPHA PANEL
 // ─────────────────────────────────────────
-function BehavioralAlphaPanel({ email, token, isPro, onUnlock }) {
+function BehavioralAlphaPanel({ email, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -4253,7 +4253,7 @@ function BehavioralAlphaPanel({ email, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Behavioral Alpha Report" consequence="Without behavioral analysis, you cannot identify the specific patterns costing you money." onUnlock={onUnlock}>
+      <ProGate label="Behavioral Alpha Report" consequence="Without behavioral analysis, you cannot identify the specific patterns costing you money." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
         {inner}
       </ProGate>
     );
@@ -4269,7 +4269,7 @@ function BehavioralAlphaPanel({ email, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // EVENT RISK OVERLAY PANEL
 // ─────────────────────────────────────────
-function EventRiskOverlayPanel({ coin, token, isPro, onUnlock }) {
+function EventRiskOverlayPanel({ coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -4343,7 +4343,7 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Event Risk Overlay" consequence="Without event-aware sizing, you risk being caught by macro volatility." onUnlock={onUnlock}>
+      <ProGate label="Event Risk Overlay" consequence="Without event-aware sizing, you risk being caught by macro volatility." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
         {inner}
       </ProGate>
     );
@@ -4359,7 +4359,7 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // TRADE PLAN PANEL
 // ─────────────────────────────────────────
-function TradePlanPanel({ coin, email, token, isPro, onUnlock }) {
+function TradePlanPanel({ coin, email, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [accountSize, setAccountSize] = useState(10000);
@@ -4484,7 +4484,7 @@ function TradePlanPanel({ coin, email, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Trade Plan Generator" consequence="Without a trade plan, you're entering positions without defined risk parameters." onUnlock={onUnlock}>
+      <ProGate label="Trade Plan Generator" consequence="Without a trade plan, you're entering positions without defined risk parameters." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
         {inner}
       </ProGate>
     );
@@ -4570,7 +4570,7 @@ function WhatChangedPanel({ token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="What Changed (24H)" consequence="Without change tracking, you start each session without knowing what shifted." onUnlock={onUnlock}>
+      <ProGate label="What Changed (24H)" consequence="Without change tracking, you start each session without knowing what shifted." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
         {inner}
       </ProGate>
     );
