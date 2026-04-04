@@ -1251,9 +1251,9 @@ function RegimeStackCard({ stack, isPro, onUnlock, requiredTier }) {
               {data?.label ?? "—"}
             </div>
             <div className="text-xs text-right w-28 hidden sm:block">
-              {isEssential && data ? (
-  <span className="text-zinc-400">Coherence {data.coherence?.toFixed(1)}%</span>
-) : (
+              {isPro && data ? (
+                <span className="text-zinc-400">Coherence {data.coherence?.toFixed(1)}%</span>
+              ) : (
                 <span className="text-gray-700 flex items-center justify-end cursor-pointer" onClick={onUnlock}>
                   <Lock />Pro
                 </span>
@@ -1278,9 +1278,9 @@ function RegimeStackCard({ stack, isPro, onUnlock, requiredTier }) {
 
         <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2">
           <Label>Recommended Exposure</Label>
-          {isEssential ? (
-  <>
-    <div className={`text-3xl font-semibold ${exposureColor(stack.exposure || 0)}`}>
+          {isPro ? (
+            <>
+              <div className={`text-3xl font-semibold ${exposureColor(stack.exposure || 0)}`}>
                 {stack.exposure ?? "—"}%
               </div>
               <Bar
@@ -1298,8 +1298,8 @@ function RegimeStackCard({ stack, isPro, onUnlock, requiredTier }) {
         </div>
       </div>
 
-      {isEssential && (
-  <div className="grid grid-cols-3 gap-3">
+      {isPro && (
+        <div className="grid grid-cols-3 gap-3">
           {[
             { l: "Survival", v: stack.survival, fn: (v) => riskColor(100 - v) },
             { l: "Hazard", v: stack.hazard, fn: riskColor },
@@ -1313,14 +1313,14 @@ function RegimeStackCard({ stack, isPro, onUnlock, requiredTier }) {
         </div>
       )}
 
-      {!isEssential && (
-  <button
-    onClick={onUnlock}
-    className="w-full border border-zinc-700 py-3 text-sm text-zinc-400 hover:border-zinc-500 hover:text-white transition-colors rounded-lg"
-  >
-    <Lock />Unlock coherence, survival, hazard & exposure — Essential
-  </button>
-)}
+      {!isPro && (
+        <button
+          onClick={onUnlock}
+          className="w-full border border-zinc-700 py-3 text-sm text-zinc-400 hover:border-zinc-500 hover:text-white transition-colors rounded-lg"
+        >
+          <Lock />Unlock coherence, survival, hazard & exposure — Essential
+        </button>
+      )}
     </CardShell>
   );
 }
