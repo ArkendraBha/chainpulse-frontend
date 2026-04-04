@@ -549,7 +549,7 @@ function deriveQuality(stack) {
   return { grade, score, structural, breakdown };
 }
 
-function RegimeQualityCard({ stack, isPro, onUnlock }) {
+function RegimeQualityCard({ stack, isPro, onUnlock, requiredTier }) {
   const quality = deriveQuality(stack);
   if (!quality) return null;
 
@@ -622,10 +622,11 @@ function RegimeQualityCard({ stack, isPro, onUnlock }) {
   if (!isPro)
     return (
       <ProGate
-        label="Regime Quality Rating"
-        consequence="Without quality scoring, you cannot distinguish a strong regime from a fragile one."
-        onUnlock={onUnlock}
-      >
+  label="Regime Quality Rating"
+  consequence="Without quality scoring, you cannot distinguish a strong regime from a fragile one."
+  onUnlock={onUnlock}
+  requiredTier={requiredTier || "essential"}
+>
         {inner}
       </ProGate>
     );
@@ -758,7 +759,7 @@ function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // REGIME PLAYBOOK ENGINE
 // ─────────────────────────────────────────
-function RegimePlaybook({ stack, isPro, onUnlock }) {
+function RegimePlaybook({ stack, isPro, onUnlock, requiredTier }) {
   const execLabel = stack?.execution?.label ?? "Neutral";
   const pb = PLAYBOOKS[execLabel] || PLAYBOOKS["Neutral"];
   const regimeAge = stack?.regime_age_hours ?? 0;
@@ -829,7 +830,7 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Regime Playbook Engine" consequence="Without a playbook, you are applying the same strategy regardless of regime conditions." onUnlock={onUnlock}>
+      <ProGate label="Regime Playbook Engine" consequence="Without a playbook, you are applying the same strategy regardless of regime conditions." onUnlock={onUnlock}requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -845,7 +846,7 @@ function RegimePlaybook({ stack, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // PERSONALIZED EXPOSURE TRACKER
 // ─────────────────────────────────────────
-function ExposureTracker({ stack, isPro, onUnlock }) {
+function ExposureTracker({ stack, isPro, onUnlock, requiredTier }) {
   const [portfolioSize, setPortfolioSize] = useState(10000);
   const [currentExposure, setCurrentExposure] = useState(50);
   const [leverage, setLeverage] = useState(1);
@@ -986,7 +987,7 @@ $$
 
   if (!isPro)
     return (
-      <ProGate label="Exposure Calibration Engine" consequence="Without exposure calibration, you cannot know if your position size is regime-appropriate." onUnlock={onUnlock}>
+      <ProGate label="Exposure Calibration Engine" consequence="Without exposure calibration, you cannot know if your position size is regime-appropriate." onUnlock={onUnlock}requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -1002,7 +1003,7 @@ $$
 // ─────────────────────────────────────────
 // REGIME STRESS METER
 // ─────────────────────────────────────────
-function StressMeter({ stack, isPro, onUnlock }) {
+function StressMeter({ stack, isPro, onUnlock, requiredTier }) {
   if (!stack) return null;
   const hazard = stack.hazard ?? 0;
   const shiftRisk = stack.shift_risk ?? 0;
@@ -1059,7 +1060,7 @@ function StressMeter({ stack, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Regime Stress Meter" consequence="Stress meter identifies regime breakdown before it appears in price." onUnlock={onUnlock}>
+      <ProGate label="Regime Stress Meter" consequence="Stress meter identifies regime breakdown before it appears in price." onUnlock={onUnlock}requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -1074,7 +1075,7 @@ function StressMeter({ stack, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // REGIME COUNTDOWN
 // ─────────────────────────────────────────
-function RegimeCountdown({ stack, isPro, onUnlock }) {
+function RegimeCountdown({ stack, isPro, onUnlock, requiredTier }) {
   if (!stack) return null;
   const execLabel = stack.execution?.label ?? "Neutral";
   const pb = PLAYBOOKS[execLabel] || PLAYBOOKS["Neutral"];
@@ -1125,7 +1126,7 @@ function RegimeCountdown({ stack, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Regime Countdown Timer" consequence="Without regime duration modeling, you cannot anticipate transition windows." onUnlock={onUnlock}>
+      <ProGate label="Regime Countdown Timer" consequence="Without regime duration modeling, you cannot anticipate transition windows." onUnlock={onUnlock}requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -1141,7 +1142,7 @@ function RegimeCountdown({ stack, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // CONFIDENCE TREND
 // ─────────────────────────────────────────
-function ConfidenceTrend({ history, confidence, isPro, onUnlock }) {
+function ConfidenceTrend({ history, confidence, isPro, onUnlock, requiredTier }) {
   const baseConf = confidence?.score ?? 60;
   const trendData = history.slice(-24).map((h, i) => ({
     hour: h.hour,
@@ -1193,7 +1194,7 @@ function ConfidenceTrend({ history, confidence, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Confidence Trend (24H)" consequence="Confidence trend shows whether regime conviction is building or deteriorating." onUnlock={onUnlock}>
+      <ProGate label="Confidence Trend (24H)" consequence="Confidence trend shows whether regime conviction is building or deteriorating." onUnlock={onUnlock}requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -1327,7 +1328,7 @@ function RegimeStackCard({ stack, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // CONFIDENCE PANEL
 // ─────────────────────────────────────────
-function ConfidencePanel({ confidence, isPro, onUnlock }) {
+function ConfidencePanel({ confidence, isPro, onUnlock, requiredTier }) {
   const inner = (
     <div className="space-y-5">
       <div className="flex justify-between items-start">
@@ -1355,7 +1356,7 @@ function ConfidencePanel({ confidence, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Regime Confidence Score" consequence="Confidence score determines appropriate position sizing for this regime." onUnlock={onUnlock}>
+      <ProGate label="Regime Confidence Score" consequence="Confidence score determines appropriate position sizing for this regime." onUnlock={onUnlock}requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -1371,7 +1372,7 @@ function ConfidencePanel({ confidence, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // VOL ENVIRONMENT
 // ─────────────────────────────────────────
-function VolEnvironment({ env, isPro, onUnlock }) {
+function VolEnvironment({ env, isPro, onUnlock, requiredTier }) {
   function envColor(label) {
     if (["Low", "Strong", "Normal"].includes(label)) return "text-green-400";
     if (["Moderate", "Weak"].includes(label)) return "text-yellow-400";
@@ -1405,7 +1406,7 @@ function VolEnvironment({ env, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Volatility & Liquidity Environment" consequence="Volatility environment determines stop placement and position sizing precision." onUnlock={onUnlock}>
+      <ProGate label="Volatility & Liquidity Environment" consequence="Volatility environment determines stop placement and position sizing precision." onUnlock={onUnlock}requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -1422,7 +1423,7 @@ function VolEnvironment({ env, isPro, onUnlock }) {
 // ─────────────────────────────────────────
 // TRANSITION MATRIX
 // ─────────────────────────────────────────
-function TransitionMatrix({ transitions, isPro, onUnlock }) {
+function TransitionMatrix({ transitions, isPro, onUnlock, requiredTier }) {
   const inner = (
     <div className="space-y-3">
       {Object.entries(transitions?.transitions || {}).map(([state, prob]) => (
@@ -1448,7 +1449,7 @@ function TransitionMatrix({ transitions, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Regime Transition Probability" consequence="Transition probabilities show where the regime is statistically likely to move next." onUnlock={onUnlock}>
+      <ProGate label="Regime Transition Probability" consequence="Transition probabilities show where the regime is statistically likely to move next." onUnlock={onUnlock}requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
@@ -1595,7 +1596,7 @@ $$
 // ─────────────────────────────────────────
 // CORRELATION PANEL
 // ─────────────────────────────────────────
-function CorrelationPanel({ correlation, isPro, onUnlock }) {
+function CorrelationPanel({ correlation, isPro, onUnlock, onUnlock }) {
   const inner = (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -1625,7 +1626,7 @@ function CorrelationPanel({ correlation, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Cross-Asset Correlation Monitor" consequence="Correlation breakdown between assets is an early warning of regime stress." onUnlock={onUnlock}>
+      <ProGate label="Cross-Asset Correlation Monitor" consequence="Correlation breakdown between assets is an early warning of regime stress." onUnlock={onUnlock}requiredTier={requiredTier || "essential"}>
         {inner}
       </ProGate>
     );
