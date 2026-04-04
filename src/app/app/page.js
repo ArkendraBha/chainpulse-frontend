@@ -1596,7 +1596,7 @@ $$
 // ─────────────────────────────────────────
 // CORRELATION PANEL
 // ─────────────────────────────────────────
-function CorrelationPanel({ correlation, isPro, onUnlock, onUnlock }) {
+function CorrelationPanel({ correlation, isPro, onUnlock, requiredTier }) {
   const inner = (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
