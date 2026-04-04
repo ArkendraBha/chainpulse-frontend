@@ -298,7 +298,7 @@ function ProGate({ label, consequence, children, onUnlock, requiredTier }) {
 // ─────────────────────────────────────────
 // STAT CARD
 // ─────────────────────────────────────────
-function StatCard({ label, value, suffix = "%", color, barCls, hint, locked, consequence, onUnlock }) {
+function StatCard({ label, value, suffix = "%", color, barCls, hint, locked, consequence, onUnlock, requiredTier }) {
   if (locked)
     return (
       <div
@@ -370,7 +370,7 @@ function SessionExpiryWarning({ tokenCreatedAt }) {
 // ─────────────────────────────────────────
 // TODAY'S VERDICT
 // ─────────────────────────────────────────
-function TodaysVerdict({ stack, decision, isPro, onUnlock }) {
+function TodaysVerdict({ stack, decision, isPro, onUnlock, requiredTier }) {
   const shiftRisk = stack?.shift_risk ?? 0;
   const exposure = stack?.exposure ?? 0;
 
@@ -1965,7 +1965,7 @@ function RegimeMap({ overview, activeCoin, onSelect }) {
 // ─────────────────────────────────────────
 // SURVIVAL CURVE
 // ─────────────────────────────────────────
-function SurvivalCurve({ curve, regimeAge, isPro, onUnlock }) {
+function SurvivalCurve({ curve, regimeAge, isPro, onUnlock, requiredTier }) {
   return (
     <CardShell>
       <div>
@@ -4657,7 +4657,7 @@ function LivePriceTicker({ activeCoin, onCoinSelect }) {
 // ─────────────────────────────────────────
 // SITE HEADER
 // ─────────────────────────────────────────
-function SiteHeader({ coin, onCoinSelect, isPro, onUnlock }) {
+function SiteHeader({ coin, onCoinSelect, isPro, onUnlock, requiredTier }) {
   return (
     <header className="sticky top-0 z-40 w-full bg-zinc-950/80 backdrop-blur-md border-b border-white/5">
       <div className="max-w-7xl mx-auto px-6">
@@ -4818,7 +4818,7 @@ function ProIntelligencePreview({ onUnlock }) {
 // ─────────────────────────────────────────
 // TODAY PANEL
 // ─────────────────────────────────────────
-function TodayPanel({ stack, decision, isPro, onUnlock }) {
+function TodayPanel({ stack, decision, isPro, onUnlock, requiredTier }) {
   if (!stack) return null;
   const execLabel = stack.execution?.label ?? "—";
   const exposure = stack.exposure ?? 0;
