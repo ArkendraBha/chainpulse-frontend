@@ -156,11 +156,12 @@ const TIERS = {
         "Up to 5 webhook endpoints",
         "HMAC-SHA256 payload signatures",
         "Delivery logs with retry status",
-        "Test webhook endpoint",
-      ],
-    },
-  ],
-},
+          "Test webhook endpoint",
+        ],
+      },
+    ],
+  },
+};
 
 export default function Pricing() {
   const [annual, setAnnual] = useState(false);
