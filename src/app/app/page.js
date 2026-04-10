@@ -5113,6 +5113,7 @@ export default function Dashboard() {
   const [correlation, setCorrelation] = useState(null);
   const [riskEvents, setRiskEvents] = useState([]);
   const [decision, setDecision] = useState(null);
+  const [disciplineData, setDisciplineData] = useState(null);
   const [coin, setCoin] = useState("BTC");
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
