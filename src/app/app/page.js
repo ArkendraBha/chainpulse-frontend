@@ -11,6 +11,824 @@ const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
 const SUPPORTED_COINS = ["BTC", "ETH", "SOL", "BNB", "AVAX", "LINK", "ADA"];
 const REFRESH_MS = 60_000;
 
+// ─────────────────────────────────────────────────────────
+// SKELETON COMPONENTS
+// ─────────────────────────────────────────────────────────
+function CardSkeleton({ rows = 3 }) {
+  return (
+    <div className="bg-zinc-950/60 border border-white/10 rounded-2xl p-8 space-y-4">
+      <div className="h-2.5 w-20 rounded skeleton-shimmer" />
+      <div className="space-y-3">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div
+            key={i}
+            className="h-4 rounded skeleton-shimmer"
+            style={{
+              width: `${[85, 70, 90, 60, 75][i % 5]}%`,
+              animationDelay: `${i * 120}ms`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RegimeStackSkeleton() {
+  return (
+    <div className="bg-zinc-950/60 border border-white/10 rounded-2xl p-8 space-y-4">
+      <div className="flex justify-between items-start">
+        <div className="space-y-2">
+          <div className="h-2.5 w-20 rounded skeleton-shimmer" />
+          <div className="h-6 w-48 rounded skeleton-shimmer" />
+        </div>
+        <div className="h-7 w-20 rounded-full skeleton-shimmer" />
+      </div>
+      <div className="space-y-2">
+        {["Macro", "Trend", "Execution"].map((l, i) => (
+          <div
+            key={l}
+            className="flex items-center justify-between px-5 py-4 border border-white/5 rounded-lg"
+          >
+            <div className="h-4 w-24 rounded skeleton-shimmer" style={{ animationDelay: `${i * 80}ms` }} />
+            <div className="h-4 w-32 rounded skeleton-shimmer" style={{ animationDelay: `${i * 80 + 40}ms` }} />
+            <div className="h-3 w-20 rounded skeleton-shimmer hidden sm:block" style={{ animationDelay: `${i * 80 + 80}ms` }} />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        {[0, 1].map((i) => (
+          <div key={i} className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-3">
+            <div className="h-2.5 w-16 rounded skeleton-shimmer" />
+            <div className="h-9 w-20 rounded skeleton-shimmer" />
+            <div className="h-1 w-full rounded skeleton-shimmer" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StatsGridSkeleton() {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-3"
+        >
+          <div className="h-2.5 w-20 rounded skeleton-shimmer" style={{ animationDelay: `${i * 60}ms` }} />
+          <div className="h-9 w-24 rounded skeleton-shimmer" style={{ animationDelay: `${i * 60 + 30}ms` }} />
+          <div className="h-1 w-full rounded skeleton-shimmer" style={{ animationDelay: `${i * 60 + 60}ms` }} />
+          <div className="h-3 w-28 rounded skeleton-shimmer" style={{ animationDelay: `${i * 60 + 90}ms` }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// TOAST NOTIFICATION SYSTEM
+// ─────────────────────────────────────────────────────────
+const toastListeners = new Set();
+let toastIdCounter = 0;
+
+function emitToast({ type = "info", title, message, duration = 5000 }) {
+  const id = ++toastIdCounter;
+  toastListeners.forEach((fn) => fn({ id, type, title, message, duration }));
+  return id;
+}
+
+function ToastContainer() {
+  const [toasts, setToasts] = useState([]);
+
+  useEffect(() => {
+    const handler = (toast) => {
+      setToasts((prev) => [...prev.slice(-4), toast]);
+      if (toast.duration > 0) {
+        setTimeout(() => {
+          setToasts((prev) => prev.filter((t) => t.id !== toast.id));
+        }, toast.duration);
+      }
+    };
+    toastListeners.add(handler);
+    return () => toastListeners.delete(handler);
+  }, []);
+
+  if (!toasts.length) return null;
+
+  return (
+    <div className="fixed top-4 right-4 z-[200] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+      {toasts.map((toast) => (
+        <ToastItem
+          key={toast.id}
+          {...toast}
+          onRemove={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ToastItem({ id, type, title, message, onRemove }) {
+  const styles = {
+    critical: { border: "border-red-700",     bg: "bg-red-950/95",     dot: "bg-red-400",     text: "text-red-200"     },
+    warning:  { border: "border-yellow-700",  bg: "bg-yellow-950/95",  dot: "bg-yellow-400",  text: "text-yellow-200"  },
+    success:  { border: "border-emerald-700", bg: "bg-emerald-950/95", dot: "bg-emerald-400", text: "text-emerald-200" },
+    info:     { border: "border-zinc-700",    bg: "bg-zinc-950/95",    dot: "bg-zinc-400",    text: "text-zinc-200"    },
+  };
+  const s = styles[type] || styles.info;
+
+  return (
+    <div
+      className={`border ${s.border} ${s.bg} rounded-xl px-4 py-3 backdrop-blur-md shadow-2xl shadow-black/60
+        flex items-start gap-3 pointer-events-auto
+        animate-[slideInFromRight_0.3s_ease-out]`}
+    >
+      <div className={`w-2 h-2 rounded-full ${s.dot} mt-1.5 shrink-0 animate-pulse`} />
+      <div className="flex-1 min-w-0">
+        {title && <div className={`text-sm font-semibold ${s.text}`}>{title}</div>}
+        {message && <div className="text-xs text-zinc-400 mt-0.5 leading-relaxed">{message}</div>}
+      </div>
+      <button
+        onClick={onRemove}
+        className="text-zinc-600 hover:text-zinc-400 transition-colors shrink-0 mt-0.5 pointer-events-auto"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// COMMAND PALETTE
+// ─────────────────────────────────────────────────────────
+function CommandPalette({ onCoinSelect, onUnlock }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const inputRef = useRef(null);
+
+  const ALL_COMMANDS = [
+    { id: "btc",  label: "Switch to Bitcoin",   group: "Assets",     shortcut: "1", action: () => { onCoinSelect("BTC"); } },
+    { id: "eth",  label: "Switch to Ethereum",  group: "Assets",     shortcut: "2", action: () => { onCoinSelect("ETH"); } },
+    { id: "sol",  label: "Switch to Solana",    group: "Assets",     shortcut: "3", action: () => { onCoinSelect("SOL"); } },
+    { id: "bnb",  label: "Switch to BNB",       group: "Assets",     shortcut: "4", action: () => { onCoinSelect("BNB"); } },
+    { id: "avax", label: "Switch to Avalanche", group: "Assets",     shortcut: "5", action: () => { onCoinSelect("AVAX"); } },
+    { id: "link", label: "Switch to Chainlink", group: "Assets",     shortcut: "6", action: () => { onCoinSelect("LINK"); } },
+    { id: "ada",  label: "Switch to Cardano",   group: "Assets",     shortcut: "7", action: () => { onCoinSelect("ADA"); } },
+    { id: "upgrade",     label: "Upgrade Plan",        group: "Account",    action: () => { onUnlock(); } },
+    { id: "pricing",     label: "View Pricing",         group: "Navigation", action: () => { window.location.href = "/pricing"; } },
+    { id: "methodology", label: "Read Methodology",     group: "Navigation", action: () => { window.location.href = "/methodology"; } },
+    { id: "home",        label: "Go to Home",           group: "Navigation", action: () => { window.location.href = "/"; } },
+    { id: "refresh",     label: "Refresh Dashboard",    group: "Data",       action: () => { window.location.reload(); } },
+  ];
+
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setOpen((v) => !v);
+        setQuery("");
+        setSelectedIndex(0);
+      }
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (open) setTimeout(() => inputRef.current?.focus(), 50);
+  }, [open]);
+
+  const filtered = ALL_COMMANDS.filter((cmd) =>
+    cmd.label.toLowerCase().includes(query.toLowerCase()) ||
+    cmd.group.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const handleKeyDown = (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setSelectedIndex((i) => Math.max(i - 1, 0)); }
+    else if (e.key === "Enter") {
+      const cmd = filtered[selectedIndex];
+      if (cmd) { cmd.action(); setOpen(false); }
+    }
+  };
+
+  const grouped = filtered.reduce((acc, cmd) => {
+    if (!acc[cmd.group]) acc[cmd.group] = [];
+    acc[cmd.group].push(cmd);
+    return acc;
+  }, {});
+
+  let flatIndex = -1;
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-start justify-center pt-[14vh] px-4"
+      onClick={() => setOpen(false)}
+      style={{ animation: "backdropFadeIn 0.15s ease-out" }}
+    >
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-xl bg-zinc-950 border border-zinc-700/80 rounded-2xl shadow-[0_30px_100px_rgba(0,0,0,0.9)] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+        style={{ animation: "paletteSlideIn 0.2s ease-out" }}
+      >
+        {/* Input */}
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-zinc-800">
+          <svg className="w-4 h-4 text-zinc-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setSelectedIndex(0); }}
+            onKeyDown={handleKeyDown}
+            placeholder="Search commands, assets, panels..."
+            className="flex-1 bg-transparent text-white text-sm placeholder-zinc-600 focus:outline-none"
+          />
+          <kbd className="text-[10px] text-zinc-600 border border-zinc-700 px-1.5 py-0.5 rounded-md shrink-0">ESC</kbd>
+        </div>
+
+        {/* Results */}
+        <div className="max-h-[60vh] overflow-y-auto py-2">
+          {filtered.length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-zinc-600">
+              No commands found{query ? ` for "${query}"` : ""}
+            </div>
+          ) : (
+            Object.entries(grouped).map(([group, cmds]) => (
+              <div key={group} className="mb-1">
+                <div className="px-4 py-1.5 text-[10px] text-zinc-600 uppercase tracking-widest font-medium">
+                  {group}
+                </div>
+                {cmds.map((cmd) => {
+                  flatIndex++;
+                  const currentFlatIndex = flatIndex;
+                  const isSelected = currentFlatIndex === selectedIndex;
+                  return (
+                    <button
+                      key={cmd.id}
+                      onClick={() => { cmd.action(); setOpen(false); }}
+                      onMouseEnter={() => setSelectedIndex(currentFlatIndex)}
+                      className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors text-left ${
+                        isSelected ? "bg-zinc-800 text-white" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <span>{cmd.label}</span>
+                      {cmd.shortcut && (
+                        <kbd className={`text-[10px] border px-1.5 py-0.5 rounded-md transition-colors ${
+                          isSelected ? "border-zinc-600 text-zinc-400" : "border-zinc-700 text-zinc-600"
+                        }`}>
+                          {cmd.shortcut}
+                        </kbd>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-2.5 border-t border-zinc-800 flex gap-4 text-[10px] text-zinc-600">
+          <span><kbd className="border border-zinc-700 px-1 py-0.5 rounded">↑↓</kbd> navigate</span>
+          <span><kbd className="border border-zinc-700 px-1 py-0.5 rounded">↵</kbd> select</span>
+          <span><kbd className="border border-zinc-700 px-1 py-0.5 rounded">Esc</kbd> close</span>
+          <span className="ml-auto"><kbd className="border border-zinc-700 px-1 py-0.5 rounded">⌘K</kbd> toggle</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// KEYBOARD SHORTCUTS HANDLER + HELP MODAL
+// ─────────────────────────────────────────────────────────
+function KeyboardShortcutsModal() {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.metaKey || e.ctrlKey) return;
+      if (e.key === "?") { e.preventDefault(); setOpen((v) => !v); }
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  if (!open) return null;
+
+  const shortcuts = [
+    { keys: ["⌘", "K"],  desc: "Open command palette"  },
+    { keys: ["1"],        desc: "Switch to Bitcoin"      },
+    { keys: ["2"],        desc: "Switch to Ethereum"     },
+    { keys: ["3"],        desc: "Switch to Solana"       },
+    { keys: ["4"],        desc: "Switch to BNB"          },
+    { keys: ["5"],        desc: "Switch to Avalanche"    },
+    { keys: ["6"],        desc: "Switch to Chainlink"    },
+    { keys: ["7"],        desc: "Switch to Cardano"      },
+    { keys: ["U"],        desc: "Open upgrade modal"     },
+    { keys: ["?"],        desc: "Show this reference"    },
+    { keys: ["Esc"],      desc: "Close modals"           },
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] flex items-center justify-center px-4"
+      onClick={() => setOpen(false)}
+    >
+      <div
+        className="bg-zinc-950 border border-zinc-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-white">Keyboard Shortcuts</h2>
+          <button onClick={() => setOpen(false)} className="text-zinc-600 hover:text-zinc-400 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="space-y-2">
+          {shortcuts.map(({ keys, desc }) => (
+            <div key={desc} className="flex items-center justify-between py-1">
+              <span className="text-sm text-zinc-400">{desc}</span>
+              <div className="flex gap-1">
+                {keys.map((k) => (
+                  <kbd key={k} className="text-[11px] border border-zinc-700 bg-zinc-900 text-zinc-300 px-2 py-0.5 rounded-md font-mono">{k}</kbd>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 pt-4 border-t border-zinc-800 text-center">
+          <span className="text-xs text-zinc-600">Press <kbd className="border border-zinc-700 px-1 py-0.5 rounded text-[10px]">?</kbd> anywhere to toggle</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// PREMIUM CHART TOOLTIP
+// ─────────────────────────────────────────────────────────
+function PremiumTooltip({ active, payload, label, labelFormatter, formatter }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-zinc-950 border border-zinc-700/60 rounded-xl shadow-2xl shadow-black/70 px-4 py-3 backdrop-blur-md min-w-[130px]">
+      {label !== undefined && (
+        <div className="text-[10px] text-zinc-500 mb-2 pb-1.5 border-b border-zinc-800">
+          {labelFormatter ? labelFormatter(label) : label}
+        </div>
+      )}
+      <div className="space-y-1.5">
+        {payload.map((entry, i) => (
+          <div key={i} className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
+              <span className="text-[11px] text-zinc-400">{entry.name}</span>
+            </div>
+            <span className="text-[11px] font-semibold text-white tabular-nums">
+              {formatter ? formatter(entry.value, entry.name)[0] : entry.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// UPGRADE NUDGE STRIP (persistent bottom bar for free users)
+// ─────────────────────────────────────────────────────────
+function UpgradeNudgeStrip({ isPro, isProTier, onUnlock }) {
+  const [dismissed, setDismissed] = useState(false);
+  const [msgIdx, setMsgIdx] = useState(0);
+
+  const messages = [
+    { text: "You're missing exposure modeling, survival curves, and the decision engine.", cta: "Unlock Essential — $39/mo" },
+    { text: "Essential users get the hazard rate, shift risk, and full regime stack coherence.", cta: "Try Essential Free" },
+    { text: "One avoided over-exposure event pays for months of Essential.", cta: "View Plans" },
+  ];
+
+  useEffect(() => {
+    const iv = setInterval(() => setMsgIdx((i) => (i + 1) % messages.length), 9000);
+    return () => clearInterval(iv);
+  }, []);
+
+  if (isProTier || dismissed) return null;
+
+  const msg = messages[msgIdx];
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-30 px-4 pb-4 pointer-events-none">
+      <div className="max-w-7xl mx-auto pointer-events-auto">
+        <div className="bg-zinc-900/97 backdrop-blur-lg border border-zinc-700/70 rounded-2xl px-5 py-3 flex items-center justify-between gap-4 shadow-[0_-4px_40px_rgba(0,0,0,0.6)]">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <p className="text-xs text-zinc-400 truncate">{msg.text}</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={onUnlock}
+              className="bg-white text-black text-xs font-semibold px-4 py-2 rounded-lg hover:bg-zinc-100 transition-all hover:-translate-y-[1px] hover:shadow-lg whitespace-nowrap"
+            >
+              {msg.cta}
+            </button>
+            <button
+              onClick={() => setDismissed(true)}
+              className="text-zinc-600 hover:text-zinc-400 transition-colors p-1"
+              aria-label="Dismiss upgrade prompt"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// TEASER PRO GATE (replaces existing ProGate)
+// ─────────────────────────────────────────────────────────
+function ProGateTeaser({ label, consequence, children, onUnlock, requiredTier, teaserValue, teaserSuffix = "%", teaserHint }) {
+  const [hovered, setHovered] = useState(false);
+  const tierLabel = requiredTier === "institutional" ? "Institutional" : requiredTier === "pro" ? "Pro" : "Essential";
+  const tierPrice = requiredTier === "institutional" ? "$149" : requiredTier === "pro" ? "$79" : "$39";
+
+  return (
+    <div
+      className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-4 relative overflow-hidden"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="text-[10px] font-medium text-zinc-500 uppercase tracking-[0.25em] mb-2">{label}</div>
+
+      {teaserValue != null ? (
+        <div className="space-y-3">
+          <div className="flex items-end gap-2">
+            <div className="text-5xl font-bold text-zinc-700 select-none" style={{ filter: "blur(4px)" }}>
+              {teaserValue}{teaserSuffix}
+            </div>
+          </div>
+          <div className="w-full bg-zinc-800/60 rounded-full h-[3px]">
+            <div className="h-[3px] rounded-full bg-zinc-700" style={{ width: "62%", filter: "blur(1px)" }} />
+          </div>
+          {teaserHint && (
+            <div className="text-xs text-zinc-700 select-none" style={{ filter: "blur(2px)" }}>{teaserHint}</div>
+          )}
+        </div>
+      ) : (
+        <div className="blur-sm select-none pointer-events-none opacity-25 max-h-28 overflow-hidden">
+          {children}
+        </div>
+      )}
+
+      {/* Hover overlay */}
+      <div
+        className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-250 rounded-2xl ${
+          hovered ? "bg-zinc-950/97" : "bg-zinc-950/80"
+        }`}
+      >
+        <div className={`text-center space-y-3 px-6 max-w-xs transition-all duration-200 ${hovered ? "scale-100 opacity-100" : "scale-95 opacity-90"}`}>
+          <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-white">
+            <svg className="w-3.5 h-3.5 text-zinc-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+            </svg>
+            {tierLabel} Feature
+          </div>
+          {consequence && (
+            <p className="text-xs text-zinc-400 leading-relaxed">{consequence}</p>
+          )}
+          <button
+            onClick={onUnlock}
+            className={`w-full py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
+              hovered
+                ? "bg-white text-black shadow-lg -translate-y-0.5 hover:-translate-y-1"
+                : "bg-white/10 text-zinc-300 border border-white/10"
+            }`}
+          >
+            Unlock {tierLabel} — {tierPrice}/month
+          </button>
+          <div className="text-[10px] text-zinc-700">7-day free trial · Cancel anytime</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// REGIME CALENDAR
+// ─────────────────────────────────────────────────────────
+function RegimeCalendar({ coin, token, isPro, onUnlock }) {
+  const [calendarData, setCalendarData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [hoveredDay, setHoveredDay] = useState(null);
+  const now = new Date();
+  const [viewYear, setViewYear] = useState(now.getFullYear());
+  const [viewMonth, setViewMonth] = useState(now.getMonth());
+
+  const REGIME_CAL_COLORS = {
+    "Strong Risk-On":  { bg: "bg-emerald-500/40",  border: "border-emerald-700/60",  text: "text-emerald-300"  },
+    "Risk-On":         { bg: "bg-green-500/30",    border: "border-green-700/50",    text: "text-green-300"    },
+    "Neutral":         { bg: "bg-yellow-500/25",   border: "border-yellow-700/40",   text: "text-yellow-300"   },
+    "Risk-Off":        { bg: "bg-red-500/25",      border: "border-red-700/40",      text: "text-red-300"      },
+    "Strong Risk-Off": { bg: "bg-red-600/40",      border: "border-red-800/60",      text: "text-red-400"      },
+  };
+
+  useEffect(() => {
+    if (!isPro || !coin || !token) return;
+    setLoading(true);
+    apiFetch(`/regime-calendar?coin=${coin}&year=${viewYear}&month=${viewMonth + 1}`, token)
+      .then((d) => { if (!d.error && d.days) setCalendarData(d.days); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [coin, token, isPro, viewYear, viewMonth]);
+
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const monthName = new Date(viewYear, viewMonth).toLocaleString("en", { month: "long", year: "numeric" });
+  const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth();
+
+  const inner = (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => { if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); } else setViewMonth((m) => m - 1); }}
+            className="text-zinc-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <span className="text-sm font-medium text-white min-w-[150px] text-center">{monthName}</span>
+          <button
+            onClick={() => { if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); } else setViewMonth((m) => m + 1); }}
+            disabled={isCurrentMonth}
+            className="text-zinc-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
+        {loading && <div className="w-4 h-4 border-2 border-zinc-700 border-t-zinc-400 rounded-full animate-spin" />}
+      </div>
+
+      {/* Day headers */}
+      <div className="grid grid-cols-7 gap-1">
+        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+          <div key={d} className="text-center text-[10px] text-zinc-600 uppercase tracking-widest py-1">{d}</div>
+        ))}
+      </div>
+
+      {/* Grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const dateKey = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const regime = calendarData[dateKey];
+          const colors = regime ? REGIME_CAL_COLORS[regime] : null;
+          const isToday = day === now.getDate() && isCurrentMonth;
+          const isFuture = new Date(viewYear, viewMonth, day) > now;
+
+          return (
+            <div
+              key={day}
+              className="relative aspect-square"
+              onMouseEnter={() => setHoveredDay({ day, dateKey, regime })}
+              onMouseLeave={() => setHoveredDay(null)}
+            >
+              <div className={`
+                w-full h-full rounded-lg flex items-center justify-center text-xs font-medium
+                transition-all duration-150 select-none
+                ${isFuture ? "opacity-20 cursor-default" : "cursor-default"}
+                ${colors
+                  ? `${colors.bg} border ${colors.border} ${colors.text}`
+                  : "bg-zinc-900/40 border border-zinc-800 text-zinc-600"
+                }
+                ${isToday ? "ring-2 ring-white/60 ring-offset-1 ring-offset-black" : ""}
+                ${hoveredDay?.day === day && !isFuture ? "scale-110 z-10 shadow-lg" : ""}
+              `}>
+                {day}
+              </div>
+              {/* Tooltip */}
+              {hoveredDay?.day === day && regime && !isFuture && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 pointer-events-none whitespace-nowrap">
+                  <div className="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-xs shadow-xl">
+                    <div className="text-zinc-500 mb-0.5">{dateKey}</div>
+                    <div className={`font-semibold ${colors?.text}`}>{regime}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3 pt-2 border-t border-white/5">
+        {Object.entries(REGIME_CAL_COLORS).map(([label, colors]) => (
+          <div key={label} className="flex items-center gap-1.5">
+            <div className={`w-2.5 h-2.5 rounded-sm ${colors.bg} border ${colors.border}`} />
+            <span className="text-[10px] text-zinc-600">{label.replace("Strong ", "S.")}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (!isPro)
+    return (
+      <ProGate label="Regime History Calendar" consequence="See which regime was active every day this month — spot patterns and seasonality." onUnlock={onUnlock} requiredTier="essential">
+        {inner}
+      </ProGate>
+    );
+
+  return (
+    <CardShell>
+      <Label>Regime History Calendar</Label>
+      <p className="text-xs text-zinc-400">{coin} daily regime — hover any day for details</p>
+      {inner}
+    </CardShell>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// ONBOARDING TOUR
+// ─────────────────────────────────────────────────────────
+function OnboardingTour({ onComplete }) {
+  const [step, setStep] = useState(0);
+  const [visible, setVisible] = useState(false);
+  const [targetRect, setTargetRect] = useState(null);
+
+  const STEPS = [
+    {
+      selector: "[data-tour='regime-stack']",
+      title: "Your Regime Stack",
+      description: "This shows the current market regime across 3 timeframes. When Macro, Trend, and Execution all agree, that's your highest-conviction signal.",
+    },
+    {
+      selector: "[data-tour='stats-grid']",
+      title: "Core Risk Signals",
+      description: "Survival probability, shift risk, and hazard rate tell you how healthy the current regime is and whether deterioration is already underway.",
+    },
+    {
+      selector: "[data-tour='today-verdict']",
+      title: "Today's Directive",
+      description: "The decision engine synthesizes all signals into a single directive — Increase, Maintain, Trim, Defensive, or Risk-Off. Unlock Essential to see it.",
+    },
+    {
+      selector: "[data-tour='upgrade-cta']",
+      title: "Unlock the Full Stack",
+      description: "Essential ($39/mo) unlocks exposure modeling, decision engine, survival curves, and alerts. Pro adds setup quality, trade plans, and behavioral tracking.",
+    },
+  ];
+
+  useEffect(() => {
+    const seen = localStorage.getItem("cp_tour_v2");
+    if (!seen) {
+      const t = setTimeout(() => setVisible(true), 1200);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!visible || step >= STEPS.length) return;
+    const current = STEPS[step];
+    const el = document.querySelector(current.selector);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      setTargetRect({ top: rect.top + window.scrollY, left: rect.left, width: rect.width, height: rect.height, bottom: rect.bottom + window.scrollY });
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [step, visible]);
+
+  const complete = () => {
+    localStorage.setItem("cp_tour_v2", "1");
+    setVisible(false);
+    onComplete?.();
+  };
+
+  if (!visible || !targetRect || step >= STEPS.length) return null;
+
+  const current = STEPS[step];
+  const tooltipTop = Math.min(targetRect.bottom + 16, window.innerHeight - 200);
+  const tooltipLeft = Math.max(16, Math.min(targetRect.left, (typeof window !== "undefined" ? window.innerWidth : 1200) - 310));
+
+  return (
+    <>
+      {/* Dim overlay with cutout */}
+      <div className="fixed inset-0 z-[90] pointer-events-none" style={{ backgroundColor: "rgba(0,0,0,0.65)" }}>
+        {/* Highlight border around target */}
+        <div
+          className="absolute border-2 border-emerald-400/80 rounded-xl shadow-[0_0_0_4000px_rgba(0,0,0,0.65)]"
+          style={{
+            top: targetRect.top - 8,
+            left: targetRect.left - 8,
+            width: targetRect.width + 16,
+            height: targetRect.height + 16,
+          }}
+        />
+      </div>
+
+      {/* Tooltip */}
+      <div
+        className="fixed z-[91] bg-zinc-950 border border-zinc-700 rounded-2xl p-5 shadow-2xl max-w-[280px] pointer-events-auto"
+        style={{ top: tooltipTop, left: tooltipLeft }}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex gap-1">
+            {STEPS.map((_, i) => (
+              <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === step ? "bg-emerald-400" : "bg-zinc-700"}`} />
+            ))}
+          </div>
+          <button onClick={complete} className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">Skip</button>
+        </div>
+        <h3 className="text-sm font-semibold text-white mb-1">{current.title}</h3>
+        <p className="text-xs text-zinc-400 leading-relaxed mb-4">{current.description}</p>
+        <div className="flex gap-2 justify-end">
+          {step > 0 && (
+            <button onClick={() => setStep((s) => s - 1)} className="text-xs text-zinc-500 hover:text-white px-3 py-1.5 transition-colors">
+              Back
+            </button>
+          )}
+          {step < STEPS.length - 1 ? (
+            <button onClick={() => setStep((s) => s + 1)} className="bg-white text-black text-xs font-semibold px-4 py-1.5 rounded-lg hover:bg-zinc-100 transition-colors">
+              Next →
+            </button>
+          ) : (
+            <button onClick={complete} className="bg-emerald-500 text-black text-xs font-semibold px-4 py-1.5 rounded-lg hover:bg-emerald-400 transition-colors">
+              Let's go →
+            </button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// DISCIPLINE STREAK CONFETTI
+// ─────────────────────────────────────────────────────────
+function StreakConfetti({ streak }) {
+  const [show, setShow] = useState(false);
+  const prevStreak = useRef(streak);
+
+  useEffect(() => {
+    if (streak > 0 && streak !== prevStreak.current && streak % 5 === 0) {
+      setShow(true);
+      const t = setTimeout(() => setShow(false), 2500);
+      prevStreak.current = streak;
+      return () => clearTimeout(t);
+    }
+    prevStreak.current = streak;
+  }, [streak]);
+
+  if (!show) return null;
+
+  const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
+  const pieces = Array.from({ length: 24 });
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl" aria-hidden="true">
+      {pieces.map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-2 h-2 rounded-sm"
+          style={{
+            left: `${5 + Math.random() * 90}%`,
+            top: "-8px",
+            backgroundColor: COLORS[i % COLORS.length],
+            animation: `confettiFall ${0.8 + Math.random() * 1.2}s ease-in ${Math.random() * 0.6}s forwards`,
+            transform: `rotate(${Math.random() * 180}deg)`,
+          }}
+        />
+      ))}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="bg-zinc-950/90 border border-emerald-700 rounded-xl px-6 py-3 text-center shadow-xl animate-[slideInFromBelow_0.4s_ease-out]">
+          <div className="text-2xl mb-1">🎯</div>
+          <div className="text-sm font-semibold text-emerald-400">{streak}-Session Streak!</div>
+          <div className="text-xs text-zinc-400 mt-0.5">Elite discipline achieved</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // ─────────────────────────────────────────
 // TOKEN
 // ─────────────────────────────────────────
@@ -1201,11 +2019,8 @@ function ConfidenceTrend({ history, confidence, isPro, onUnlock, requiredTier })
           </defs>
           <XAxis dataKey="hour" hide />
           <YAxis domain={[0, 100]} hide />
-          <Tooltip
-            contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }}
-            labelStyle={{ color: "#71717a" }}
-            formatter={(v) => [`${v}%`, "Confidence"]}
-          />
+          <Tooltip content={<PremiumTooltip formatter={(v) => [`${v}%`, "Confidence"]} />} />
+
           <ReferenceLine y={75} stroke="#22c55e" strokeDasharray="3 3" strokeOpacity={0.3} />
           <ReferenceLine y={50} stroke="#facc15" strokeDasharray="3 3" strokeOpacity={0.3} />
           <Area type="monotone" dataKey="conf" stroke="#3b82f6" strokeWidth={2} fill="url(#confGrad)" dot={false} />
@@ -1891,11 +2706,8 @@ function RegimeTimeline({ history, coin }) {
           <CartesianGrid stroke="#18181b" strokeDasharray="3 3" />
           <XAxis dataKey="hour" stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
           <YAxis stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} domain={[-100, 100]} />
-          <Tooltip
-            contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }}
-            labelStyle={{ color: "#71717a" }}
-            formatter={(v) => [v?.toFixed(2), "Score"]}
-          />
+          <Tooltip content={<PremiumTooltip formatter={(v) => [`${v?.toFixed(2)}`, "Score"]} />} />
+
           <ReferenceLine y={0} stroke="#27272a" />
           <ReferenceLine y={35} stroke="#16a34a" strokeDasharray="3 3" strokeOpacity={0.4} />
           <ReferenceLine y={-35} stroke="#dc2626" strokeDasharray="3 3" strokeOpacity={0.4} />
@@ -2006,11 +2818,8 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock, requiredTier }) {
             <CartesianGrid stroke="#18181b" strokeDasharray="3 3" />
             <XAxis dataKey="hour" stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
             <YAxis stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} domain={[0, 100]} />
-            <Tooltip
-              contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }}
-              labelStyle={{ color: "#71717a" }}
-              formatter={(v, n) => [`${v?.toFixed(1)}%`, n]}
-            />
+            <Tooltip content={<PremiumTooltip formatter={(v, n) => [`${v?.toFixed(1)}%`, n]} />} />
+
             <Line type="monotone" dataKey="survival" stroke="#22c55e" strokeWidth={2} dot={false} name="Survival %" />
             <Line type="monotone" dataKey="hazard" stroke="#f87171" strokeWidth={1.5} strokeDasharray="4 4" dot={false} name="Hazard %" />
             <ReferenceLine x={Math.round(regimeAge)} stroke="#ffffff" strokeDasharray="3 3" label={{ value: "Now", fill: "#71717a", fontSize: 10 }} />
@@ -2811,10 +3620,13 @@ function StreakTracker({ disciplineData: data, isPro, onUnlock, requiredTier }) 
       </ProGate>
     );
   return (
-    <CardShell>
+  <CardShell>
+    <div className="relative">
+      <StreakConfetti streak={streak} />
       <Label>Discipline Streak</Label>
       <p className="text-xs text-zinc-400 mb-4">Consecutive sessions where your exposure aligned with regime recommendation</p>
       {!data ? <div className="text-sm text-zinc-400">Loading streak...</div> : inner}
+</div>
     </CardShell>
   );
 }
@@ -3017,7 +3829,8 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock, requiredTier })
               <CartesianGrid stroke="#18181b" strokeDasharray="3 3" />
               <XAxis dataKey="period" stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
               <YAxis stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
-              <Tooltip contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }} labelStyle={{ color: "#71717a" }} formatter={(v, n) => [`${v?.toFixed(1)}%`, n]} />
+              <Tooltip content={<PremiumTooltip formatter={(v, n) => [`${v?.toFixed(1)}%`, n]} labelFormatter={(l) => `Period ${l}`} />} />
+
               <ReferenceLine y={0} stroke="#27272a" />
               <Line type="monotone" dataKey="user_cum" stroke="#22c55e" strokeWidth={2} dot={false} name="Your Return" />
               <Line type="monotone" dataKey="model_cum" stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 4" dot={false} name="Model Return" />
@@ -4709,6 +5522,21 @@ function SiteHeader({ coin, onCoinSelect, isPro, onUnlock, wsStatus, wsLastHeart
               </a>
             ))}
           </nav>
+{/* Command palette hint */}
+<button
+  onClick={() => {
+    const e = new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true });
+    window.dispatchEvent(e);
+  }}
+  className="hidden md:flex items-center gap-1.5 text-xs text-zinc-600 border border-zinc-800 px-2.5 py-1 rounded-lg hover:border-zinc-600 hover:text-zinc-400 transition-colors"
+  title="Open command palette"
+>
+  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+  </svg>
+  <span>⌘K</span>
+</button>
+
           <div className="flex items-center gap-3 shrink-0">
             {wsStatus && wsStatus !== "disconnected" ? (
   <LiveStatusIndicator status={wsStatus} lastHeartbeat={wsLastHeartbeat} connectionCount={wsConnectionCount} />
@@ -5166,18 +5994,32 @@ function useRegimeWebSocket({ coin, token, isPro, onUpdate }) {
         fetchStats();
       };
       ws.onmessage = (evt) => {
-        const raw = evt.data;
-        if (raw === "pong") return;
-        try {
-          const msg = JSON.parse(raw);
-          if (msg.type === "heartbeat") {
-            setLastHeartbeat(new Date(msg.timestamp));
-            ws.send("ping");
-          } else if (msg.type === "regime_snapshot" || msg.type === "regime_update") {
-            if (onUpdate) onUpdate(msg.data);
-          }
-        } catch {}
-      };
+  const raw = evt.data;
+  if (raw === "pong") return;
+  try {
+    const msg = JSON.parse(raw);
+    if (msg.type === "heartbeat") {
+      setLastHeartbeat(new Date(msg.timestamp));
+      ws.send("ping");
+    } else if (msg.type === "regime_snapshot" || msg.type === "regime_update") {
+      // Fire toast on regime change
+      if (msg.type === "regime_update" && msg.data) {
+        const newLabel = msg.data.execution?.label;
+        const shiftRisk = msg.data.shift_risk ?? 0;
+        if (newLabel && shiftRisk > 70) {
+          emitToast({
+            type: shiftRisk > 80 ? "critical" : "warning",
+            title: `⚠ High Shift Risk — ${msg.data.coin ?? ""}`,
+            message: `${newLabel} · ${shiftRisk}% deterioration probability`,
+            duration: shiftRisk > 80 ? 10000 : 6000,
+          });
+        }
+      }
+      if (onUpdate) onUpdate(msg.data);
+    }
+  } catch {}
+};
+
       ws.onerror = () => { setStatus("reconnecting"); };
       ws.onclose = () => {
         setStatus("reconnecting");
@@ -5515,7 +6357,8 @@ function BacktestingEnginePanel({ coin: propCoin, token, isPro, onUnlock }) {
                   <CartesianGrid stroke="#18181b" strokeDasharray="3 3" />
                   <XAxis dataKey="timestamp" stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 9 }} tickFormatter={(v) => v ? new Date(v).toLocaleDateString("en", { month: "short", day: "numeric" }) : ""} />
                   <YAxis stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 4 }} formatter={(v, n) => [`$${v?.toLocaleString()}`, n]} labelFormatter={(l) => l ? new Date(l).toLocaleDateString() : ""} />
+                  <Tooltip content={<PremiumTooltip formatter={(v, n) => [`$${v?.toLocaleString()}`, n]} labelFormatter={(l) => l ? new Date(l).toLocaleDateString() : ""} />} />
+
                   <Line type="monotone" dataKey="equity" stroke="#10b981" strokeWidth={2} dot={false} name="Strategy" />
                   <Line type="monotone" dataKey="benchmark" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 4" dot={false} name="Benchmark" />
                 </LineChart>
@@ -6005,6 +6848,20 @@ export default function Dashboard() {
   const [token, setToken] = useState(null);
   const [email, setEmail] = useState("");
   const [activeTier, setActiveTier] = useState("free");
+  const prevShiftRiskRef = useRef(0);
+
+// ── Keyboard shortcuts ──
+useEffect(() => {
+  const handler = (e) => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+    if (e.metaKey || e.ctrlKey) return;
+    const coinMap = { "1": "BTC", "2": "ETH", "3": "SOL", "4": "BNB", "5": "AVAX", "6": "LINK", "7": "ADA" };
+    if (coinMap[e.key]) { e.preventDefault(); setCoin(coinMap[e.key]); }
+    if (e.key === "u" || e.key === "U") { e.preventDefault(); setShowModal(true); }
+  };
+  window.addEventListener("keydown", handler);
+  return () => window.removeEventListener("keydown", handler);
+}, []);
   const isEssentialActive = hasTier(activeTier, "essential");
 const isProActive = hasTier(activeTier, "pro");
 const isInstitutionalActive = hasTier(activeTier, "institutional");
@@ -6061,6 +6918,19 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
       setCorrelation(data.correlation || null);
       setRiskEvents(data.events || []);
       setLastUpdated(new Date());
+/ Notify on high shift risk via toast
+      if (data.stack?.shift_risk > 75) {
+        const prevShiftRisk = prevShiftRiskRef.current ?? 0;
+        if (data.stack.shift_risk > prevShiftRisk + 10) {
+          emitToast({
+            type: data.stack.shift_risk > 85 ? "critical" : "warning",
+            title: `Shift Risk Elevated — ${data.stack.coin}`,
+            message: `${data.stack.shift_risk}% · ${data.stack.execution?.label ?? "Unknown regime"}`,
+            duration: 7000,
+          });
+        }
+      }
+      prevShiftRiskRef.current = data.stack?.shift_risk ?? 0;
     } catch (err) { console.error("Dashboard fetch error:", err); }
     finally { setLoading(false); }
   }, []);
@@ -6083,11 +6953,47 @@ useEffect(() => {
   const onUnlock = () => setShowModal(true);
 
   if (loading) return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4 text-zinc-400">
-      <div className="w-8 h-8 border-2 border-zinc-700 border-t-white rounded-full animate-spin" />
-      <div className="text-sm">Initialising Regime Model...</div>
+  <div className="min-h-screen bg-black">
+    <div className="h-14 bg-zinc-950/80 border-b border-white/5" />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-5">
+      {/* Verdict skeleton */}
+      <div className="bg-zinc-950/60 border border-white/10 rounded-2xl px-6 py-5">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-zinc-800 skeleton-shimmer" />
+          <div className="h-5 w-64 rounded skeleton-shimmer" />
+        </div>
+      </div>
+      {/* Today panel skeleton */}
+      <div className="bg-zinc-950/60 border border-white/10 rounded-2xl p-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+              <div className="h-2.5 w-16 rounded skeleton-shimmer" />
+              <div className="h-6 w-20 rounded skeleton-shimmer" />
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Hero grid skeleton */}
+      <div className="grid md:grid-cols-3 gap-4">
+        <div className="bg-zinc-950/60 border border-white/10 rounded-2xl p-8 space-y-4">
+          <div className="h-2.5 w-32 rounded skeleton-shimmer" />
+          <div className="h-20 w-28 rounded skeleton-shimmer" />
+          <div className="h-1 w-full rounded skeleton-shimmer" />
+        </div>
+        <div className="md:col-span-2">
+          <RegimeStackSkeleton />
+        </div>
+      </div>
+      {/* Stats skeleton */}
+      <StatsGridSkeleton />
+      {/* More panels */}
+      <CardSkeleton rows={4} />
+      <CardSkeleton rows={3} />
     </div>
-  );
+  </div>
+);
+
 
   if (!stack || stack.message) return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4 text-gray-400">
@@ -6116,8 +7022,18 @@ const isInstitutional = hasTier(activeTier, "institutional");
   const maturityLabel = maturity > 75 ? "Overextended" : maturity > 50 ? "Late Phase" : maturity > 25 ? "Mid Phase" : "Early Phase";
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      {showModal && <ProModal onClose={() => setShowModal(false)} email={email} />}
+  <main id="main-content" className="min-h-screen bg-black text-white">
+    {showModal && <ProModal onClose={() => setShowModal(false)} email={email} />}
+
+    {/* Global overlays */}
+    <ToastContainer />
+    <CommandPalette onCoinSelect={setCoin} onUnlock={onUnlock} />
+    <KeyboardShortcutsModal />
+    <OnboardingTour onComplete={() => {}} />
+
+    {/* Upgrade nudge for free users */}
+    <UpgradeNudgeStrip isPro={isPro} isProTier={isProTier} onUnlock={onUnlock} />
+
 
       {/* ── SITE HEADER (replaces inline header) ── */}
       <SiteHeader
@@ -6146,7 +7062,10 @@ const isInstitutional = hasTier(activeTier, "institutional");
         <ModelVersionBadge version={stack.model_version} durationMs={stack.computation_ms} lastUpdated={lastUpdated} />
 
         {/* ── TODAY'S VERDICT ── */}
-        <TodaysVerdict stack={stack} decision={decision} isPro={isPro} onUnlock={onUnlock} />
+        <div data-tour="today-verdict">
+  <TodaysVerdict stack={stack} decision={decision} isPro={isPro} onUnlock={onUnlock} />
+</div>
+
 
         {/* ── TODAY PANEL ── */}
         <TodayPanel stack={stack} decision={decision} isPro={isPro} onUnlock={onUnlock} />
@@ -6237,6 +7156,7 @@ const isInstitutional = hasTier(activeTier, "institutional");
         </div>
 
         {/* ── STATS GRID ── */}
+<div data-tour="stats-grid">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <StatCard label="Survival Probability" value={isEssential ? survival : null} color={isEssential ? riskColor(100 - (survival || 0)) : ""} barCls={isEssential ? (survival > 60 ? "bg-green-500" : survival > 40 ? "bg-yellow-500" : "bg-red-500") : ""} hint="Probability current regime continues" locked={!isEssential} consequence="Survival probability quantifies regime decay risk." onUnlock={onUnlock} />
 <StatCard label="Regime Shift Risk" value={isEssential ? shiftRisk : null} color={isEssential ? riskColor(shiftRisk) : ""} barCls={isEssential ? (shiftRisk > 70 ? "bg-red-500" : shiftRisk > 45 ? "bg-yellow-500" : "bg-green-500") : ""} hint="Composite deterioration signal" locked={!isEssential} consequence="Shift risk identifies breakdown probability before price moves." onUnlock={onUnlock} />
@@ -6245,6 +7165,7 @@ const isInstitutional = hasTier(activeTier, "institutional");
 <StatCard label="Strength Percentile" value={isEssential ? percentile : null} color="text-blue-400" barCls="bg-blue-500" hint="Relative to historical scores" locked={!isEssential} consequence="Percentile rank shows how extreme the current regime is historically." onUnlock={onUnlock} />
           <StatCard label="Execution Score" value={stack.execution?.score?.toFixed(1) ?? "—"} suffix="" color={regimeText(execLabel)} hint="Raw 1H momentum-vol composite" locked={false} />
         </div>
+</div>
 
      {isPro ? (
   <>
@@ -6348,7 +7269,10 @@ const isInstitutional = hasTier(activeTier, "institutional");
 )}
 
         {/* ── REGIME STACK DETAIL ── */}
-        <RegimeStackCard stack={stack} isPro={isEssential} onUnlock={onUnlock} requiredTier="essential" />
+        <div data-tour="regime-stack">
+  <RegimeStackCard stack={stack} isPro={isEssential} onUnlock={onUnlock} requiredTier="essential" />
+</div>
+
 
         {/* ── CONFIDENCE PANEL ── */}
         <ConfidencePanel confidence={confidence} isPro={isPro} onUnlock={onUnlock} />
@@ -6378,11 +7302,13 @@ const isInstitutional = hasTier(activeTier, "institutional");
   <RegimeMap overview={overview} activeCoin={coin} onSelect={setCoin} />
   <RegimeTimeline history={historyData} coin={coin} />
   <RiskEvents events={riskEvents} />
+{/* Regime Calendar */}
+<RegimeCalendar coin={coin} token={token} isPro={isEssential} onUnlock={onUnlock} />
 </AdvancedAnalytics>
 
         {/* ── PRO UPSELL FOOTER ── */}
         {!isPro && (
-          <div className="border border-zinc-700 p-10 text-center space-y-6 cursor-pointer hover:border-zinc-500 transition-colors rounded-2xl" onClick={onUnlock}>
+          <div data-tour="upgrade-cta" className="border border-zinc-700 p-10 text-center space-y-6 cursor-pointer hover:border-zinc-500 transition-colors rounded-2xl" onClick={onUnlock}>
             <div>
               <Label>ChainPulse Pro</Label>
               <h3 className="text-2xl font-semibold mt-2">Avoid one late-cycle breakdown.<br />That alone pays for this.</h3>

@@ -21,6 +21,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="bg-black text-white relative overflow-x-hidden">
+<a href="#main-content" className="skip-link">Skip to main content</a>
         <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.25),transparent_45%),radial-gradient(circle_at_80%_30%,rgba(59,130,246,0.20),transparent_45%)]" />
         <NavBarWrapper />
         {children}
