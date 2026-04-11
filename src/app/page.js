@@ -310,6 +310,19 @@ export default function Landing() {
                 title: "Daily Regime Brief",
                 desc:  "Morning snapshot of all regime conditions across assets",
               },
+{
+  title: "AI Regime Analyst",
+  desc: "3-paragraph AI narrative explaining current conditions and what to do",
+},
+{
+  title: "Backtesting Engine",
+  desc: "Test 5 strategies across up to 365 days of historical regime data",
+},
+{
+  title: "Portfolio Risk Engine",
+  desc: "Monte Carlo VaR and Kelly Criterion position sizing in one place",
+},
+
             ].map(({ title, desc }) => (
               <div key={title} className="border border-zinc-800 p-6 space-y-2">
                 <div className="text-white font-medium">{title}</div>
