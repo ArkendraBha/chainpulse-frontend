@@ -5130,7 +5130,7 @@ function ProModal({ onClose, email }) {
       </div>
     </div>
   );
-
+}
 // ─────────────────────────────────────────────────────────
 // FEATURE 1 — WEBSOCKET HOOK
 // ─────────────────────────────────────────────────────────
@@ -5980,7 +5980,7 @@ function CustomRegimeThresholdsPanel({ email, token, isInstitutional, onUnlock }
   );
 }
 
-}// ─────────────────────────────────────────
+// ─────────────────────────────────────────
 // MAIN DASHBOARD
 // ─────────────────────────────────────────
 export default function Dashboard() {
