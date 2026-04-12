@@ -1,6 +1,7 @@
 "use client";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, memo, useMemo } from "react";
+
 import {
   AreaChart, Area, LineChart, Line, RadialBarChart, RadialBar,
   XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -10,6 +11,291 @@ import {
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL;
 const SUPPORTED_COINS = ["BTC", "ETH", "SOL", "BNB", "AVAX", "LINK", "ADA"];
 const REFRESH_MS = 60_000;
+
+// ─────────────────────────────────────────────────────────
+// LAZY PANEL HOOK
+// ─────────────────────────────────────────────────────────
+function useLazyPanel(ref) {
+  const [isVisible, setIsVisible] = useState(false);
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [ref]);
+  return isVisible;
+}
+
+// ─────────────────────────────────────────────────────────
+// COMPARISON MODE PANEL
+// ─────────────────────────────────────────────────────────
+const ComparisonModePanel = memo(function ComparisonModePanel({ primaryCoin, token, isPro, onUnlock }) {
+  const [compareCoin, setCompareCoin] = useState("ETH");
+  const [primaryData, setPrimaryData] = useState(null);
+  const [compareData, setCompareData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const containerRef = useRef(null);
+  const isVisible = useLazyPanel(containerRef);
+
+  const otherCoins = SUPPORTED_COINS.filter((c) => c !== primaryCoin);
+
+  useEffect(() => {
+    if (!isPro || !primaryCoin || !compareCoin || !isVisible) return;
+    setLoading(true);
+    Promise.all([
+      apiFetch(`/dashboard?coin=${primaryCoin}`, token).catch(() => null),
+      apiFetch(`/dashboard?coin=${compareCoin}`, token).catch(() => null),
+    ]).then(([a, b]) => {
+      if (a && !a.error) setPrimaryData(a.stack);
+      if (b && !b.error) setCompareData(b.stack);
+    }).finally(() => setLoading(false));
+  }, [primaryCoin, compareCoin, isPro, token, isVisible]);
+
+  const metrics = [
+    { key: "exposure",   label: "Exposure",  fmt: (v) => `${v ?? "—"}%`, colorFn: exposureColor },
+    { key: "shift_risk", label: "Shift Risk", fmt: (v) => `${v ?? "—"}%`, colorFn: riskColor },
+    { key: "hazard",     label: "Hazard",     fmt: (v) => `${v ?? "—"}%`, colorFn: riskColor },
+    { key: "survival",   label: "Survival",   fmt: (v) => `${v ?? "—"}%`, colorFn: (v) => riskColor(100 - v) },
+    { key: "alignment",  label: "Alignment",  fmt: (v) => `${v ?? "—"}%`, colorFn: alignColor },
+  ];
+
+  const inner = (
+    <div className="space-y-5">
+      <div className="flex items-center gap-3">
+        <div className="flex-1 bg-white/2 border border-white/5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white">
+          {primaryCoin}
+          <span className="text-zinc-500 text-xs ml-2 font-normal">primary</span>
+        </div>
+        <div className="text-zinc-600 text-lg font-light">vs</div>
+        <select
+          value={compareCoin}
+          onChange={(e) => setCompareCoin(e.target.value)}
+          className="flex-1 bg-zinc-950 border border-zinc-700 text-white px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-zinc-500"
+        >
+          {otherCoins.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+
+      {loading && <div className="text-sm text-zinc-400 text-center py-4">Comparing regimes...</div>}
+
+      {primaryData && compareData && (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { coin: primaryCoin, stack: primaryData },
+              { coin: compareCoin, stack: compareData },
+            ].map(({ coin, stack }) => (
+              <div key={coin} className={`border rounded-xl p-4 space-y-2 ${regimeBorder(stack.execution?.label)}`}>
+                <div className="text-xs text-zinc-400 font-medium">{coin}</div>
+                <div className={`text-lg font-bold ${regimeText(stack.execution?.label)}`}>
+                  {stack.execution?.label ?? "—"}
+                </div>
+                <div className="text-xs text-zinc-500">{stack.regime_age_hours?.toFixed(1)}h active</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-1">
+            <div className="grid grid-cols-3 gap-2 text-[10px] text-zinc-600 uppercase tracking-widest pb-1">
+              <div>{primaryCoin}</div>
+              <div className="text-center">Metric</div>
+              <div className="text-right">{compareCoin}</div>
+            </div>
+            {metrics.map(({ key, label, fmt, colorFn }) => {
+              const aVal = primaryData[key];
+              const bVal = compareData[key];
+              return (
+                <div key={key} className="grid grid-cols-3 gap-2 items-center py-2 border-b border-white/5">
+                  <div className={`text-lg font-bold tabular-nums ${aVal != null ? colorFn(aVal) : "text-zinc-600"}`}>
+                    {fmt(aVal)}
+                  </div>
+                  <div className="text-center text-xs text-zinc-500">{label}</div>
+                  <div className={`text-lg font-bold tabular-nums text-right ${bVal != null ? colorFn(bVal) : "text-zinc-600"}`}>
+                    {fmt(bVal)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-xs text-zinc-400 uppercase tracking-widest">Timeframe Alignment</div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { coin: primaryCoin, stack: primaryData },
+                { coin: compareCoin, stack: compareData },
+              ].map(({ coin, stack }) => (
+                <div key={coin} className="space-y-1.5">
+                  <div className="text-xs text-zinc-500 font-medium">{coin}</div>
+                  {[
+                    { label: "Macro", data: stack.macro },
+                    { label: "Trend", data: stack.trend },
+                    { label: "Exec",  data: stack.execution },
+                  ].map(({ label, data }) => (
+                    <div key={label} className="flex items-center gap-2 text-xs">
+                      <span className="text-zinc-600 w-8 shrink-0">{label}</span>
+                      <span className={`${data ? regimeText(data.label) : "text-zinc-700"} font-medium`}>
+                        {data?.label?.replace("Strong ", "S.").replace("Risk-On", "R+").replace("Risk-Off", "R-") ?? "—"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  if (!isPro)
+    return (
+      <div ref={containerRef}>
+        <ProGate
+          label="Comparison Mode"
+          consequence="Overlay any two assets side by side to find the strongest regime opportunity right now."
+          onUnlock={onUnlock}
+          requiredTier="pro"
+        >
+          <div className="h-32 bg-zinc-900/40 rounded-xl" />
+        </ProGate>
+      </div>
+    );
+
+  return (
+    <div ref={containerRef}>
+      <CardShell>
+        <Label>Comparison Mode</Label>
+        <p className="text-xs text-zinc-400 mb-4">Side-by-side regime analysis across any two assets</p>
+        {inner}
+      </CardShell>
+    </div>
+  );
+});
+
+// ─────────────────────────────────────────────────────────
+// REGIME HERO BAR
+// ─────────────────────────────────────────────────────────
+function RegimeHeroBar({ stack, decision, isPro, isEssential, onUnlock, wsStatus }) {
+  if (!stack) return null;
+
+  const execLabel  = stack.execution?.label ?? "—";
+  const exposure   = stack.exposure   ?? 0;
+  const shiftRisk  = stack.shift_risk ?? 0;
+  const hazard     = stack.hazard     ?? 0;
+  const survival   = stack.survival   ?? 0;
+  const alignment  = stack.alignment  ?? 0;
+
+  const regimeBgMap = {
+    "Strong Risk-On":  "from-emerald-950/60 to-transparent border-emerald-800/50",
+    "Risk-On":         "from-green-950/40 to-transparent border-green-900/40",
+    "Neutral":         "from-yellow-950/30 to-transparent border-yellow-900/30",
+    "Risk-Off":        "from-red-950/40 to-transparent border-red-900/40",
+    "Strong Risk-Off": "from-red-950/60 to-transparent border-red-800/50",
+  };
+  const gradClass = regimeBgMap[execLabel] ?? "from-zinc-900/40 to-transparent border-white/10";
+
+  return (
+    <div className={`bg-gradient-to-r ${gradClass} border rounded-2xl px-6 py-5 transition-all duration-700`}>
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+
+        {/* Left: Regime identity */}
+        <div className="flex items-center gap-5">
+          <div>
+            <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Current Regime</div>
+            <div className={`text-3xl font-bold tracking-tight ${regimeText(execLabel)}`}>{execLabel}</div>
+            <div className="text-xs text-zinc-500 mt-0.5">
+              {stack.regime_age_hours?.toFixed(1)}h active
+              {wsStatus === "connected" && <span className="ml-2 text-emerald-500">· Live</span>}
+            </div>
+          </div>
+          <div className={`hidden sm:flex flex-col items-center px-4 py-2.5 rounded-xl border bg-black/20 ${
+            alignment >= 80 ? "border-emerald-800/60" :
+            alignment >= 50 ? "border-yellow-800/60" : "border-red-800/60"
+          }`}>
+            <div className={`text-2xl font-bold ${alignColor(alignment)}`}>{alignment}%</div>
+            <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Aligned</div>
+          </div>
+        </div>
+
+        {/* Center: Key numbers */}
+        <div className="flex items-center gap-3 flex-wrap">
+          {[
+            { label: "Exposure",  value: `${exposure}%`,  colorFn: () => exposureColor(exposure)      },
+            { label: "Shift Risk",value: `${shiftRisk}%`, colorFn: () => riskColor(shiftRisk)         },
+            { label: "Hazard",    value: `${hazard}%`,    colorFn: () => riskColor(hazard)            },
+            { label: "Survival",  value: `${survival}%`,  colorFn: () => riskColor(100 - survival)    },
+          ].map(({ label, value, colorFn }) => (
+            <div
+              key={label}
+              className={`flex flex-col items-center px-3 py-2 rounded-lg bg-black/20 border border-white/5 min-w-[72px] ${!isEssential ? "cursor-pointer" : ""}`}
+              onClick={!isEssential ? onUnlock : undefined}
+            >
+              <div className={`text-xl font-bold tabular-nums ${isEssential ? colorFn() : "text-zinc-700"} ${!isEssential ? "blur-sm select-none" : ""}`}>
+                {isEssential ? value : "—%"}
+              </div>
+              <div className="text-[10px] text-zinc-500 uppercase tracking-widest">{label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Right: Directive */}
+        <div className="shrink-0">
+          {isEssential && decision ? (
+            <div className="flex flex-col items-end gap-1">
+              <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Directive</div>
+              <div className={`text-lg font-bold ${
+                decision.action === "aggressive" ? "text-emerald-400" :
+                decision.action === "hold"       ? "text-green-400"   :
+                decision.action === "trim"       ? "text-yellow-400"  :
+                decision.action === "defensive"  ? "text-orange-400"  : "text-red-400"
+              }`}>{decision.directive}</div>
+              <div className="text-xs text-zinc-500">Score: {decision.score}/100</div>
+            </div>
+          ) : (
+            <button
+              onClick={onUnlock}
+              className="bg-white/10 hover:bg-white/15 border border-white/10 hover:border-white/20 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:-translate-y-[1px]"
+            >
+              Unlock Directive →
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom: Timeframe strip */}
+      <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-3 flex-wrap">
+        {[
+          { label: "Macro (1D)",     data: stack.macro     },
+          { label: "Trend (4H)",     data: stack.trend     },
+          { label: "Execution (1H)", data: stack.execution },
+        ].map(({ label, data }) => (
+          <div key={label} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs ${
+            data ? regimeBorder(data.label) : "border-white/5 bg-transparent"
+          }`}>
+            <span className="text-zinc-500">{label}</span>
+            <span className={`font-semibold ${data ? regimeText(data.label) : "text-zinc-600"}`}>
+              {data?.label ?? "—"}
+            </span>
+          </div>
+        ))}
+        <div className="ml-auto text-[10px] text-zinc-600 hidden md:block">
+          <kbd className="border border-zinc-700 px-1 py-0.5 rounded">⌘K</kbd> commands ·{" "}
+          <kbd className="border border-zinc-700 px-1 py-0.5 rounded">?</kbd> shortcuts
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 // ─────────────────────────────────────────────────────────
 // SKELETON COMPONENTS
@@ -151,9 +437,11 @@ function ToastItem({ id, type, title, message, onRemove }) {
         {message && <div className="text-xs text-zinc-400 mt-0.5 leading-relaxed">{message}</div>}
       </div>
       <button
-        onClick={onRemove}
-        className="text-zinc-600 hover:text-zinc-400 transition-colors shrink-0 mt-0.5 pointer-events-auto"
-      >
+  onClick={onRemove}
+  aria-label="Dismiss notification"
+  className="text-zinc-600 hover:text-zinc-400 transition-colors shrink-0 mt-0.5 pointer-events-auto"
+>
+
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -446,10 +734,11 @@ function UpgradeNudgeStrip({ isPro, isProTier, onUnlock }) {
               {msg.cta}
             </button>
             <button
-              onClick={() => setDismissed(true)}
-              className="text-zinc-600 hover:text-zinc-400 transition-colors p-1"
-              aria-label="Dismiss upgrade prompt"
-            >
+  onClick={() => setDismissed(true)}
+  aria-label="Dismiss upgrade prompt"
+  className="text-zinc-600 hover:text-zinc-400 transition-colors p-1"
+>
+
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -533,13 +822,15 @@ function ProGateTeaser({ label, consequence, children, onUnlock, requiredTier, t
 // ─────────────────────────────────────────────────────────
 // REGIME CALENDAR
 // ─────────────────────────────────────────────────────────
-function RegimeCalendar({ coin, token, isPro, onUnlock }) {
+const RegimeCalendar = memo(function RegimeCalendar({ coin, token, isPro, onUnlock }) {
   const [calendarData, setCalendarData] = useState({});
   const [loading, setLoading] = useState(false);
   const [hoveredDay, setHoveredDay] = useState(null);
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
+  const containerRef = useRef(null);
+  const isVisible = useLazyPanel(containerRef);
 
   const REGIME_CAL_COLORS = {
     "Strong Risk-On":  { bg: "bg-emerald-500/40",  border: "border-emerald-700/60",  text: "text-emerald-300"  },
@@ -550,13 +841,13 @@ function RegimeCalendar({ coin, token, isPro, onUnlock }) {
   };
 
   useEffect(() => {
-    if (!isPro || !coin || !token) return;
+    if (!isPro || !coin || !token || !isVisible) return;
     setLoading(true);
     apiFetch(`/regime-calendar?coin=${coin}&year=${viewYear}&month=${viewMonth + 1}`, token)
       .then((d) => { if (!d.error && d.days) setCalendarData(d.days); })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [coin, token, isPro, viewYear, viewMonth]);
+  }, [coin, token, isPro, viewYear, viewMonth, isVisible]);
 
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const firstDay = new Date(viewYear, viewMonth, 1).getDay();
@@ -565,11 +856,11 @@ function RegimeCalendar({ coin, token, isPro, onUnlock }) {
 
   const inner = (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={() => { if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); } else setViewMonth((m) => m - 1); }}
+            aria-label="Previous month"
             className="text-zinc-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -578,6 +869,7 @@ function RegimeCalendar({ coin, token, isPro, onUnlock }) {
           <button
             onClick={() => { if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); } else setViewMonth((m) => m + 1); }}
             disabled={isCurrentMonth}
+            aria-label="Next month"
             className="text-zinc-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
@@ -586,14 +878,12 @@ function RegimeCalendar({ coin, token, isPro, onUnlock }) {
         {loading && <div className="w-4 h-4 border-2 border-zinc-700 border-t-zinc-400 rounded-full animate-spin" />}
       </div>
 
-      {/* Day headers */}
       <div className="grid grid-cols-7 gap-1">
         {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
           <div key={d} className="text-center text-[10px] text-zinc-600 uppercase tracking-widest py-1">{d}</div>
         ))}
       </div>
 
-      {/* Grid */}
       <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
         {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -615,16 +905,12 @@ function RegimeCalendar({ coin, token, isPro, onUnlock }) {
                 w-full h-full rounded-lg flex items-center justify-center text-xs font-medium
                 transition-all duration-150 select-none
                 ${isFuture ? "opacity-20 cursor-default" : "cursor-default"}
-                ${colors
-                  ? `${colors.bg} border ${colors.border} ${colors.text}`
-                  : "bg-zinc-900/40 border border-zinc-800 text-zinc-600"
-                }
+                ${colors ? `${colors.bg} border ${colors.border} ${colors.text}` : "bg-zinc-900/40 border border-zinc-800 text-zinc-600"}
                 ${isToday ? "ring-2 ring-white/60 ring-offset-1 ring-offset-black" : ""}
                 ${hoveredDay?.day === day && !isFuture ? "scale-110 z-10 shadow-lg" : ""}
               `}>
                 {day}
               </div>
-              {/* Tooltip */}
               {hoveredDay?.day === day && regime && !isFuture && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 pointer-events-none whitespace-nowrap">
                   <div className="bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-xs shadow-xl">
@@ -638,7 +924,6 @@ function RegimeCalendar({ coin, token, isPro, onUnlock }) {
         })}
       </div>
 
-      {/* Legend */}
       <div className="flex flex-wrap gap-3 pt-2 border-t border-white/5">
         {Object.entries(REGIME_CAL_COLORS).map(([label, colors]) => (
           <div key={label} className="flex items-center gap-1.5">
@@ -652,19 +937,24 @@ function RegimeCalendar({ coin, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Regime History Calendar" consequence="See which regime was active every day this month — spot patterns and seasonality." onUnlock={onUnlock} requiredTier="essential">
-        {inner}
-      </ProGate>
+      <div ref={containerRef}>
+        <ProGate label="Regime History Calendar" consequence="See which regime was active every day this month — spot patterns and seasonality." onUnlock={onUnlock} requiredTier="essential">
+          {inner}
+        </ProGate>
+      </div>
     );
 
   return (
-    <CardShell>
-      <Label>Regime History Calendar</Label>
-      <p className="text-xs text-zinc-400">{coin} daily regime — hover any day for details</p>
-      {inner}
-    </CardShell>
+    <div ref={containerRef}>
+      <CardShell>
+        <Label>Regime History Calendar</Label>
+        <p className="text-xs text-zinc-400">{coin} daily regime — hover any day for details</p>
+        {inner}
+      </CardShell>
+    </div>
   );
-}
+});
+
 
 // ─────────────────────────────────────────────────────────
 // ONBOARDING TOUR
@@ -1285,27 +1575,81 @@ function TodaysVerdict({ stack, decision, isPro, onUnlock, requiredTier }) {
 // FREE TIER BANNER
 // ─────────────────────────────────────────
 function FreeTierBanner({ onUnlock }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <div className="border border-zinc-700 bg-zinc-950/80 px-6 py-5 rounded-2xl">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="space-y-1">
-          <div className="text-sm text-white font-medium">
-            You are viewing regime context only
+    <div className="border border-zinc-700/60 bg-gradient-to-r from-zinc-900/80 to-zinc-950/80 rounded-2xl overflow-hidden">
+      <div className="px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+            <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
           </div>
-          <div className="text-xs text-zinc-400">
-            Without exposure modeling and survival analysis, you are trading without a risk framework.
+          <div>
+            <div className="text-sm font-semibold text-white">You're on the Free tier</div>
+            <div className="text-xs text-zinc-400 mt-0.5">
+              Regime labels and direction are live.{" "}
+              <button
+                onClick={() => setExpanded((v) => !v)}
+                className="text-zinc-500 hover:text-zinc-300 underline underline-offset-2 transition-colors"
+              >
+                {expanded ? "Show less" : "See what you're missing"}
+              </button>
+            </div>
           </div>
         </div>
         <button
-  onClick={onUnlock}
-  className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-6 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap hover:bg-gray-100 shrink-0"
->
-  View Plans — Starting at $39/mo
-</button>
+          onClick={onUnlock}
+          className="bg-white text-black text-xs font-semibold px-5 py-2.5 rounded-xl hover:bg-zinc-100 transition-all hover:-translate-y-[1px] hover:shadow-lg shrink-0"
+        >
+          Start Free Trial
+        </button>
       </div>
+
+      {expanded && (
+        <div className="px-6 pb-5 border-t border-zinc-800">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+            {[
+              { icon: "📊", label: "Exposure %",     desc: "Exact allocation for this regime",     tier: "Essential" },
+              { icon: "⚡", label: "Shift Risk",      desc: "Deterioration probability in %",       tier: "Essential" },
+              { icon: "🎯", label: "Daily Directive", desc: "Increase / Trim / Defensive signal",   tier: "Essential" },
+              { icon: "📈", label: "Survival Curve",  desc: "How long this regime typically lasts", tier: "Essential" },
+              { icon: "🔬", label: "Setup Quality",   desc: "Is now a good entry point?",           tier: "Pro" },
+              { icon: "🤖", label: "AI Narrative",    desc: "3-paragraph regime explanation",       tier: "Pro" },
+              { icon: "📉", label: "Backtesting",     desc: "Historical strategy performance",      tier: "Pro" },
+              { icon: "🛡️", label: "Trade Plans",     desc: "Entry zones, stops, tranches",         tier: "Pro" },
+            ].map(({ icon, label, desc, tier }) => (
+              <div
+                key={label}
+                onClick={onUnlock}
+                className="bg-white/2 border border-white/5 rounded-xl p-3 space-y-1 cursor-pointer hover:border-zinc-600 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-base">{icon}</span>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium ${
+                    tier === "Pro"
+                      ? "border-emerald-800 text-emerald-500 bg-emerald-950/40"
+                      : "border-blue-800 text-blue-400 bg-blue-950/40"
+                  }`}>{tier}</span>
+                </div>
+                <div className="text-xs font-medium text-white">{label}</div>
+                <div className="text-[10px] text-zinc-600 leading-relaxed">{desc}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex items-center justify-between">
+            <div className="text-xs text-zinc-600">7-day free trial · No credit card required · Cancel anytime</div>
+            <button onClick={onUnlock} className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors font-medium">
+              View all features →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
 // ─────────────────────────────────────────
 // SHIFT RISK ALERT
@@ -1486,18 +1830,20 @@ function RegimeQualityCard({ stack, isPro, onUnlock, requiredTier }) {
 // ─────────────────────────────────────────
 // HISTORICAL ANALOGS PANEL
 // ─────────────────────────────────────────
-function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock, requiredTier }) {
+const HistoricalAnalogsPanel = memo(function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const containerRef = useRef(null);
+  const isVisible = useLazyPanel(containerRef);
 
   useEffect(() => {
-    if (!isPro || !coin) return;
+    if (!isPro || !coin || !isVisible) return;
     setLoading(true);
     apiFetch(`/historical-analogs?coin=${coin}`, token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [coin, isPro, token]);
+  }, [coin, isPro, token, isVisible]);
 
   const inner = data ? (
     <div className="space-y-6">
@@ -1509,11 +1855,11 @@ function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock, requiredTier }) 
         <>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[
-              { l: "Sample Size", v: data.sample_size, s: "" },
+              { l: "Sample Size",      v: data.sample_size,                          s: ""  },
               { l: "Avg Continuation", v: `${data.continuation?.avg_hours?.toFixed(1)}h`, s: "" },
-              { l: "Max Continuation", v: `${data.continuation?.max_hours}h`, s: "" },
-              { l: "24h Cont. Prob", v: data.continuation?.prob_24h_pct, s: "%", c: data.continuation?.prob_24h_pct > 60 ? "text-emerald-400" : "text-yellow-400" },
-              { l: "72h Cont. Prob", v: data.continuation?.prob_72h_pct, s: "%", c: data.continuation?.prob_72h_pct > 40 ? "text-emerald-400" : "text-yellow-400" },
+              { l: "Max Continuation", v: `${data.continuation?.max_hours}h`,        s: ""  },
+              { l: "24h Cont. Prob",   v: data.continuation?.prob_24h_pct,           s: "%", c: data.continuation?.prob_24h_pct > 60 ? "text-emerald-400" : "text-yellow-400" },
+              { l: "72h Cont. Prob",   v: data.continuation?.prob_72h_pct,           s: "%", c: data.continuation?.prob_72h_pct > 40 ? "text-emerald-400" : "text-yellow-400" },
             ].map(({ l, v, s, c }) => (
               <div key={l} className="bg-white/2 border border-white/5 rounded-lg p-3 space-y-1">
                 <div className="text-xs text-zinc-400">{l}</div>
@@ -1588,18 +1934,23 @@ function HistoricalAnalogsPanel({ coin, token, isPro, onUnlock, requiredTier }) 
 
   if (!isPro)
     return (
-      <ProGate label="Historical Analogs" consequence="Without historical analogs, you have no statistical context for current regime conditions." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
-        {inner}
-      </ProGate>
+      <div ref={containerRef}>
+        <ProGate label="Historical Analogs" consequence="Without historical analogs, you have no statistical context for current regime conditions." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
+          {inner}
+        </ProGate>
+      </div>
     );
+
   return (
-    <CardShell>
-      <Label>Historical Analogs</Label>
-      <p className="text-xs text-zinc-400 mb-4">Forward return statistics from similar historical regime conditions</p>
-      {inner}
-    </CardShell>
+    <div ref={containerRef}>
+      <CardShell>
+        <Label>Historical Analogs</Label>
+        <p className="text-xs text-zinc-400 mb-4">Forward return statistics from similar historical regime conditions</p>
+        {inner}
+      </CardShell>
+    </div>
   );
-}
+});
 
 // ─────────────────────────────────────────
 // REGIME PLAYBOOK ENGINE
@@ -3775,20 +4126,22 @@ function DisciplinePanel({ disciplineData: data, isPro, onUnlock, requiredTier }
 }
 
 // ─────────────────────────────────────────
-// MISTAKE REPLAY PANEL — FIX: uses token + apiFetch
+// MISTAKE REPLAY PANEL 
 // ─────────────────────────────────────────
-function MistakeReplayPanel({ email, coin, token, isPro, onUnlock, requiredTier }) {
+const MistakeReplayPanel = memo(function MistakeReplayPanel({ email, coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const containerRef = useRef(null);
+  const isVisible = useLazyPanel(containerRef);
 
   useEffect(() => {
-    if (!email || !isPro) return;
+    if (!email || !isPro || !isVisible) return;
     setLoading(true);
     apiFetch(`/mistake-replay?email=${encodeURIComponent(email)}&coin=${coin}`, token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [email, coin, isPro, token]);
+  }, [email, coin, isPro, token, isVisible]);
 
   const severityStyle = (s) => {
     if (s === "high") return "border-red-800 bg-red-950 text-red-300";
@@ -3843,18 +4196,23 @@ function MistakeReplayPanel({ email, coin, token, isPro, onUnlock, requiredTier 
 
   if (!isPro)
     return (
-      <ProGate label="Mistake Replay Engine" consequence="Mistake replay identifies the exact conditions where your decisions cost you money." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
-        {inner}
-      </ProGate>
+      <div ref={containerRef}>
+        <ProGate label="Mistake Replay Engine" consequence="Mistake replay identifies the exact conditions where your decisions cost you money." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
+          {inner}
+        </ProGate>
+      </div>
     );
+
   return (
-    <CardShell>
-      <Label>Mistake Replay Engine</Label>
-      <p className="text-xs text-zinc-400 mb-4">Sessions where you deviated from the model during elevated risk conditions</p>
-      {inner}
-    </CardShell>
+    <div ref={containerRef}>
+      <CardShell>
+        <Label>Mistake Replay Engine</Label>
+        <p className="text-xs text-zinc-400 mb-4">Sessions where you deviated from the model during elevated risk conditions</p>
+        {inner}
+      </CardShell>
+    </div>
   );
-}
+});
 
 // ─────────────────────────────────────────
 // PERFORMANCE PANEL — already had token, kept clean
@@ -3965,20 +4323,22 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock, requiredTier })
 }
 
 // ─────────────────────────────────────────
-// EDGE PROFILE PANEL — FIX: uses token + apiFetch
+// EDGE PROFILE PANEL 
 // ─────────────────────────────────────────
-function EdgeProfilePanel({ email, token, isPro, onUnlock, requiredTier }) {
+const EdgeProfilePanel = memo(function EdgeProfilePanel({ email, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const containerRef = useRef(null);
+  const isVisible = useLazyPanel(containerRef);
 
   useEffect(() => {
-    if (!email || !isPro) return;
+    if (!email || !isPro || !isVisible) return;
     setLoading(true);
     apiFetch(`/edge-profile?email=${encodeURIComponent(email)}`, token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [email, isPro, token]);
+  }, [email, isPro, token, isVisible]);
 
   const perfColor = (perf) => {
     if (perf === "Strong") return "text-emerald-400";
@@ -3988,8 +4348,9 @@ function EdgeProfilePanel({ email, token, isPro, onUnlock, requiredTier }) {
   };
 
   const inner = !data ? (
-    loading ? <div className="text-sm text-zinc-400">Building your edge profile...</div>
-    : <div className="text-sm text-zinc-400">Log exposure across multiple sessions to unlock your edge profile.</div>
+    loading
+      ? <div className="text-sm text-zinc-400">Building your edge profile...</div>
+      : <div className="text-sm text-zinc-400">Log exposure across multiple sessions to unlock your edge profile.</div>
   ) : !data.ready ? (
     <div className="space-y-3">
       <div className="border border-white/5 px-4 py-3 text-sm text-zinc-400 rounded-lg">{data.message}</div>
@@ -4066,28 +4427,35 @@ function EdgeProfilePanel({ email, token, isPro, onUnlock, requiredTier }) {
 
   if (!isPro)
     return (
-      <ProGate label="Edge Profile" consequence="Without an edge profile you cannot identify which regimes you consistently outperform in." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
-        {inner}
-      </ProGate>
+      <div ref={containerRef}>
+        <ProGate label="Edge Profile" consequence="Without an edge profile you cannot identify which regimes you consistently outperform in." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
+          {inner}
+        </ProGate>
+      </div>
     );
+
   return (
-    <CardShell>
-      <Label>Edge Profile</Label>
-      <p className="text-xs text-zinc-400 mb-4">Your historical performance breakdown by regime type</p>
-      {inner}
-    </CardShell>
+    <div ref={containerRef}>
+      <CardShell>
+        <Label>Edge Profile</Label>
+        <p className="text-xs text-zinc-400 mb-4">Your historical performance breakdown by regime type</p>
+        {inner}
+      </CardShell>
+    </div>
   );
-}
+});
 
 // ─────────────────────────────────────────
-// WEEKLY REPORT PANEL — FIX: uses token + apiFetch
+// WEEKLY REPORT PANEL 
 // ─────────────────────────────────────────
-function WeeklyReportPanel({ email, coin, token, isPro, onUnlock, requiredTier }) {
+const WeeklyReportPanel = memo(function WeeklyReportPanel({ email, coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const containerRef = useRef(null);
+  const isVisible = useLazyPanel(containerRef);
 
   useEffect(() => {
-    if (!email || !isPro) return;
+    if (!email || !isPro || !isVisible) return;
     setLoading(true);
     Promise.all([
       apiFetch(`/discipline-score?email=${encodeURIComponent(email)}`, token),
@@ -4096,7 +4464,7 @@ function WeeklyReportPanel({ email, coin, token, isPro, onUnlock, requiredTier }
       .then(([discipline, performance]) => setData({ discipline, performance }))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [email, coin, isPro, token]);
+  }, [email, coin, isPro, token, isVisible]);
 
   const inner = data ? (
     <div className="space-y-5">
@@ -4142,18 +4510,23 @@ function WeeklyReportPanel({ email, coin, token, isPro, onUnlock, requiredTier }
 
   if (!isPro)
     return (
-      <ProGate label="Weekly Performance Report" consequence="Weekly reports show whether your discipline is improving or deteriorating over time." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
-        {inner}
-      </ProGate>
+      <div ref={containerRef}>
+        <ProGate label="Weekly Performance Report" consequence="Weekly reports show whether your discipline is improving or deteriorating over time." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
+          {inner}
+        </ProGate>
+      </div>
     );
+
   return (
-    <CardShell>
-      <Label>Weekly Performance Report</Label>
-      <p className="text-xs text-zinc-400 mb-4">Discipline score, returns, and notable events from this period</p>
-      {inner}
-    </CardShell>
+    <div ref={containerRef}>
+      <CardShell>
+        <Label>Weekly Performance Report</Label>
+        <p className="text-xs text-zinc-400 mb-4">Discipline score, returns, and notable events from this period</p>
+        {inner}
+      </CardShell>
+    </div>
   );
-}
+});
 
 // ─────────────────────────────────────────
 // PORTFOLIO HEALTH SCORE — FIX: uses token + apiFetch
@@ -5060,18 +5433,20 @@ function InternalDamagePanel({ coin, token, isPro, onUnlock,  requiredTier }) {
 // ─────────────────────────────────────────
 // BEHAVIORAL ALPHA PANEL
 // ─────────────────────────────────────────
-function BehavioralAlphaPanel({ email, token, isPro, onUnlock,  requiredTier }) {
+const BehavioralAlphaPanel = memo(function BehavioralAlphaPanel({ email, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const containerRef = useRef(null);
+  const isVisible = useLazyPanel(containerRef);
 
   useEffect(() => {
-    if (!isPro || !email) return;
+    if (!isPro || !email || !isVisible) return;
     setLoading(true);
     apiFetch(`/behavioral-alpha?email=${encodeURIComponent(email)}&lookback_days=30`, token)
       .then((d) => { if (!d.error) setData(d); })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [email, isPro, token]);
+  }, [email, isPro, token, isVisible]);
 
   function gradeStyle(grade) {
     if (grade === "A") return "text-emerald-400";
@@ -5162,18 +5537,23 @@ function BehavioralAlphaPanel({ email, token, isPro, onUnlock,  requiredTier }) 
 
   if (!isPro)
     return (
-      <ProGate label="Behavioral Alpha Report" consequence="Without behavioral analysis, you cannot identify the specific patterns costing you money." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
-        {inner}
-      </ProGate>
+      <div ref={containerRef}>
+        <ProGate label="Behavioral Alpha Report" consequence="Without behavioral analysis, you cannot identify the specific patterns costing you money." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
+          {inner}
+        </ProGate>
+      </div>
     );
+
   return (
-    <CardShell>
-      <Label>Behavioral Alpha Report</Label>
-      <p className="text-xs text-zinc-400 mb-4">Identifies specific behavioral leaks and their estimated cost</p>
-      {inner}
-    </CardShell>
+    <div ref={containerRef}>
+      <CardShell>
+        <Label>Behavioral Alpha Report</Label>
+        <p className="text-xs text-zinc-400 mb-4">Identifies specific behavioral leaks and their estimated cost</p>
+        {inner}
+      </CardShell>
+    </div>
   );
-}
+});
 
 // ─────────────────────────────────────────
 // EVENT RISK OVERLAY PANEL
@@ -5497,8 +5877,10 @@ function WhatChangedPanel({ token, isPro, onUnlock, requiredTier }) {
 // ─────────────────────────────────────────
 function LivePriceTicker({ activeCoin, onCoinSelect }) {
   const [prices, setPrices] = useState({});
-  const [changes, setChanges] = useState({});
-  const [prev, setPrev] = useState({});
+const [changes, setChanges] = useState({});
+const [prev, setPrev] = useState({});
+const [sparklines, setSparklines] = useState({});
+
 
   useEffect(() => {
   const fetchPrices = async () => {
@@ -5517,6 +5899,20 @@ function LivePriceTicker({ activeCoin, onCoinSelect }) {
         return p;
       });
       setChanges(ch);
+// Fetch sparklines — fire and forget, non-blocking
+Promise.all(
+  SUPPORTED_COINS.map((c) =>
+    fetch(`[api.binance.com](https://api.binance.com/api/v3/klines?symbol=${c}USDT&interval=1h&limit=24)`)
+      .then((r) => r.json())
+      .then((k) => ({ c, data: k.map((x) => parseFloat(x[4])) }))
+      .catch(() => ({ c, data: [] }))
+  )
+).then((results) => {
+  const sp = {};
+  results.forEach(({ c, data }) => { sp[c] = data; });
+  setSparklines(sp);
+}).catch(() => {});
+
     } catch (err) { console.error("Price fetch error:", err); }
   };
   fetchPrices();
@@ -5532,7 +5928,8 @@ function LivePriceTicker({ activeCoin, onCoinSelect }) {
   };
 
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-hide py-0.5 flex-wrap">
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide py-0.5 flex-nowrap">
+
       {SUPPORTED_COINS.map((coin) => {
         const price = prices[coin];
         const change = changes[coin];
@@ -5550,7 +5947,33 @@ function LivePriceTicker({ activeCoin, onCoinSelect }) {
             } ${flash ? "animate-pulse" : ""}`}
           >
             <span className={`text-xs font-semibold ${isActive ? "text-white" : "text-zinc-300"}`}>{coin}</span>
-            <span className="text-xs text-zinc-400 tabular-nums font-mono">${fmt(price)}</span>
+
+{sparklines[coin]?.length > 1 && (
+  <svg width="28" height="14" className="shrink-0 opacity-80">
+    {(() => {
+      const d = sparklines[coin];
+      const min = Math.min(...d);
+      const max = Math.max(...d);
+      const range = max - min || 1;
+      const pts = d.map((v, i) =>
+        `${(i / (d.length - 1)) * 28},${14 - ((v - min) / range) * 12}`
+      ).join(" ");
+      return (
+        <polyline
+          points={pts}
+          fill="none"
+          stroke={isPos ? "#4ade80" : "#f87171"}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      );
+    })()}
+  </svg>
+)}
+
+<span className="text-xs text-zinc-400 tabular-nums font-mono">${fmt(price)}</span>
+
             {change !== undefined && (
               <span className={`text-xs font-medium tabular-nums ${isPos ? "text-emerald-400" : "text-red-400"}`}>
                 {isPos ? "+" : ""}{change?.toFixed(2)}%
@@ -5610,10 +6033,19 @@ function SiteHeader({ coin, onCoinSelect, isPro, onUnlock, wsStatus, wsLastHeart
             {wsStatus && wsStatus !== "disconnected" ? (
   <LiveStatusIndicator status={wsStatus} lastHeartbeat={wsLastHeartbeat} connectionCount={wsConnectionCount} />
 ) : (
-  <div className="hidden sm:flex items-center gap-1.5 text-xs text-zinc-500">
-    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />Live
+  <div className="hidden sm:flex items-center gap-2">
+    <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+      <span>Live</span>
+    </div>
+    {wsConnectionCount && wsConnectionCount > 0 && (
+      <div className="text-[10px] text-zinc-600 border border-zinc-800 px-2 py-0.5 rounded-full">
+        {wsConnectionCount.toLocaleString()} online
+      </div>
+    )}
   </div>
 )}
+
 
             {isPro ? (
               <span className="text-xs text-emerald-400 border border-emerald-900/60 bg-emerald-950/40 px-3 py-1.5 rounded-xl">Pro Active</span>
@@ -5907,9 +6339,11 @@ function ProModal({ onClose, email }) {
       <div className="bg-zinc-950 border border-white/8 rounded-2xl max-w-2xl w-full p-8 space-y-6 relative shadow-2xl shadow-black/50">
         {/* Close button */}
         <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors"
-        >
+  onClick={onClose}
+  aria-label="Close modal"
+  className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors"
+>
+
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -6324,7 +6758,7 @@ function OnChainIntelligencePanel({ coin, token, isEssential, isPro, onUnlock })
 // ─────────────────────────────────────────────────────────
 // FEATURE 4 — BACKTESTING ENGINE
 // ─────────────────────────────────────────────────────────
-function BacktestingEnginePanel({ coin: propCoin, token, isPro, onUnlock }) {
+const BacktestingEnginePanel = memo(function BacktestingEnginePanel({ coin: propCoin, token, isPro, onUnlock }) {
   const [coin, setCoin] = useState(propCoin || "BTC");
   const [days, setDays] = useState(90);
   const [strategy, setStrategy] = useState("follow_model");
@@ -6332,6 +6766,8 @@ function BacktestingEnginePanel({ coin: propCoin, token, isPro, onUnlock }) {
   const [compareData, setCompareData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState("single");
+  const containerRef = useRef(null);
+  const isVisible = useLazyPanel(containerRef);
 
   useEffect(() => { setCoin(propCoin || "BTC"); }, [propCoin]);
 
@@ -6427,7 +6863,6 @@ function BacktestingEnginePanel({ coin: propCoin, token, isPro, onUnlock }) {
                   <XAxis dataKey="timestamp" stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 9 }} tickFormatter={(v) => v ? new Date(v).toLocaleDateString("en", { month: "short", day: "numeric" }) : ""} />
                   <YAxis stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
                   <Tooltip content={<PremiumTooltip formatter={(v, n) => [`$${v?.toLocaleString()}`, n]} labelFormatter={(l) => l ? new Date(l).toLocaleDateString() : ""} />} />
-
                   <Line type="monotone" dataKey="equity" stroke="#10b981" strokeWidth={2} dot={false} name="Strategy" />
                   <Line type="monotone" dataKey="benchmark" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 4" dot={false} name="Benchmark" />
                 </LineChart>
@@ -6505,19 +6940,23 @@ function BacktestingEnginePanel({ coin: propCoin, token, isPro, onUnlock }) {
 
   if (!isPro)
     return (
-      <ProGate label="Backtesting Engine" consequence="Test how different strategies performed across historical regime conditions." onUnlock={onUnlock} requiredTier="pro">
-        <div className="h-32 bg-zinc-900/40 rounded-xl" />
-      </ProGate>
+      <div ref={containerRef}>
+        <ProGate label="Backtesting Engine" consequence="Test how different strategies performed across historical regime conditions." onUnlock={onUnlock} requiredTier="pro">
+          <div className="h-32 bg-zinc-900/40 rounded-xl" />
+        </ProGate>
+      </div>
     );
 
   return (
-    <CardShell>
-      <Label>Backtesting Engine</Label>
-      <p className="text-xs text-zinc-400 mb-4">Simulate strategy performance across historical regime conditions</p>
-      {inner}
-    </CardShell>
+    <div ref={containerRef}>
+      <CardShell>
+        <Label>Backtesting Engine</Label>
+        <p className="text-xs text-zinc-400 mb-4">Simulate strategy performance across historical regime conditions</p>
+        {inner}
+      </CardShell>
+    </div>
   );
-}
+});
 
 // ─────────────────────────────────────────────────────────
 // FEATURES 5 & 6 — PORTFOLIO RISK ENGINE
@@ -6918,6 +7357,9 @@ export default function Dashboard() {
   const [email, setEmail] = useState("");
   const [activeTier, setActiveTier] = useState("free");
   const prevShiftRiskRef = useRef(0);
+const isProActiveRef = useRef(false);
+
+  const prevShiftRiskRef = useRef(0);
 
 // ── Keyboard shortcuts ──
 useEffect(() => {
@@ -6997,6 +7439,29 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
             message: `${data.stack.shift_risk}% · ${data.stack.execution?.label ?? "Unknown regime"}`,
             duration: 7000,
           });
+          // Sound alert for critical shift risk
+if (data.stack.shift_risk > 85 && typeof window !== "undefined") {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const tone = (freq, start, dur, gain = 0.25) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(gain, start + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+      osc.start(start);
+      osc.stop(start + dur);
+    };
+    tone(880, ctx.currentTime,        0.15, 0.25);
+    tone(660, ctx.currentTime + 0.18, 0.15, 0.20);
+    tone(440, ctx.currentTime + 0.36, 0.25, 0.18);
+  } catch {}
+}
+
         }
       }
       prevShiftRiskRef.current = data.stack?.shift_risk ?? 0;
@@ -7005,12 +7470,18 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
   }, []);
 
   useEffect(() => {
+  isProActiveRef.current = isProActive;
+}, [isProActive]);
+
+useEffect(() => {
   setLoading(true);
   fetchData(coin, token);
-  const pollMs = isProActive ? 300_000 : REFRESH_MS;
-  const iv = setInterval(() => fetchData(coin, token), pollMs);
+  const iv = setInterval(() => {
+    fetchData(coin, token);
+  }, isProActiveRef.current ? 300_000 : REFRESH_MS);
   return () => clearInterval(iv);
-}, [coin, token, fetchData, isProActive]);
+}, [coin, token, fetchData]);
+
 
 useEffect(() => {
   if (!email || !token || !stack || stack.pro_required) return;
@@ -7019,7 +7490,8 @@ useEffect(() => {
     .catch(console.error);
 }, [email, token, stack]);
 
-  const onUnlock = () => setShowModal(true);
+  const onUnlock = useCallback(() => setShowModal(true), []);
+
 
   if (loading) return (
   <div className="min-h-screen bg-black">
@@ -7074,9 +7546,9 @@ useEffect(() => {
   );
 
   const isPro = !stack.pro_required;
-  const isEssential = hasTier(activeTier, "essential");
-  const isProTier = hasTier(activeTier, "pro");
-const isInstitutional = hasTier(activeTier, "institutional");
+  const isEssential = useMemo(() => hasTier(activeTier, "essential"), [activeTier]);
+const isProTier = useMemo(() => hasTier(activeTier, "pro"), [activeTier]);
+const isInstitutional = useMemo(() => hasTier(activeTier, "institutional"), [activeTier]);
   const exposure = stack.exposure ?? 0;
   const shiftRisk = stack.shift_risk ?? 0;
   const alignment = stack.alignment ?? 0;
@@ -7093,6 +7565,13 @@ const isInstitutional = hasTier(activeTier, "institutional");
   return (
   <main id="main-content" className="min-h-screen bg-black text-white">
     {showModal && <ProModal onClose={() => setShowModal(false)} email={email} />}
+    {/* Screen reader live announcements */}
+    <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+      {stack
+        ? `Current regime: ${stack.execution?.label ?? "Unknown"}. Shift risk: ${stack.shift_risk ?? 0} percent.`
+        : "Loading regime data."
+      }
+    </div>
 
     {/* Global overlays */}
     <ToastContainer />
@@ -7146,10 +7625,30 @@ const isInstitutional = hasTier(activeTier, "institutional");
         <ShiftRiskAlert shiftRisk={shiftRisk} coin={coin} isPro={isPro} />
         <StaleDataBanner isStale={stack?.is_stale || stack?.data_source === "cache"} dataTimestamp={stack?.data_timestamp} />
 
+{/* ── REGIME HERO BAR ── */}
+<RegimeHeroBar
+  stack={stack}
+  decision={decision}
+  isPro={isPro}
+  isEssential={isEssential}
+  onUnlock={onUnlock}
+  wsStatus={isProTier ? wsStatus : null}
+/>
+
         {/* ── WHAT CHANGED (24H) ── */}
         <WhatChangedPanel token={token} isPro={isPro} onUnlock={onUnlock} />
 {/* Feature 2: AI Narrative */}
 <AINarrativePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} />
+
+{/* Comparison Mode */}
+<ErrorBoundary>
+  <ComparisonModePanel
+    primaryCoin={coin}
+    token={token}
+    isPro={isProTier}
+    onUnlock={onUnlock}
+  />
+</ErrorBoundary>
 
 {/* Feature 3: On-Chain Intelligence */}
 <OnChainIntelligencePanel coin={coin} token={token} isEssential={isEssential} isPro={isProTier} onUnlock={onUnlock} />
@@ -7226,7 +7725,7 @@ const isInstitutional = hasTier(activeTier, "institutional");
 
         {/* ── STATS GRID ── */}
 <div data-tour="stats-grid">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatCard label="Survival Probability" value={isEssential ? survival : null} color={isEssential ? riskColor(100 - (survival || 0)) : ""} barCls={isEssential ? (survival > 60 ? "bg-green-500" : survival > 40 ? "bg-yellow-500" : "bg-red-500") : ""} hint="Probability current regime continues" locked={!isEssential} consequence="Survival probability quantifies regime decay risk." onUnlock={onUnlock} />
 <StatCard label="Regime Shift Risk" value={isEssential ? shiftRisk : null} color={isEssential ? riskColor(shiftRisk) : ""} barCls={isEssential ? (shiftRisk > 70 ? "bg-red-500" : shiftRisk > 45 ? "bg-yellow-500" : "bg-green-500") : ""} hint="Composite deterioration signal" locked={!isEssential} consequence="Shift risk identifies breakdown probability before price moves." onUnlock={onUnlock} />
 <StatCard label="Hazard Rate" value={isEssential ? hazard : null} color={isEssential ? riskColor(hazard || 0) : ""} barCls={isEssential ? (hazard > 70 ? "bg-red-500" : hazard > 45 ? "bg-yellow-500" : "bg-green-500") : ""} hint="Failure risk vs historical norm" locked={!isEssential} consequence="Hazard rate measures how fragile this regime is vs history." onUnlock={onUnlock} />
@@ -7329,6 +7828,8 @@ const isInstitutional = hasTier(activeTier, "institutional");
     <DecisionEnginePanel stack={stack} token={token} isPro={false} onUnlock={onUnlock} onDecisionLoaded={setDecision} requiredTier="essential" />
     <RegimePlaybook stack={stack} isPro={false} onUnlock={onUnlock} requiredTier="essential" />
     <ProIntelligencePreview onUnlock={onUnlock} />
+<ComparisonModePanel primaryCoin={coin} token={token} isPro={false} onUnlock={onUnlock} />
+
     <AINarrativePanel coin={coin} token={token} isPro={false} onUnlock={onUnlock} />
 <OnChainIntelligencePanel coin={coin} token={token} isEssential={false} isPro={false} onUnlock={onUnlock} />
 <BacktestingEnginePanel coin={coin} token={token} isPro={false} onUnlock={onUnlock} />
