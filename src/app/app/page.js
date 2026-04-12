@@ -2805,41 +2805,110 @@ function RegimeMap({ overview, activeCoin, onSelect }) {
 // SURVIVAL CURVE
 // ─────────────────────────────────────────
 function SurvivalCurve({ curve, regimeAge, isPro, onUnlock, requiredTier }) {
+  // Generate a fake curve for the teaser so free users see something behind the gate
+  const teaserCurve = Array.from({ length: 48 }, (_, i) => ({
+    hour: i,
+    survival: Math.max(10, 100 - (i * 1.8) - Math.sin(i * 0.3) * 8),
+    hazard: Math.min(90, 5 + (i * 1.2) + Math.cos(i * 0.4) * 5),
+  }));
+
+  const displayCurve = isPro && curve?.length > 0 ? curve : teaserCurve;
+
   return (
     <CardShell>
       <div>
         <Label>Survival Curve</Label>
         <h2 className="text-base font-semibold">Regime Persistence Probability</h2>
-        <p className="text-xs text-zinc-400 mt-1">Probability current regime persists · white line = current age</p>
+        <p className="text-xs text-zinc-400 mt-1">
+          Probability current regime persists · white line = current age
+        </p>
       </div>
-      <div className={!isPro ? "blur-sm pointer-events-none" : ""}>
-        <ResponsiveContainer width="100%" height={260}>
-          <LineChart data={curve}>
-            <CartesianGrid stroke="#18181b" strokeDasharray="3 3" />
-            <XAxis dataKey="hour" stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
-            <YAxis stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} domain={[0, 100]} />
-            <Tooltip content={<PremiumTooltip formatter={(v, n) => [`${v?.toFixed(1)}%`, n]} />} />
 
-            <Line type="monotone" dataKey="survival" stroke="#22c55e" strokeWidth={2} dot={false} name="Survival %" />
-            <Line type="monotone" dataKey="hazard" stroke="#f87171" strokeWidth={1.5} strokeDasharray="4 4" dot={false} name="Hazard %" />
-            <ReferenceLine x={Math.round(regimeAge)} stroke="#ffffff" strokeDasharray="3 3" label={{ value: "Now", fill: "#71717a", fontSize: 10 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-      {!isPro && (
-        <div className="absolute inset-0 flex items-center justify-center cursor-pointer rounded-2xl" onClick={onUnlock}>
-          <div className="bg-zinc-950 border border-zinc-700 px-6 py-5 text-center space-y-3 rounded-xl">
-            <div className="text-sm font-medium">Survival Curve</div>
-            <div className="text-xs text-zinc-400 max-w-xs">Without survival modeling, you cannot quantify regime decay probability.</div>
-            <button className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-4 py-2.5 rounded-xl text-xs font-semibold">
-  Unlock — Essential $39/month
-</button>
+      {/* Chart — always rendered, blurred for free users */}
+      <div className={`relative ${!isPro ? "pointer-events-none" : ""}`}>
+        <div className={!isPro ? "blur-sm opacity-60" : ""}>
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={displayCurve}>
+              <CartesianGrid stroke="#18181b" strokeDasharray="3 3" />
+              <XAxis
+                dataKey="hour"
+                stroke="#3f3f46"
+                tick={{ fill: "#52525b", fontSize: 10 }}
+              />
+              <YAxis
+                stroke="#3f3f46"
+                tick={{ fill: "#52525b", fontSize: 10 }}
+                domain={[0, 100]}
+              />
+              <Tooltip
+                content={
+                  <PremiumTooltip
+                    formatter={(v, n) => [`${v?.toFixed(1)}%`, n]}
+                  />
+                }
+              />
+              <Line
+                type="monotone"
+                dataKey="survival"
+                stroke="#22c55e"
+                strokeWidth={2}
+                dot={false}
+                name="Survival %"
+              />
+              <Line
+                type="monotone"
+                dataKey="hazard"
+                stroke="#f87171"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                dot={false}
+                name="Hazard %"
+              />
+              <ReferenceLine
+                x={Math.round(regimeAge)}
+                stroke="#ffffff"
+                strokeDasharray="3 3"
+                label={{ value: "Now", fill: "#71717a", fontSize: 10 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Lock overlay for free users */}
+        {!isPro && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="bg-zinc-950/95 border border-zinc-700 px-6 py-5 text-center space-y-3 rounded-xl shadow-2xl backdrop-blur-sm max-w-xs">
+              <div className="text-sm font-semibold text-white flex items-center justify-center gap-2">
+                <svg className="w-4 h-4 text-zinc-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                </svg>
+                Survival Curve
+              </div>
+              <div className="text-xs text-zinc-400 leading-relaxed">
+                Without survival modeling, you cannot quantify regime decay probability.
+              </div>
+              <button
+                onClick={onUnlock}
+                className="w-full bg-white text-black px-4 py-2.5 rounded-xl text-xs font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all shadow-lg"
+              >
+                Unlock — Essential $39/month
+              </button>
+              <div className="text-[10px] text-zinc-700">7-day free trial · Cancel anytime</div>
+            </div>
           </div>
+        )}
+      </div>
+
+      {/* If Pro but no data yet */}
+      {isPro && (!curve || curve.length === 0) && (
+        <div className="text-xs text-zinc-500 text-center py-4">
+          Survival curve data loading...
         </div>
       )}
     </CardShell>
   );
 }
+
 
 // ─────────────────────────────────────────
 // INTERPRETATION PANEL
