@@ -6918,7 +6918,7 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
       setCorrelation(data.correlation || null);
       setRiskEvents(data.events || []);
       setLastUpdated(new Date());
-/ Notify on high shift risk via toast
+// Notify on high shift risk via toast
       if (data.stack?.shift_risk > 75) {
         const prevShiftRisk = prevShiftRiskRef.current ?? 0;
         if (data.stack.shift_risk > prevShiftRisk + 10) {
