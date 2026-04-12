@@ -936,7 +936,7 @@ const RegimeCalendar = memo(function RegimeCalendar({ coin, token, isPro, onUnlo
   );
 
   if (!isPro)
-    return (
+    return (f
       <div ref={containerRef}>
         <ProGate label="Regime History Calendar" consequence="See which regime was active every day this month — spot patterns and seasonality." onUnlock={onUnlock} requiredTier="essential">
           {inner}
@@ -7358,8 +7358,7 @@ export default function Dashboard() {
   const [activeTier, setActiveTier] = useState("free");
   const prevShiftRiskRef = useRef(0);
 const isProActiveRef = useRef(false);
-
-  const prevShiftRiskRef = useRef(0);
+const abortControllerRef = useRef(null);
 
 // ── Keyboard shortcuts ──
 useEffect(() => {
