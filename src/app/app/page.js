@@ -7356,6 +7356,12 @@ export default function Dashboard() {
   const [token, setToken] = useState(null);
   const [email, setEmail] = useState("");
   const [activeTier, setActiveTier] = useState("free");
+  const isEssentialActive = hasTier(activeTier, "essential");
+const isProActive       = hasTier(activeTier, "pro");
+const isInstitutionalActive = hasTier(activeTier, "institutional");
+const isEssential    = isEssentialActive;
+const isProTier      = isProActive;
+const isInstitutional = isInstitutionalActive;
   const prevShiftRiskRef = useRef(0);
 const isProActiveRef = useRef(false);
 const abortControllerRef = useRef(null);
@@ -7372,9 +7378,6 @@ useEffect(() => {
   window.addEventListener("keydown", handler);
   return () => window.removeEventListener("keydown", handler);
 }, []);
-  const isEssentialActive = hasTier(activeTier, "essential");
-const isProActive = hasTier(activeTier, "pro");
-const isInstitutionalActive = hasTier(activeTier, "institutional");
 // Feature 1: WebSocket
 const handleWsUpdate = useCallback((newStack) => {
   if (newStack) setStack(newStack);
@@ -7545,9 +7548,6 @@ useEffect(() => {
   );
 
   const isPro = !stack.pro_required;
-  const isEssential = useMemo(() => hasTier(activeTier, "essential"), [activeTier]);
-const isProTier = useMemo(() => hasTier(activeTier, "pro"), [activeTier]);
-const isInstitutional = useMemo(() => hasTier(activeTier, "institutional"), [activeTier]);
   const exposure = stack.exposure ?? 0;
   const shiftRisk = stack.shift_risk ?? 0;
   const alignment = stack.alignment ?? 0;
