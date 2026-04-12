@@ -287,10 +287,24 @@ function RegimeHeroBar({ stack, decision, isPro, isEssential, onUnlock, wsStatus
             </span>
           </div>
         ))}
-        <div className="ml-auto text-[10px] text-zinc-600 hidden md:block">
-          <kbd className="border border-zinc-700 px-1 py-0.5 rounded">⌘K</kbd> commands ·{" "}
-          <kbd className="border border-zinc-700 px-1 py-0.5 rounded">?</kbd> shortcuts
-        </div>
+        <div className="ml-auto flex items-center gap-3">
+  <button
+    onClick={() => captureRegimeSnapshot(stack.coin, execLabel, exposure, shiftRisk, decision)}
+    className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1 border border-zinc-800 px-2 py-1 rounded-lg"
+    aria-label="Copy regime snapshot to clipboard"
+    title="Copy regime snapshot to clipboard"
+  >
+    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+    Share
+  </button>
+  <div className="text-[10px] text-zinc-600 hidden md:block">
+    <kbd className="border border-zinc-700 px-1 py-0.5 rounded">⌘K</kbd> commands ·{" "}
+    <kbd className="border border-zinc-700 px-1 py-0.5 rounded">?</kbd> shortcuts
+  </div>
+</div>
+
       </div>
     </div>
   );
@@ -1352,15 +1366,20 @@ const REGIME_CHART_COLORS = {
 };
 
 // ─────────────────────────────────────────
-// CardShell — shared card wrapper (was missing)
+// CardShell
 // ─────────────────────────────────────────
-function CardShell({ children }) {
+function CardShell({ children, label }) {
   return (
-    <div className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-4">
+    <div
+      role="region"
+      aria-label={label}
+      className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-4"
+    >
       {children}
     </div>
   );
 }
+
 
 // ─────────────────────────────────────────
 // PRIMITIVES
@@ -3065,6 +3084,23 @@ function RegimeTimeline({ history, coin }) {
           <Area type="monotone" dataKey="score" stroke="#22c55e" strokeWidth={2} fill="url(#hGrad)" dot={false} />
         </AreaChart>
       </ResponsiveContainer>
+        <table className="sr-only" aria-label="Regime score history">
+          <caption>{coin} regime score over the last 48 hours</caption>
+          <thead>
+            <tr>
+              <th scope="col">Hour</th>
+              <th scope="col">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {history.filter((_, i) => i % 4 === 0).map((point, i) => (
+              <tr key={i}>
+                <td>{point.hour}</td>
+                <td>{point.score?.toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
     </CardShell>
   );
 }
@@ -3223,6 +3259,25 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock, requiredTier }) {
               />
             </LineChart>
           </ResponsiveContainer>
+          <table className="sr-only" aria-label="Survival curve data">
+            <caption>Regime persistence probability over time</caption>
+            <thead>
+              <tr>
+                <th scope="col">Hour</th>
+                <th scope="col">Survival %</th>
+                <th scope="col">Hazard %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(isPro && curve?.length > 0 ? curve : []).filter((_, i) => i % 6 === 0).map((point) => (
+                <tr key={point.hour}>
+                  <td>{point.hour}h</td>
+                  <td>{point.survival?.toFixed(1)}%</td>
+                  <td>{point.hazard?.toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         {/* Lock overlay for free users */}
@@ -4217,7 +4272,7 @@ const MistakeReplayPanel = memo(function MistakeReplayPanel({ email, coin, token
 // ─────────────────────────────────────────
 // PERFORMANCE PANEL — already had token, kept clean
 // ─────────────────────────────────────────
-function PerformancePanel({ email, coin, token, isPro, onUnlock, requiredTier }) {
+const PerformancePanel = memo(function PerformancePanel({ email, coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -4226,18 +4281,30 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock, requiredTier })
     setLoading(true);
     apiFetch(`/performance-comparison?email=${encodeURIComponent(email)}&coin=${coin}`, token)
       .then(setData)
-      .catch(console.error)
+      .catch((e) => { if (e?.status !== 403) console.error(e); })
       .finally(() => setLoading(false));
   }, [email, coin, isPro, token]);
 
-  const inner = data ? (
+  const inner = loading ? (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
+            <div className="h-3 w-16 rounded skeleton-shimmer" />
+            <div className="h-8 w-20 rounded skeleton-shimmer" style={{ animationDelay: "100ms" }} />
+          </div>
+        ))}
+      </div>
+      <div className="h-48 rounded-xl skeleton-shimmer" style={{ animationDelay: "200ms" }} />
+    </div>
+  ) : data ? (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Your Return", value: data.user_total_return !== null ? `${(data.user_total_return ?? 0) > 0 ? "+" : ""}${data.user_total_return?.toFixed(1)}%` : "—", color: (data.user_total_return ?? 0) >= 0 ? "text-emerald-400" : "text-red-400" },
-          { label: "Model Return", value: data.model_total_return !== null ? `${(data.model_total_return ?? 0) > 0 ? "+" : ""}${data.model_total_return?.toFixed(1)}%` : "—", color: (data.model_total_return ?? 0) >= 0 ? "text-blue-400" : "text-red-400" },
-          { label: "Alpha vs Model", value: data.alpha !== null ? `${(data.alpha ?? 0) > 0 ? "+" : ""}${data.alpha?.toFixed(1)}%` : "—", color: (data.alpha ?? 0) >= 0 ? "text-emerald-400" : "text-red-400" },
-          { label: "Periods Tracked", value: data.periods ?? "—", color: "text-gray-300" },
+          { label: "Your Return",   value: data.user_total_return  !== null ? `${(data.user_total_return ?? 0)  > 0 ? "+" : ""}${data.user_total_return?.toFixed(1)}%`  : "—", color: (data.user_total_return  ?? 0) >= 0 ? "text-emerald-400" : "text-red-400" },
+          { label: "Model Return",  value: data.model_total_return !== null ? `${(data.model_total_return ?? 0) > 0 ? "+" : ""}${data.model_total_return?.toFixed(1)}%` : "—", color: (data.model_total_return ?? 0) >= 0 ? "text-blue-400"    : "text-red-400" },
+          { label: "Alpha vs Model",value: data.alpha              !== null ? `${(data.alpha ?? 0)              > 0 ? "+" : ""}${data.alpha?.toFixed(1)}%`              : "—", color: (data.alpha              ?? 0) >= 0 ? "text-emerald-400" : "text-red-400" },
+          { label: "Periods Tracked",value: data.periods ?? "—", color: "text-gray-300" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
             <div className="text-xs text-zinc-400">{label}</div>
@@ -4245,9 +4312,7 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock, requiredTier })
           </div>
         ))}
       </div>
-
       {data.message && <div className="text-xs text-zinc-500 border border-white/5 px-4 py-3 rounded-lg">{data.message}</div>}
-
       {data.curve?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Cumulative Return Comparison</div>
@@ -4257,15 +4322,13 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock, requiredTier })
               <XAxis dataKey="period" stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
               <YAxis stroke="#3f3f46" tick={{ fill: "#52525b", fontSize: 10 }} />
               <Tooltip content={<PremiumTooltip formatter={(v, n) => [`${v?.toFixed(1)}%`, n]} labelFormatter={(l) => `Period ${l}`} />} />
-
               <ReferenceLine y={0} stroke="#27272a" />
-              <Line type="monotone" dataKey="user_cum" stroke="#22c55e" strokeWidth={2} dot={false} name="Your Return" />
+              <Line type="monotone" dataKey="user_cum"  stroke="#22c55e" strokeWidth={2} dot={false} name="Your Return" />
               <Line type="monotone" dataKey="model_cum" stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 4" dot={false} name="Model Return" />
             </LineChart>
           </ResponsiveContainer>
         </div>
       )}
-
       {data.regime_breakdown && Object.keys(data.regime_breakdown).length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Performance by Regime</div>
@@ -4283,7 +4346,6 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock, requiredTier })
           </div>
         </div>
       )}
-
       {(data.best_regime || data.worst_regime) && (
         <div className="grid grid-cols-2 gap-4">
           {data.best_regime && (
@@ -4301,8 +4363,6 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock, requiredTier })
         </div>
       )}
     </div>
-  ) : loading ? (
-    <div className="text-sm text-zinc-400">Loading performance data...</div>
   ) : (
     <div className="text-sm text-zinc-400">No performance data yet. Log your exposure over multiple periods to begin tracking.</div>
   );
@@ -4310,9 +4370,10 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock, requiredTier })
   if (!isPro)
     return (
       <ProGate label="Performance Comparison" consequence="Without performance tracking, you cannot measure whether your decisions are adding or destroying alpha." onUnlock={onUnlock} requiredTier={requiredTier || "essential"}>
-        {inner}
+        <div className="h-32 bg-zinc-900/40 rounded-xl" />
       </ProGate>
     );
+
   return (
     <CardShell>
       <Label>Performance Comparison</Label>
@@ -4320,7 +4381,7 @@ function PerformancePanel({ email, coin, token, isPro, onUnlock, requiredTier })
       {inner}
     </CardShell>
   );
-}
+});
 
 // ─────────────────────────────────────────
 // EDGE PROFILE PANEL 
@@ -5152,7 +5213,7 @@ function SetupQualityPanel({ coin, token, isPro, onUnlock, requiredTier }) {
 // ─────────────────────────────────────────
 // OPPORTUNITY RANKING PANEL
 // ─────────────────────────────────────────
-function OpportunityRankingPanel({ token, isPro, onUnlock, requiredTier }) {
+const OpportunityRankingPanel = memo(function OpportunityRankingPanel({ token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -5161,7 +5222,7 @@ function OpportunityRankingPanel({ token, isPro, onUnlock, requiredTier }) {
     setLoading(true);
     apiFetch("/opportunity-ranking", token)
       .then((d) => { if (!d.error) setData(d); })
-      .catch(console.error)
+      .catch((e) => { if (e?.status !== 403) console.error(e); })
       .finally(() => setLoading(false));
   }, [isPro, token]);
 
@@ -5172,7 +5233,13 @@ function OpportunityRankingPanel({ token, isPro, onUnlock, requiredTier }) {
     return "text-red-400";
   }
 
-  const inner = data ? (
+  const inner = loading ? (
+    <div className="space-y-3 py-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="h-12 rounded skeleton-shimmer" style={{ animationDelay: `${i * 100}ms` }} />
+      ))}
+    </div>
+  ) : data ? (
     <div className="space-y-6">
       <div className="flex gap-4 flex-wrap">
         {data.best_long && (
@@ -5194,7 +5261,6 @@ function OpportunityRankingPanel({ token, isPro, onUnlock, requiredTier }) {
           </div>
         )}
       </div>
-
       <div className="space-y-2">
         {(data.rankings || []).map((r, i) => (
           <div key={r.coin} className="border border-white/5 rounded-lg p-4 flex items-center gap-4">
@@ -5222,7 +5288,6 @@ function OpportunityRankingPanel({ token, isPro, onUnlock, requiredTier }) {
           </div>
         ))}
       </div>
-
       {data.rotation_signals?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Rotation Signals</div>
@@ -5232,16 +5297,15 @@ function OpportunityRankingPanel({ token, isPro, onUnlock, requiredTier }) {
         </div>
       )}
     </div>
-  ) : loading ? (
-    <div className="text-sm text-zinc-400">Ranking opportunities across all assets...</div>
   ) : null;
 
   if (!isPro)
     return (
       <ProGate label="Opportunity Ranking" consequence="Without opportunity ranking, you cannot identify the best risk-adjusted entry across all assets." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
-        {inner}
+        <div className="h-32 bg-zinc-900/40 rounded-xl" />
       </ProGate>
     );
+
   return (
     <CardShell>
       <Label>Opportunity Ranking</Label>
@@ -5249,12 +5313,12 @@ function OpportunityRankingPanel({ token, isPro, onUnlock, requiredTier }) {
       {inner}
     </CardShell>
   );
-}
+});
 
 // ─────────────────────────────────────────
 // SCENARIOS PANEL
 // ─────────────────────────────────────────
-function ScenariosPanel({ coin, token, isPro, onUnlock, requiredTier }) {
+const ScenariosPanel = memo(function ScenariosPanel({ coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -5263,7 +5327,7 @@ function ScenariosPanel({ coin, token, isPro, onUnlock, requiredTier }) {
     setLoading(true);
     apiFetch(`/scenarios?coin=${coin}`, token)
       .then((d) => { if (!d.error) setData(d); })
-      .catch(console.error)
+      .catch((e) => { if (e?.status !== 403) console.error(e); })
       .finally(() => setLoading(false));
   }, [coin, isPro, token]);
 
@@ -5273,7 +5337,13 @@ function ScenariosPanel({ coin, token, isPro, onUnlock, requiredTier }) {
     return { border: "border-blue-800", bg: "bg-blue-950", text: "text-blue-300", bar: "bg-blue-500" };
   };
 
-  const inner = data ? (
+  const inner = loading ? (
+    <div className="grid md:grid-cols-3 gap-4">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="h-48 rounded-xl skeleton-shimmer" style={{ animationDelay: `${i * 120}ms` }} />
+      ))}
+    </div>
+  ) : data ? (
     <div className="space-y-6">
       <div className="grid md:grid-cols-3 gap-4">
         {(data.scenarios || []).map((s) => {
@@ -5307,7 +5377,6 @@ function ScenariosPanel({ coin, token, isPro, onUnlock, requiredTier }) {
           );
         })}
       </div>
-
       {data.expected_path && (
         <div className="grid md:grid-cols-2 gap-4">
           <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-2">
@@ -5320,7 +5389,6 @@ function ScenariosPanel({ coin, token, isPro, onUnlock, requiredTier }) {
           </div>
         </div>
       )}
-
       {data.invalidation_triggers?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">What Invalidates Base Case</div>
@@ -5330,16 +5398,15 @@ function ScenariosPanel({ coin, token, isPro, onUnlock, requiredTier }) {
         </div>
       )}
     </div>
-  ) : loading ? (
-    <div className="text-sm text-zinc-400">Computing probabilistic scenarios...</div>
   ) : null;
 
   if (!isPro)
     return (
       <ProGate label="Probabilistic Scenarios" consequence="Without scenario analysis, you have no framework for multiple outcomes." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
-        {inner}
+        <div className="h-32 bg-zinc-900/40 rounded-xl" />
       </ProGate>
     );
+
   return (
     <CardShell>
       <Label>Probabilistic Scenarios</Label>
@@ -5347,12 +5414,12 @@ function ScenariosPanel({ coin, token, isPro, onUnlock, requiredTier }) {
       {inner}
     </CardShell>
   );
-}
+});
 
 // ─────────────────────────────────────────
 // INTERNAL DAMAGE PANEL
 // ─────────────────────────────────────────
-function InternalDamagePanel({ coin, token, isPro, onUnlock,  requiredTier }) {
+const InternalDamagePanel = memo(function InternalDamagePanel({ coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -5361,11 +5428,17 @@ function InternalDamagePanel({ coin, token, isPro, onUnlock,  requiredTier }) {
     setLoading(true);
     apiFetch(`/internal-damage?coin=${coin}`, token)
       .then((d) => { if (!d.error && d.internal_damage_score !== null) setData(d); })
-      .catch(console.error)
+      .catch((e) => { if (e?.status !== 403) console.error(e); })
       .finally(() => setLoading(false));
   }, [coin, isPro, token]);
 
-  const inner = data ? (
+  const inner = loading ? (
+    <div className="space-y-3 py-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="h-4 rounded skeleton-shimmer" style={{ width: `${[85, 65, 75, 55][i]}%`, animationDelay: `${i * 100}ms` }} />
+      ))}
+    </div>
+  ) : data ? (
     <div className="space-y-6">
       <div className="flex items-center gap-8">
         <div className="text-center space-y-2 shrink-0">
@@ -5386,7 +5459,6 @@ function InternalDamagePanel({ coin, token, isPro, onUnlock,  requiredTier }) {
           ))}
         </div>
       </div>
-
       {data.signals?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Damage Signals ({data.high_severity_count} high severity)</div>
@@ -5404,23 +5476,21 @@ function InternalDamagePanel({ coin, token, isPro, onUnlock,  requiredTier }) {
           ))}
         </div>
       )}
-
       {data.signals?.length === 0 && (
         <div className="border border-emerald-900 bg-emerald-950 px-4 py-3 text-emerald-300 text-sm rounded-lg">
           ✓ No internal damage signals detected. Structure intact.
         </div>
       )}
     </div>
-  ) : loading ? (
-    <div className="text-sm text-zinc-400">Scanning internal structure...</div>
   ) : null;
 
   if (!isPro)
     return (
       <ProGate label="Internal Damage Monitor" consequence="Internal damage often precedes visible regime shifts. Without it, you're blindsided." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
-        {inner}
+        <div className="h-32 bg-zinc-900/40 rounded-xl" />
       </ProGate>
     );
+
   return (
     <CardShell>
       <Label>Internal Damage Monitor</Label>
@@ -5428,7 +5498,7 @@ function InternalDamagePanel({ coin, token, isPro, onUnlock,  requiredTier }) {
       {inner}
     </CardShell>
   );
-}
+});
 
 // ─────────────────────────────────────────
 // BEHAVIORAL ALPHA PANEL
@@ -5558,7 +5628,7 @@ const BehavioralAlphaPanel = memo(function BehavioralAlphaPanel({ email, token, 
 // ─────────────────────────────────────────
 // EVENT RISK OVERLAY PANEL
 // ─────────────────────────────────────────
-function EventRiskOverlayPanel({ coin, token, isPro, onUnlock,   requiredTier }) {
+const EventRiskOverlayPanel = memo(function EventRiskOverlayPanel({ coin, token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -5567,11 +5637,17 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock,   requiredTier })
     setLoading(true);
     apiFetch(`/event-risk-overlay?coin=${coin}`, token)
       .then((d) => { if (!d.error) setData(d); })
-      .catch(console.error)
+      .catch((e) => { if (e?.status !== 403) console.error(e); })
       .finally(() => setLoading(false));
   }, [coin, isPro, token]);
 
-  const inner = data ? (
+  const inner = loading ? (
+    <div className="space-y-3 py-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="h-4 rounded skeleton-shimmer" style={{ width: `${[85, 65, 75, 55][i]}%`, animationDelay: `${i * 100}ms` }} />
+      ))}
+    </div>
+  ) : data ? (
     <div className="space-y-6">
       <div className={`border p-5 rounded-lg space-y-2 ${
         data.exposure_adjustment < -15 ? "border-red-800 bg-red-950" :
@@ -5580,9 +5656,9 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock,   requiredTier })
       }`}>
         <div className="flex justify-between items-start">
           <div>
-            <div className={`text-lg font-semibold ${
-              data.exposure_adjustment < -15 ? "text-red-300" : data.exposure_adjustment < 0 ? "text-yellow-300" : "text-emerald-300"
-            }`}>{data.adjustment_label}</div>
+            <div className={`text-lg font-semibold ${data.exposure_adjustment < -15 ? "text-red-300" : data.exposure_adjustment < 0 ? "text-yellow-300" : "text-emerald-300"}`}>
+              {data.adjustment_label}
+            </div>
             <div className="text-sm text-gray-300 mt-1">{data.adjustment_message}</div>
           </div>
           <div className="text-right">
@@ -5595,7 +5671,6 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock,   requiredTier })
           <div><div className="text-xs text-zinc-500">Adjusted Exposure</div><div className={`text-lg font-semibold ${data.exposure_adjusted < data.exposure_before_event ? "text-yellow-400" : "text-emerald-400"}`}>{data.exposure_adjusted}%</div></div>
         </div>
       </div>
-
       {data.imminent_events?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Imminent Events (within 48h)</div>
@@ -5612,7 +5687,6 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock,   requiredTier })
           </div>
         </div>
       )}
-
       {data.event_guidance?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Event-Specific Guidance</div>
@@ -5626,16 +5700,15 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock,   requiredTier })
         </div>
       )}
     </div>
-  ) : loading ? (
-    <div className="text-sm text-zinc-400">Computing event risk overlay...</div>
   ) : null;
 
   if (!isPro)
     return (
       <ProGate label="Event Risk Overlay" consequence="Without event-aware sizing, you risk being caught by macro volatility." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
-        {inner}
+        <div className="h-32 bg-zinc-900/40 rounded-xl" />
       </ProGate>
     );
+
   return (
     <CardShell>
       <Label>Event Risk Overlay</Label>
@@ -5643,7 +5716,7 @@ function EventRiskOverlayPanel({ coin, token, isPro, onUnlock,   requiredTier })
       {inner}
     </CardShell>
   );
-}
+});
 
 // ─────────────────────────────────────────
 // TRADE PLAN PANEL
@@ -5789,7 +5862,7 @@ function TradePlanPanel({ coin, email, token, isPro, onUnlock,   requiredTier })
 // ─────────────────────────────────────────
 // WHAT CHANGED PANEL
 // ─────────────────────────────────────────
-function WhatChangedPanel({ token, isPro, onUnlock, requiredTier }) {
+const WhatChangedPanel = memo(function WhatChangedPanel({ token, isPro, onUnlock, requiredTier }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -5798,7 +5871,7 @@ function WhatChangedPanel({ token, isPro, onUnlock, requiredTier }) {
     setLoading(true);
     apiFetch("/what-changed?lookback_hours=24", token)
       .then((d) => { if (!d.error) setData(d); })
-      .catch(console.error)
+      .catch((e) => { if (e?.status !== 403) console.error(e); })
       .finally(() => setLoading(false));
   }, [isPro, token]);
 
@@ -5809,7 +5882,13 @@ function WhatChangedPanel({ token, isPro, onUnlock, requiredTier }) {
     stable: "text-zinc-400",
   };
 
-  const inner = data ? (
+  const inner = loading ? (
+    <div className="space-y-3 py-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="h-4 rounded skeleton-shimmer" style={{ width: `${[85, 65, 75, 55][i]}%`, animationDelay: `${i * 100}ms` }} />
+      ))}
+    </div>
+  ) : data ? (
     <div className="space-y-5">
       <div className={`text-lg font-semibold ${toneColor[data.tone] || "text-zinc-400"}`}>{data.headline}</div>
       <div className="flex gap-3 text-xs">
@@ -5817,7 +5896,6 @@ function WhatChangedPanel({ token, isPro, onUnlock, requiredTier }) {
         <span className="text-red-400">{data.downgrades} downgrades</span>
         <span className="text-zinc-500">{data.change_count} total changes</span>
       </div>
-
       {data.changes?.length > 0 && (
         <div className="space-y-2">
           {data.changes.map((c, i) => (
@@ -5837,11 +5915,9 @@ function WhatChangedPanel({ token, isPro, onUnlock, requiredTier }) {
           ))}
         </div>
       )}
-
       {data.changes?.length === 0 && (
         <div className="text-sm text-zinc-400">No regime changes in the last 24 hours.</div>
       )}
-
       {data.takeaways?.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs text-zinc-400 uppercase tracking-widest">Key Takeaways</div>
@@ -5853,16 +5929,18 @@ function WhatChangedPanel({ token, isPro, onUnlock, requiredTier }) {
         </div>
       )}
     </div>
-  ) : loading ? (
-    <div className="text-sm text-zinc-400">Loading intelligence brief...</div>
   ) : null;
 
   if (!isPro)
     return (
       <ProGate label="What Changed (24H)" consequence="Without change tracking, you start each session without knowing what shifted." onUnlock={onUnlock} requiredTier={requiredTier || "pro"}>
-        {inner}
+        <div className="space-y-2">
+          <div className="h-4 bg-zinc-800 rounded w-full" />
+          <div className="h-4 bg-zinc-800 rounded w-3/4" />
+        </div>
       </ProGate>
     );
+
   return (
     <CardShell>
       <Label>What Changed — Last 24 Hours</Label>
@@ -5870,7 +5948,7 @@ function WhatChangedPanel({ token, isPro, onUnlock, requiredTier }) {
       {inner}
     </CardShell>
   );
-}
+});
 
 // ─────────────────────────────────────────
 // LIVE PRICE TICKER
@@ -5899,19 +5977,25 @@ const [sparklines, setSparklines] = useState({});
         return p;
       });
       setChanges(ch);
-// Fetch sparklines — fire and forget, non-blocking
-Promise.all(
-  SUPPORTED_COINS.map((c) =>
-    fetch(`[api.binance.com](https://api.binance.com/api/v3/klines?symbol=${c}USDT&interval=1h&limit=24)`)
-      .then((r) => r.json())
-      .then((k) => ({ c, data: k.map((x) => parseFloat(x[4])) }))
-      .catch(() => ({ c, data: [] }))
-  )
-).then((results) => {
-  const sp = {};
-  results.forEach(({ c, data }) => { sp[c] = data; });
-  setSparklines(sp);
-}).catch(() => {});
+// Sparklines fetched separately after a short delay to avoid rate limiting
+setTimeout(() => {
+  Promise.all(
+    SUPPORTED_COINS.map((c) => {
+      const url = new URL("[api.binance.com](https://api.binance.com/api/v3/klines)");
+      url.searchParams.set("symbol", `${c}USDT`);
+      url.searchParams.set("interval", "1h");
+      url.searchParams.set("limit", "24");
+      return fetch(url.toString())
+        .then((r) => r.ok ? r.json() : [])
+        .then((k) => ({ c, data: Array.isArray(k) ? k.map((x) => parseFloat(x[4])) : [] }))
+        .catch(() => ({ c, data: [] }));
+    })
+  ).then((results) => {
+    const sp = {};
+    results.forEach(({ c, data }) => { sp[c] = data; });
+    setSparklines(sp);
+  }).catch(() => {});
+}, 500);
 
     } catch (err) { console.error("Price fetch error:", err); }
   };
@@ -6243,35 +6327,28 @@ function ProModal({ onClose, email }) {
   const [selectedTier, setSelectedTier] = useState("pro");
   const [billingCycle, setBillingCycle] = useState("annual");
   const [loading, setLoading] = useState(false);
+  const [showValue, setShowValue] = useState(true);
 
   const tiers = {
     essential: {
-      name: "Essential",
-      monthlyPrice: 39,
-      annualPrice: 29,
-      annualTotal: 348,
-      badge: null,
-      color: "text-blue-400",
-      borderActive: "border-blue-500",
+      name: "Essential", monthlyPrice: 39, annualPrice: 29, annualTotal: 348,
+      badge: null, color: "text-blue-400", borderActive: "border-blue-500",
       features: [
         "Full regime stack (all timeframes)",
-        "Exposure guidance — regime-adjusted sizing",
+        "Exposure recommendation % — regime-adjusted",
         "Shift risk warnings",
         "Hazard assessment",
         "Playbook recommendations",
         "Survival curve",
         "Decision engine directive",
+        "Funding rates + open interest",
+        "CSV export — exposure log and performance",
       ],
       description: "Complete regime intelligence for disciplined traders.",
     },
     pro: {
-      name: "Pro",
-      monthlyPrice: 79,
-      annualPrice: 59,
-      annualTotal: 708,
-      badge: "MOST POPULAR",
-      color: "text-emerald-400",
-      borderActive: "border-emerald-500",
+      name: "Pro", monthlyPrice: 79, annualPrice: 59, annualTotal: 708,
+      badge: "MOST POPULAR", color: "text-emerald-400", borderActive: "border-emerald-500",
       features: [
         "Everything in Essential",
         "Setup quality scoring + entry zones",
@@ -6283,30 +6360,31 @@ function ProModal({ onClose, email }) {
         "PnL impact estimator",
         "Drawdown simulator",
         "Mistake replay engine",
+        "AI Regime Analyst narrative",
+        "Backtesting engine (5 strategies)",
+        "Monte Carlo VaR simulation",
+        "Kelly Criterion position sizer",
+        "Comparison mode (side-by-side assets)",
       ],
-      description: "Full analytical suite for serious traders.",
+      description: "Full analytical suite for serious traders managing real capital.",
     },
     institutional: {
-  name: "Institutional",
-  monthlyPrice: 149,
-  annualPrice: 119,
-  annualTotal: 1428,
-  badge: null,
-  color: "text-purple-400",
-  borderActive: "border-purple-500",
-  features: [
-    "Everything in Pro",
-    "REST API access (1,000 req/day)",
-    "Up to 3 API keys with usage tracking",
-    "Custom per-coin alert thresholds",
-    "Trader archetype overlay",
-    "Priority alert delivery (1hr cooldown)",
-    "Webhook delivery + HMAC signatures",
-    "Up to 5 webhook endpoints",
-    "Delivery logs with retry status",
-  ],
-  description: "For power users and teams who need API access and full customization.",
-},
+      name: "Institutional", monthlyPrice: 149, annualPrice: 119, annualTotal: 1428,
+      badge: null, color: "text-purple-400", borderActive: "border-purple-500",
+      features: [
+        "Everything in Pro",
+        "REST API access (1,000 req/day)",
+        "Up to 3 API keys with usage tracking",
+        "Custom per-coin alert thresholds",
+        "Custom regime score boundaries",
+        "Trader archetype overlay",
+        "Priority alert delivery (1hr cooldown)",
+        "Webhook delivery + HMAC signatures",
+        "Up to 5 webhook endpoints",
+        "Delivery logs with retry status",
+      ],
+      description: "For power users and teams who need API access and full customization.",
+    },
   };
 
   const tier = tiers[selectedTier];
@@ -6319,149 +6397,129 @@ function ProModal({ onClose, email }) {
       const res = await fetch(`${BACKEND}/create-checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          billing_cycle: billingCycle,
-          tier: selectedTier,
-          email: email || undefined,
-        }),
+        body: JSON.stringify({ billing_cycle: billingCycle, tier: selectedTier, email: email || undefined }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center px-4 py-8 overflow-y-auto">
       <div className="bg-zinc-950 border border-white/8 rounded-2xl max-w-2xl w-full p-8 space-y-6 relative shadow-2xl shadow-black/50">
-        {/* Close button */}
-        <button
-  onClick={onClose}
-  aria-label="Close modal"
-  className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors"
->
-
+        <button onClick={onClose} aria-label="Close modal" className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        {/* Header */}
-        <div className="space-y-2 pr-6">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <Label>ChainPulse Pro</Label>
-          </div>
-          <h2 className="text-2xl font-semibold leading-tight tracking-tight">
-            Choose your edge
-          </h2>
-          <p className="text-zinc-500 text-sm leading-relaxed">
-            Institutional-grade regime intelligence for every level of trader.
-          </p>
-        </div>
-
-        {/* Billing toggle */}
-        <div className="grid grid-cols-2 gap-2">
-          {[
-  { key: "monthly", label: "Monthly", sub: "$" + tier.monthlyPrice + "/mo" },
-  { key: "annual", label: "Annual", sub: "$" + tier.annualPrice + "/mo", badge: "SAVE " + savingsPct + "%" },
-].map(({ key, label, sub, badge }) => (
-            <button
-              key={key}
-              onClick={() => setBillingCycle(key)}
-              className={[
-                "py-3 rounded-xl text-sm font-medium border transition-all relative",
-                billingCycle === key
-                  ? "bg-white text-black border-white"
-                  : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20",
-              ].join(" ")}
-            >
-              {badge && (
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
-                  {badge}
-                </div>
-              )}
-              <div>{label}</div>
-              <div className="text-xs font-normal opacity-70">{sub}</div>
-            </button>
-          ))}
-        </div>
-
-        {/* Tier selector */}
-        <div className="grid grid-cols-3 gap-2">
-          {Object.entries(tiers).map(([key, t]) => (
-            <button
-              key={key}
-              onClick={() => setSelectedTier(key)}
-              className={[
-                "py-4 px-3 rounded-xl border transition-all text-center space-y-1 relative",
-                selectedTier === key
-                  ? `${t.borderActive} bg-white/5`
-                  : "border-white/10 hover:border-white/20",
-              ].join(" ")}
-            >
-              {t.badge && (
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
-                  {t.badge}
-                </div>
-              )}
-              <div className={`text-sm font-semibold ${selectedTier === key ? t.color : "text-zinc-400"}`}>
-                {t.name}
+        {showValue ? (
+          <div className="space-y-6">
+            <div className="space-y-2 pr-6">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <Label>ChainPulse Pro</Label>
               </div>
-              <div className="text-lg font-bold text-white">
-                ${billingCycle === "annual" ? t.annualPrice : t.monthlyPrice}
-                <span className="text-xs text-zinc-500 font-normal">/mo</span>
-              </div>
-              {billingCycle === "annual" && (
-                <div className="text-[10px] text-zinc-600">{"$" + t.annualTotal + "/yr"}</div>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Tier description */}
-        <div className="text-sm text-zinc-400">{tier.description}</div>
-
-        {/* Feature list */}
-        <div className="bg-white/2 border border-white/5 rounded-xl p-5 space-y-3 max-h-60 overflow-y-auto">
-          {tier.features.map((text) => (
-            <div key={text} className="flex items-center gap-3 text-sm text-zinc-300">
-              <span className="text-emerald-400 shrink-0">→</span>
-              {text}
+              <h2 className="text-2xl font-semibold leading-tight">
+                One avoided drawdown pays for years of Pro
+              </h2>
+              <p className="text-zinc-500 text-sm leading-relaxed">
+                For traders managing $5,000+, a single 3% avoided over-exposure event saves $150 — more than four months of Essential.
+              </p>
             </div>
-          ))}
-        </div>
 
-        {/* Checkout button */}
-        <div className="space-y-3">
-          <button
-            onClick={checkout}
-            disabled={loading}
-            className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all disabled:opacity-50 text-sm shadow-lg"
-          >
-            {loading
-  ? "Redirecting..."
-  : billingCycle === "annual"
-    ? "Start " + tier.name + " — $" + tier.annualTotal + "/year"
-    : "Start " + tier.name + " — $" + tier.monthlyPrice + "/month"
-}
-          </button>
-          <div className="text-center text-zinc-600 text-xs">
-            7-day risk-free evaluation · Cancel anytime · Instant access
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: "📊", title: "Exposure Modeling",    desc: "Know exactly how much to deploy in every regime"     },
+                { icon: "⚡", title: "Shift Risk Alerts",     desc: "Get warned before deterioration hits price"          },
+                { icon: "🎯", title: "Daily Directive",       desc: "One clear action — Increase, Trim, or Defensive"     },
+                { icon: "🔬", title: "Setup Quality",         desc: "Know if now is a good entry or a chase"              },
+                { icon: "🤖", title: "AI Regime Analyst",     desc: "Plain English explanation of current conditions"     },
+                { icon: "📉", title: "Backtesting Engine",    desc: "See how any strategy performed across regimes"       },
+                { icon: "🛡️", title: "Trade Plan Generator", desc: "Entry zones, stops, tranches — generated instantly"  },
+                { icon: "🧠", title: "Behavioral Tracking",   desc: "Find the exact patterns that cost you money"         },
+              ].map(({ icon, title, desc }) => (
+                <div key={title} className="flex items-start gap-3 p-3 rounded-xl bg-white/2 border border-white/5">
+                  <span className="text-xl shrink-0">{icon}</span>
+                  <div>
+                    <div className="text-xs font-semibold text-white">{title}</div>
+                    <div className="text-[10px] text-zinc-500 mt-0.5 leading-relaxed">{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowValue(false)}
+              className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all text-sm shadow-lg"
+            >
+              See Pricing →
+            </button>
+            <div className="text-center text-zinc-600 text-xs">7-day free trial · Cancel anytime · Instant access</div>
           </div>
-        </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="space-y-2 pr-6">
+              <button onClick={() => setShowValue(true)} className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1 mb-2">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                Back
+              </button>
+              <h2 className="text-2xl font-semibold leading-tight tracking-tight">Choose your edge</h2>
+              <p className="text-zinc-500 text-sm leading-relaxed">Institutional-grade regime intelligence for every level of trader.</p>
+            </div>
 
-        {/* Footer */}
-        <div className="border-t border-white/5 pt-4 text-center">
-          <div className="text-xs text-zinc-600">For swing traders managing $5,000+</div>
-        </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { key: "monthly", label: "Monthly", sub: "$" + tier.monthlyPrice + "/mo" },
+                { key: "annual",  label: "Annual",  sub: "$" + tier.annualPrice  + "/mo", badge: "SAVE " + savingsPct + "%" },
+              ].map(({ key, label, sub, badge }) => (
+                <button key={key} onClick={() => setBillingCycle(key)} className={`py-3 rounded-xl text-sm font-medium border transition-all relative ${billingCycle === key ? "bg-white text-black border-white" : "bg-transparent text-zinc-400 border-white/10 hover:border-white/20"}`}>
+                  {badge && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">{badge}</div>}
+                  <div>{label}</div>
+                  <div className="text-xs font-normal opacity-70">{sub}</div>
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(tiers).map(([key, t]) => (
+                <button key={key} onClick={() => setSelectedTier(key)} className={`py-4 px-3 rounded-xl border transition-all text-center space-y-1 relative ${selectedTier === key ? `${t.borderActive} bg-white/5` : "border-white/10 hover:border-white/20"}`}>
+                  {t.badge && <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">{t.badge}</div>}
+                  <div className={`text-sm font-semibold ${selectedTier === key ? t.color : "text-zinc-400"}`}>{t.name}</div>
+                  <div className="text-lg font-bold text-white">${billingCycle === "annual" ? t.annualPrice : t.monthlyPrice}<span className="text-xs text-zinc-500 font-normal">/mo</span></div>
+                  {billingCycle === "annual" && <div className="text-[10px] text-zinc-600">${t.annualTotal}/yr</div>}
+                </button>
+              ))}
+            </div>
+
+            <div className="text-sm text-zinc-400">{tier.description}</div>
+
+            <div className="bg-white/2 border border-white/5 rounded-xl p-5 space-y-3 max-h-52 overflow-y-auto">
+              {tier.features.map((text) => (
+                <div key={text} className="flex items-center gap-3 text-sm text-zinc-300">
+                  <span className="text-emerald-400 shrink-0">→</span>{text}
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              <button onClick={checkout} disabled={loading} className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:bg-zinc-100 hover:-translate-y-[1px] transition-all disabled:opacity-50 text-sm shadow-lg">
+                {loading ? "Redirecting..." : billingCycle === "annual" ? "Start " + tier.name + " — $" + tier.annualTotal + "/year" : "Start " + tier.name + " — $" + tier.monthlyPrice + "/month"}
+              </button>
+              <div className="text-center text-zinc-600 text-xs">7-day risk-free evaluation · Cancel anytime · Instant access</div>
+            </div>
+
+            <div className="border-t border-white/5 pt-4 text-center">
+              <div className="text-xs text-zinc-600">For swing traders managing $5,000+</div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
 // ─────────────────────────────────────────────────────────
 // FEATURE 1 — WEBSOCKET HOOK
 // ─────────────────────────────────────────────────────────
@@ -6572,7 +6630,7 @@ function LiveStatusIndicator({ status, lastHeartbeat, connectionCount }) {
 // ─────────────────────────────────────────────────────────
 // FEATURE 2 — AI NARRATIVE
 // ─────────────────────────────────────────────────────────
-function AINarrativePanel({ coin, token, isPro, onUnlock }) {
+const AINarrativePanel = memo(function AINarrativePanel({ coin, token, isPro, onUnlock }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -6581,7 +6639,7 @@ function AINarrativePanel({ coin, token, isPro, onUnlock }) {
     setLoading(true);
     apiFetch(`/ai-narrative?coin=${coin}`, token)
       .then((d) => { if (!d.error) setData(d); })
-      .catch(console.error)
+      .catch((e) => { if (e?.status !== 403) console.error(e); })
       .finally(() => setLoading(false));
   }, [coin, token, isPro]);
 
@@ -6591,9 +6649,13 @@ function AINarrativePanel({ coin, token, isPro, onUnlock }) {
     ? Math.round((Date.now() - new Date(data.generated_at).getTime()) / 60000)
     : null;
 
-  const inner = !data ? (
-    loading ? <div className="text-sm text-zinc-400">Generating AI analysis...</div> : null
-  ) : !data.available ? (
+  const inner = loading ? (
+    <div className="space-y-3 py-2">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="h-4 rounded skeleton-shimmer" style={{ width: `${[95, 85, 90, 70, 80][i]}%`, animationDelay: `${i * 100}ms` }} />
+      ))}
+    </div>
+  ) : !data ? null : !data.available ? (
     <div className="border border-zinc-800 bg-zinc-900/40 px-5 py-4 rounded-xl text-sm text-zinc-400">
       AI narrative is not configured on this deployment. OpenAI integration required.
     </div>
@@ -6658,12 +6720,12 @@ function AINarrativePanel({ coin, token, isPro, onUnlock }) {
       {inner}
     </CardShell>
   );
-}
+});
 
 // ─────────────────────────────────────────────────────────
 // FEATURE 3 — ON-CHAIN INTELLIGENCE
 // ─────────────────────────────────────────────────────────
-function OnChainIntelligencePanel({ coin, token, isEssential, isPro, onUnlock }) {
+const OnChainIntelligencePanel = memo(function OnChainIntelligencePanel({ coin, token, isEssential, isPro, onUnlock }) {
   const [funding, setFunding] = useState(null);
   const [oi, setOi] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -6677,14 +6739,21 @@ function OnChainIntelligencePanel({ coin, token, isEssential, isPro, onUnlock })
     ]).then(([f, o]) => {
       if (f && !f.error) setFunding(f);
       if (o && !o.error) setOi(o);
-    }).finally(() => setLoading(false));
+    }).catch((e) => { if (e?.status !== 403) console.error(e); })
+    .finally(() => setLoading(false));
   }, [coin, token, isEssential]);
 
   const inner = (
     <div className="space-y-5">
-      {loading && <div className="text-sm text-zinc-400">Loading on-chain data...</div>}
+      {loading && (
+        <div className="space-y-3 py-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-4 rounded skeleton-shimmer" style={{ width: `${[85, 65, 75, 55][i]}%`, animationDelay: `${i * 100}ms` }} />
+          ))}
+        </div>
+      )}
 
-      {funding && (
+      {!loading && funding && (
         <div className={`border rounded-xl p-5 space-y-3 ${fundingSignalBorder(funding.signal)}`}>
           <div className="flex justify-between items-start">
             <div>
@@ -6713,7 +6782,7 @@ function OnChainIntelligencePanel({ coin, token, isEssential, isPro, onUnlock })
         </div>
       )}
 
-      {oi && (
+      {!loading && oi && (
         <div className="border border-white/10 bg-white/2 rounded-xl p-5 space-y-3">
           <div className="flex justify-between items-start">
             <div>
@@ -6734,8 +6803,8 @@ function OnChainIntelligencePanel({ coin, token, isEssential, isPro, onUnlock })
         </div>
       )}
 
-      {!isEssential && !loading && (
-        <div className="text-sm text-zinc-500 text-center py-4">Essential tier required for on-chain data.</div>
+      {!loading && !funding && !oi && isEssential && (
+        <div className="text-sm text-zinc-500 text-center py-4">No on-chain data available.</div>
       )}
     </div>
   );
@@ -6753,7 +6822,8 @@ function OnChainIntelligencePanel({ coin, token, isEssential, isPro, onUnlock })
       {inner}
     </CardShell>
   );
-}
+});
+
 
 // ─────────────────────────────────────────────────────────
 // FEATURE 4 — BACKTESTING ENGINE
@@ -7331,6 +7401,37 @@ function CustomRegimeThresholdsPanel({ email, token, isInstitutional, onUnlock }
   );
 }
 
+async function captureRegimeSnapshot(coin, execLabel, exposure, shiftRisk, decision) {
+  const text = [
+    `ChainPulse Regime Snapshot — ${new Date().toLocaleString()}`,
+    `Asset: ${coin}`,
+    `Regime: ${execLabel}`,
+    `Exposure: ${exposure}%`,
+    `Shift Risk: ${shiftRisk}%`,
+    decision ? `Directive: ${decision.directive} (Score: ${decision.score})` : "",
+    ``,
+    `chainpulse.pro`,
+  ].filter(Boolean).join("\n");
+
+  try {
+    await navigator.clipboard.writeText(text);
+    emitToast({
+      type: "success",
+      title: "Snapshot copied",
+      message: "Regime summary copied to clipboard.",
+      duration: 3000,
+    });
+  } catch {
+    emitToast({
+      type: "info",
+      title: "Snapshot",
+      message: "Copy: " + text.split("\n")[1],
+      duration: 5000,
+    });
+  }
+}
+
+
 // ─────────────────────────────────────────
 // MAIN DASHBOARD
 // ─────────────────────────────────────────
@@ -7411,65 +7512,77 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
 }, []);
 
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
-    try {
-      const headers = {};
-      if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
-      const res = await fetch(`${BACKEND}/dashboard?coin=${selectedCoin}`, { headers });
-      if (!res.ok) throw new Error("Fetch failed");
-      const data = await res.json();
-      setStack(data.stack || null);
-	if (data.stack?.tier) setActiveTier(data.stack.tier);
-	else if (data.tier) setActiveTier(data.tier);
-      setLatest(data.latest || null);
-      setCurveData(data.curve || []);
-      setHistoryData(data.history || []);
-      setOverview(data.overview || []);
-      setBreadth(data.breadth || null);
-      setConfidence(data.confidence || null);
-      setVolEnv(data.volEnv || null);
-      setTransitions(data.transitions || null);
-      setCorrelation(data.correlation || null);
-      setRiskEvents(data.events || []);
-      setLastUpdated(new Date());
-// Notify on high shift risk via toast
-      if (data.stack?.shift_risk > 75) {
-        const prevShiftRisk = prevShiftRiskRef.current ?? 0;
-        if (data.stack.shift_risk > prevShiftRisk + 10) {
-          emitToast({
-            type: data.stack.shift_risk > 85 ? "critical" : "warning",
-            title: `Shift Risk Elevated — ${data.stack.coin}`,
-            message: `${data.stack.shift_risk}% · ${data.stack.execution?.label ?? "Unknown regime"}`,
-            duration: 7000,
-          });
-          // Sound alert for critical shift risk
-if (data.stack.shift_risk > 85 && typeof window !== "undefined") {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const tone = (freq, start, dur, gain = 0.25) => {
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.connect(g);
-      g.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = "sine";
-      g.gain.setValueAtTime(0, start);
-      g.gain.linearRampToValueAtTime(gain, start + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.001, start + dur);
-      osc.start(start);
-      osc.stop(start + dur);
-    };
-    tone(880, ctx.currentTime,        0.15, 0.25);
-    tone(660, ctx.currentTime + 0.18, 0.15, 0.20);
-    tone(440, ctx.currentTime + 0.36, 0.25, 0.18);
-  } catch {}
-}
+  if (abortControllerRef.current) {
+    abortControllerRef.current.abort();
+  }
+  abortControllerRef.current = new AbortController();
 
+  try {
+    const headers = {};
+    if (currentToken) headers["Authorization"] = `Bearer ${currentToken}`;
+    const res = await fetch(`${BACKEND}/dashboard?coin=${selectedCoin}`, {
+      headers,
+      signal: abortControllerRef.current.signal,
+    });
+    if (!res.ok) throw new Error("Fetch failed");
+    const data = await res.json();
+    setStack(data.stack || null);
+    if (data.stack?.tier) setActiveTier(data.stack.tier);
+    else if (data.tier) setActiveTier(data.tier);
+    setLatest(data.latest || null);
+    setCurveData(data.curve || []);
+    setHistoryData(data.history || []);
+    setOverview(data.overview || []);
+    setBreadth(data.breadth || null);
+    setConfidence(data.confidence || null);
+    setVolEnv(data.volEnv || null);
+    setTransitions(data.transitions || null);
+    setCorrelation(data.correlation || null);
+    setRiskEvents(data.events || []);
+    setLastUpdated(new Date());
+
+    if (data.stack?.shift_risk > 75) {
+      const prevShiftRisk = prevShiftRiskRef.current ?? 0;
+      if (data.stack.shift_risk > prevShiftRisk + 10) {
+        emitToast({
+          type: data.stack.shift_risk > 85 ? "critical" : "warning",
+          title: `Shift Risk Elevated — ${data.stack.coin}`,
+          message: `${data.stack.shift_risk}% · ${data.stack.execution?.label ?? "Unknown regime"}`,
+          duration: 7000,
+        });
+        if (data.stack.shift_risk > 85 && typeof window !== "undefined") {
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const tone = (freq, start, dur, gain = 0.25) => {
+              const osc = ctx.createOscillator();
+              const g = ctx.createGain();
+              osc.connect(g);
+              g.connect(ctx.destination);
+              osc.frequency.value = freq;
+              osc.type = "sine";
+              g.gain.setValueAtTime(0, start);
+              g.gain.linearRampToValueAtTime(gain, start + 0.01);
+              g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+              osc.start(start);
+              osc.stop(start + dur);
+            };
+            tone(880, ctx.currentTime, 0.15, 0.25);
+            tone(660, ctx.currentTime + 0.18, 0.15, 0.20);
+            tone(440, ctx.currentTime + 0.36, 0.25, 0.18);
+          } catch {}
         }
       }
-      prevShiftRiskRef.current = data.stack?.shift_risk ?? 0;
-    } catch (err) { console.error("Dashboard fetch error:", err); }
-    finally { setLoading(false); }
-  }, []);
+    }
+    prevShiftRiskRef.current = data.stack?.shift_risk ?? 0;
+
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    console.error("Dashboard fetch error:", err);
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
 
   useEffect(() => {
   isProActiveRef.current = isProActive;
@@ -7493,6 +7606,37 @@ useEffect(() => {
 }, [email, token, stack]);
 
   const onUnlock = useCallback(() => setShowModal(true), []);
+// Daily return visit tracking
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  const lastVisit = localStorage.getItem("cp_last_visit");
+  const today = new Date().toDateString();
+  if (lastVisit && lastVisit !== today) {
+    const daysSince = Math.floor(
+      (new Date(today) - new Date(lastVisit)) / (1000 * 60 * 60 * 24)
+    );
+    const timer = setTimeout(() => {
+      if (daysSince === 1) {
+        emitToast({
+          type: "success",
+          title: "Welcome back!",
+          message: "Regime conditions have updated since your last visit.",
+          duration: 4000,
+        });
+      } else if (daysSince > 2) {
+        emitToast({
+          type: "info",
+          title: `${daysSince} days since your last check`,
+          message: "Significant regime changes may have occurred.",
+          duration: 5000,
+        });
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }
+  localStorage.setItem("cp_last_visit", today);
+}, []);
+
 
 
   if (loading) return (
@@ -7608,10 +7752,7 @@ useEffect(() => {
         {/* ── Model Version Badge ── */}
         <ModelVersionBadge version={stack.model_version} durationMs={stack.computation_ms} lastUpdated={lastUpdated} />
 
-        {/* ── TODAY'S VERDICT ── */}
-        <div data-tour="today-verdict">
-  <TodaysVerdict stack={stack} decision={decision} isPro={isPro} onUnlock={onUnlock} />
-</div>
+       
 
 
         {/* ── TODAY PANEL ── */}
@@ -7737,13 +7878,15 @@ useEffect(() => {
      {isPro ? (
   <>
     <PortfolioHealthScore stack={stack} disciplineData={disciplineData} isPro={isPro} onUnlock={onUnlock} />
-    
-    {/* ESSENTIAL TIER — these show for all paid users */}
+
+    <ErrorBoundary><AINarrativePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><OnChainIntelligencePanel coin={coin} token={token} isEssential={isEssential} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><ComparisonModePanel primaryCoin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
+
     <ErrorBoundary>
       <DecisionEnginePanel stack={stack} token={token} isPro={isEssential} onUnlock={onUnlock} onDecisionLoaded={setDecision} />
     </ErrorBoundary>
-    
-    {/* PRO TIER — these need Pro or higher */}
+
     <ErrorBoundary>
       <SetupQualityPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
     </ErrorBoundary>
@@ -7753,89 +7896,81 @@ useEffect(() => {
     <ErrorBoundary>
       <ScenariosPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
     </ErrorBoundary>
-    <TradePlanPanel coin={coin} email={email} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
-    <IfNothingPanel stack={stack} token={token} isPro={isEssential} onUnlock={onUnlock} />
-    <PnLImpactEstimator stack={stack} isPro={isEssential} onUnlock={onUnlock} />
-    <DrawdownSimulator stack={stack} isPro={isEssential} onUnlock={onUnlock} />
-    <InternalDamagePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
-    <EventRiskOverlayPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
-    
+    <ErrorBoundary>
+      <BacktestingEnginePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} />
+    </ErrorBoundary>
+    <ErrorBoundary>
+      <PortfolioRiskEnginePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} />
+    </ErrorBoundary>
+
+    <ErrorBoundary><TradePlanPanel coin={coin} email={email} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+    <ErrorBoundary><IfNothingPanel stack={stack} token={token} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><PnLImpactEstimator stack={stack} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><DrawdownSimulator stack={stack} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><InternalDamagePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+    <ErrorBoundary><EventRiskOverlayPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+
     <div className="grid md:grid-cols-2 gap-4">
-      <StressMeter stack={stack} isPro={isEssential} onUnlock={onUnlock} />
-      <RegimeCountdown stack={stack} isPro={isEssential} onUnlock={onUnlock} />
+      <ErrorBoundary><StressMeter stack={stack} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+      <ErrorBoundary><RegimeCountdown stack={stack} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
     </div>
     <div className="grid md:grid-cols-2 gap-4">
-      <RegimeQualityCard stack={stack} isPro={isEssential} onUnlock={onUnlock} />
-      <ConfidenceTrend history={historyData} confidence={confidence} isPro={isEssential} onUnlock={onUnlock} />
+      <ErrorBoundary><RegimeQualityCard stack={stack} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+      <ErrorBoundary><ConfidenceTrend history={historyData} confidence={confidence} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
     </div>
-    <RegimePlaybook stack={stack} isPro={isEssential} onUnlock={onUnlock} />
-    <HistoricalAnalogsPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
-    
-    {/* INSTITUTIONAL TIER */}
-    <ArchetypeOverlayPanel coin={coin} email={email} token={token} isPro={isInstitutional} onUnlock={onUnlock} requiredTier="institutional" />
-    
-    <ExposureTracker stack={stack} isPro={isEssential} onUnlock={onUnlock} />
-    <RiskProfilePanel email={email} token={token} isPro={isEssential} onUnlock={onUnlock} onProfileSaved={(p) => console.log("Saved:", p)} />
-    
-    {/* INSTITUTIONAL TIER */}
-    <CustomRegimeThresholdsPanel
-  email={email}
-  token={token}
-  isInstitutional={isInstitutional}
-  onUnlock={onUnlock}
-/>
 
-    
-    <UserAlertsInbox email={email} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
+    <ErrorBoundary><RegimePlaybook stack={stack} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><HistoricalAnalogsPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+
+    <ErrorBoundary><ArchetypeOverlayPanel coin={coin} email={email} token={token} isPro={isInstitutional} onUnlock={onUnlock} requiredTier="institutional" /></ErrorBoundary>
+
+    <ErrorBoundary><ExposureTracker stack={stack} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><RiskProfilePanel email={email} token={token} isPro={isEssential} onUnlock={onUnlock} onProfileSaved={(p) => console.log("Saved:", p)} /></ErrorBoundary>
+
+    <ErrorBoundary><AlertThresholdsPanel email={email} token={token} isPro={isInstitutional} onUnlock={onUnlock} requiredTier="institutional" /></ErrorBoundary>
+    <ErrorBoundary><CustomRegimeThresholdsPanel email={email} token={token} isInstitutional={isInstitutional} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><UserAlertsInbox email={email} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+
     <div className="relative">
-  <ExposureLogger stack={stack} email={email} token={token} isPro={isEssential} onUnlock={onUnlock} />
-  {isEssential && email && token && (
-    <div className="absolute top-8 right-8 z-10">
-      <ExportButton
-        url={`/export/exposure-log?email=${encodeURIComponent(email)}`}
-        filename="exposure-log.csv"
-        token={token}
-      />
+      <ErrorBoundary><ExposureLogger stack={stack} email={email} token={token} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+      {isEssential && email && token && (
+        <div className="absolute top-8 right-8 z-10">
+          <ExportButton url={`/export/exposure-log?email=${encodeURIComponent(email)}`} filename="exposure-log.csv" token={token} />
+        </div>
+      )}
     </div>
-  )}
-</div>
 
-    <PerformanceLogger coin={coin} email={email} token={token} isPro={isEssential} onUnlock={onUnlock} />
-    <StreakTracker disciplineData={disciplineData} isPro={isEssential} onUnlock={onUnlock} />
-    <DisciplinePanel disciplineData={disciplineData} isPro={isEssential} onUnlock={onUnlock} />
-    <BehavioralAlphaPanel email={email} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
-    <MistakeReplayPanel email={email} coin={coin} token={token} isPro={isEssential} onUnlock={onUnlock} />
+    <ErrorBoundary><PerformanceLogger coin={coin} email={email} token={token} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><StreakTracker disciplineData={disciplineData} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><DisciplinePanel disciplineData={disciplineData} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><BehavioralAlphaPanel email={email} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+    <ErrorBoundary><MistakeReplayPanel email={email} coin={coin} token={token} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+
     <div className="relative">
-  <PerformancePanel email={email} coin={coin} token={token} isPro={isEssential} onUnlock={onUnlock} />
-  {isEssential && email && token && (
-    <div className="absolute top-8 right-8 z-10">
-      <ExportButton
-        url={`/export/performance?email=${encodeURIComponent(email)}&coin=${coin}`}
-        filename={`performance-${coin}.csv`}
-        token={token}
-      />
+      <ErrorBoundary><PerformancePanel email={email} coin={coin} token={token} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+      {isEssential && email && token && (
+        <div className="absolute top-8 right-8 z-10">
+          <ExportButton url={`/export/performance?email=${encodeURIComponent(email)}&coin=${coin}`} filename={`performance-${coin}.csv`} token={token} />
+        </div>
+      )}
     </div>
-  )}
-</div>
 
-    <EdgeProfilePanel email={email} token={token} isPro={isEssential} onUnlock={onUnlock} />
-    <WeeklyReportPanel email={email} coin={coin} token={token} isPro={isEssential} onUnlock={onUnlock} />
+    <ErrorBoundary><EdgeProfilePanel email={email} token={token} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><WeeklyReportPanel email={email} coin={coin} token={token} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
   </>
 ) : (
   <>
-    {/* FREE USERS: strategic gates showing what they're missing */}
     <DecisionEnginePanel stack={stack} token={token} isPro={false} onUnlock={onUnlock} onDecisionLoaded={setDecision} requiredTier="essential" />
     <RegimePlaybook stack={stack} isPro={false} onUnlock={onUnlock} requiredTier="essential" />
     <ProIntelligencePreview onUnlock={onUnlock} />
-<ComparisonModePanel primaryCoin={coin} token={token} isPro={false} onUnlock={onUnlock} />
-
     <AINarrativePanel coin={coin} token={token} isPro={false} onUnlock={onUnlock} />
-<OnChainIntelligencePanel coin={coin} token={token} isEssential={false} isPro={false} onUnlock={onUnlock} />
-<BacktestingEnginePanel coin={coin} token={token} isPro={false} onUnlock={onUnlock} />
-<PortfolioRiskEnginePanel coin={coin} token={token} isPro={false} onUnlock={onUnlock} />
-
+    <OnChainIntelligencePanel coin={coin} token={token} isEssential={false} isPro={false} onUnlock={onUnlock} />
+    <BacktestingEnginePanel coin={coin} token={token} isPro={false} onUnlock={onUnlock} />
+    <PortfolioRiskEnginePanel coin={coin} token={token} isPro={false} onUnlock={onUnlock} />
+    <ComparisonModePanel primaryCoin={coin} token={token} isPro={false} onUnlock={onUnlock} />
   </>
 )}
+
 
         {/* ── REGIME STACK DETAIL ── */}
         <div data-tour="regime-stack">
