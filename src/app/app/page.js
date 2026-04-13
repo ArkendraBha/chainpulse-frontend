@@ -182,6 +182,58 @@ const ComparisonModePanel = memo(function ComparisonModePanel({ primaryCoin, tok
 });
 
 // ─────────────────────────────────────────────────────────
+// TIER UPGRADE BLOCK — replaces individual locked panel wall
+// ─────────────────────────────────────────────────────────
+function TierUpgradeBlock({ tier, price, color, border, bg, label, tagline, features, onUnlock }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className={`border ${border} ${bg} rounded-2xl overflow-hidden`}>
+      <div className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+        <div className="space-y-1.5 flex-1">
+          <div className={`text-xs font-semibold uppercase tracking-widest ${color}`}>{label}</div>
+          <p className="text-sm text-zinc-400 leading-relaxed max-w-xl">{tagline}</p>
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1 mt-1"
+          >
+            {expanded ? "Hide features" : `See all ${features.length} features`}
+            <svg className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <button
+            onClick={onUnlock}
+            className="bg-white text-black px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-100 transition-all hover:-translate-y-[1px] hover:shadow-lg whitespace-nowrap"
+          >
+            Unlock {price}/month →
+          </button>
+          <div className="text-[10px] text-zinc-700">7-day free trial · Cancel anytime</div>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="px-6 pb-6 border-t border-white/5 pt-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {features.map((feat) => (
+              <div key={feat} className="flex items-start gap-2.5 text-xs text-zinc-500">
+                <svg className={`w-3.5 h-3.5 ${color} shrink-0 mt-0.5`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+                {feat}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────
 // REGIME HERO BAR
 // ─────────────────────────────────────────────────────────
 function RegimeHeroBar({ stack, decision, isPro, isEssential, onUnlock, wsStatus }) {
@@ -204,7 +256,8 @@ function RegimeHeroBar({ stack, decision, isPro, isEssential, onUnlock, wsStatus
   const gradClass = regimeBgMap[execLabel] ?? "from-zinc-900/40 to-transparent border-white/10";
 
   return (
-    <div className={`bg-gradient-to-r ${gradClass} border rounded-2xl px-6 py-5 transition-all duration-700`}>
+    <div className={`bg-gradient-to-r ${gradClass} border rounded-2xl px-6 py-6 transition-all duration-700`} style={{ boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset" }}>
+
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
 
         {/* Left: Regime identity */}
@@ -1373,12 +1426,14 @@ function CardShell({ children, label }) {
     <div
       role="region"
       aria-label={label}
-      className="bg-zinc-950/60 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-8 space-y-4"
+      className="rounded-2xl border border-zinc-800/60 p-6 space-y-4"
+      style={{ backgroundColor: "#111113" }}
     >
       {children}
     </div>
   );
 }
+
 
 
 // ─────────────────────────────────────────
@@ -1437,11 +1492,18 @@ function ProGate({ label, consequence, children, onUnlock, requiredTier }) {
             <div className="text-xs text-zinc-500 leading-relaxed">{consequence}</div>
           )}
           <button
-            onClick={onUnlock}
-            className="w-full bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all text-xs font-semibold hover:bg-zinc-100"
-          >
-            {"Unlock — " + tierLabel + " " + tierPrice + "/month"}
-          </button>
+  onClick={onUnlock}
+  className={`w-full px-5 py-2.5 rounded-xl text-xs font-semibold transition-all hover:-translate-y-[1px] shadow-lg ${
+    requiredTier === "institutional"
+      ? "bg-purple-600 text-white hover:bg-purple-500"
+      : requiredTier === "pro"
+      ? "bg-emerald-600 text-white hover:bg-emerald-500"
+      : "bg-blue-600 text-white hover:bg-blue-500"
+  }`}
+>
+  {"Unlock — " + tierLabel + " " + tierPrice + "/month"}
+</button>
+
           <div className="text-xs text-zinc-700">7-day risk-free · Cancel anytime</div>
         </div>
       </div>
@@ -1456,27 +1518,27 @@ function StatCard({ label, value, suffix = "%", color, barCls, hint, locked, con
   if (locked)
     return (
       <div
-        className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2 relative overflow-hidden cursor-pointer group"
+        className="rounded-lg p-5 space-y-2 relative overflow-hidden cursor-pointer border border-zinc-800/40"
+        style={{ backgroundColor: "#111113" }}
         onClick={onUnlock}
       >
         <Label>{label}</Label>
-        <div className="text-3xl font-semibold text-zinc-800 blur-sm select-none tabular-nums">00.0</div>
-        <Bar value={50} cls="bg-zinc-800" />
-        {hint && <div className="text-xs text-zinc-800 blur-sm select-none">{hint}</div>}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-          <div className="text-center space-y-1 px-3">
-            <span className="text-xs text-zinc-400 flex items-center gap-1 justify-center">
-  <Lock />Essential
-</span>
-            {consequence && (
-              <div className="text-xs text-zinc-600 max-w-[140px] text-center leading-relaxed">
-                {consequence}
-              </div>
-            )}
+        <div className="text-3xl font-semibold tabular-nums text-zinc-800 select-none" style={{ filter: "blur(6px)" }}>
+          {["73.2", "41.8", "28.4", "67.1", "89", "−21.7"][Math.abs(label.length) % 6]}
+        </div>
+        <div className="w-full bg-zinc-900 rounded-full h-[3px] mt-2">
+          <div className="h-[3px] rounded-full bg-zinc-800" style={{ width: "62%" }} />
+        </div>
+        {hint && <div className="text-xs text-zinc-800 select-none" style={{ filter: "blur(4px)" }}>{hint}</div>}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 rounded-lg" style={{ backgroundColor: "rgba(0,0,0,0.85)" }}>
+          <div className="text-center space-y-1">
+            <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Essential</div>
+            <div className="text-xs text-white font-medium">$39/month</div>
           </div>
         </div>
       </div>
     );
+
   return (
     <div className="bg-white/2 border border-white/5 rounded-lg p-5 space-y-2">
       <Label>{label}</Label>
@@ -6025,10 +6087,12 @@ setTimeout(() => {
             key={coin}
             onClick={() => onCoinSelect?.(coin)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 shrink-0 border ${
-              isActive
-                ? "bg-white/8 border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-                : "bg-white/2 border-white/5 hover:bg-white/5 hover:border-white/10"
-            } ${flash ? "animate-pulse" : ""}`}
+  isActive
+    ? "border-white/30 shadow-[0_0_12px_rgba(255,255,255,0.06)]"
+    : "border-white/5 hover:border-white/10"
+} ${flash ? "animate-pulse" : ""}`}
+style={isActive ? { backgroundColor: "#1a1a1d" } : { backgroundColor: "rgba(255,255,255,0.02)" }}
+
           >
             <span className={`text-xs font-semibold ${isActive ? "text-white" : "text-zinc-300"}`}>{coin}</span>
 
@@ -6219,49 +6283,6 @@ function AdvancedAnalytics({ children, isPro }) {
 }
 
 // ─────────────────────────────────────────
-// PRO INTELLIGENCE PREVIEW
-// ─────────────────────────────────────────
-function ProIntelligencePreview({ onUnlock }) {
-  return (
-    <CardShell>
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <Label>Pro Intelligence</Label>
-          <h2 className="text-lg font-semibold">8 analytics panels locked</h2>
-          <p className="text-sm text-zinc-500 leading-relaxed">Unlock the full regime intelligence stack</p>
-        </div>
-        <button onClick={onUnlock} className="bg-white text-black hover:-translate-y-[1px] hover:shadow-lg transition-all px-5 py-2.5 rounded-lg text-sm font-semibold shrink-0 shadow-sm">
-  View Plans — Starting at $39/mo
-</button>
-      </div>
-      <div className="relative rounded-lg overflow-hidden">
-        <div className="blur-md pointer-events-none opacity-40 space-y-3 p-4 bg-white/2 border border-white/5 rounded-lg">
-          <div className="grid grid-cols-3 gap-4">
-            {["Decision Engine", "Survival Curve", "Stress Meter"].map((l) => (
-              <div key={l} className="bg-white/5 rounded-lg p-4 space-y-2">
-                <div className="text-xs text-zinc-500">{l}</div>
-                <div className="text-2xl font-semibold text-emerald-400">{l === "Decision Engine" ? "Hold" : l === "Survival Curve" ? "74%" : "32"}</div>
-                <div className="w-full bg-white/5 rounded-full h-1"><div className="h-1 rounded-full bg-emerald-500" style={{ width: "74%" }} /></div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/95 via-zinc-950/50 to-transparent" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center space-y-3">
-            <div className="text-sm text-zinc-400">Full regime intelligence suite</div>
-            <button onClick={onUnlock} className="mt-2 bg-white text-black px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-[1px] transition-all text-sm font-semibold hover:bg-zinc-100">
-  View Plans — Starting at $39/month
-</button>
-            <div className="text-xs text-zinc-700">7-day risk-free · Cancel anytime</div>
-          </div>
-        </div>
-      </div>
-    </CardShell>
-  );
-}
-
-// ─────────────────────────────────────────
 // TODAY PANEL
 // ─────────────────────────────────────────
 function TodayPanel({ stack, decision, isPro, onUnlock, requiredTier }) {
@@ -6280,11 +6301,16 @@ function TodayPanel({ stack, decision, isPro, onUnlock, requiredTier }) {
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
-          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Regime</div>
-          <div className={`text-lg font-semibold ${regimeText(execLabel)}`}>{execLabel}</div>
-          <div className="text-xs text-zinc-600">{regimeAge.toFixed(1)}h active</div>
-        </div>
+        <div className={`rounded-lg p-4 space-y-1 border ${
+  execLabel?.includes("Risk-Off") ? "border-red-900/50 bg-red-950/20" :
+  execLabel?.includes("Risk-On") ? "border-emerald-900/50 bg-emerald-950/20" :
+  "border-yellow-900/40 bg-yellow-950/10"
+}`}>
+  <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Regime</div>
+  <div className={`text-lg font-semibold ${regimeText(execLabel)}`}>{execLabel}</div>
+  <div className="text-xs text-zinc-600">{regimeAge.toFixed(1)}h active</div>
+</div>
+
         <div className="bg-white/2 border border-white/5 rounded-lg p-4 space-y-1">
           <div className="text-[10px] text-zinc-500 uppercase tracking-widest">Exposure</div>
           {isPro ? (
@@ -7706,7 +7732,8 @@ useEffect(() => {
   const maturityLabel = maturity > 75 ? "Overextended" : maturity > 50 ? "Late Phase" : maturity > 25 ? "Mid Phase" : "Early Phase";
 
   return (
-  <main id="main-content" className="min-h-screen bg-black text-white">
+  <main id="main-content" className="min-h-screen text-white" style={{ backgroundColor: "#0a0a0b" }}>
+
     {showModal && <ProModal onClose={() => setShowModal(false)} email={email} />}
     {/* Screen reader live announcements */}
     <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
@@ -7882,28 +7909,30 @@ useEffect(() => {
     <ErrorBoundary><AINarrativePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
     <ErrorBoundary><OnChainIntelligencePanel coin={coin} token={token} isEssential={isEssential} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
     <ErrorBoundary><ComparisonModePanel primaryCoin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><DecisionEnginePanel stack={stack} token={token} isPro={isEssential} onUnlock={onUnlock} onDecisionLoaded={setDecision} /></ErrorBoundary>
 
-    <ErrorBoundary>
-      <DecisionEnginePanel stack={stack} token={token} isPro={isEssential} onUnlock={onUnlock} onDecisionLoaded={setDecision} />
-    </ErrorBoundary>
+    {/* ── Section: Advanced Analytics ── */}
+    <div className="flex items-center gap-4 pt-4">
+      <div className="flex-1 h-px bg-zinc-900" />
+      <div className="text-[10px] text-zinc-700 uppercase tracking-widest font-medium">Advanced Analytics</div>
+      <div className="flex-1 h-px bg-zinc-900" />
+    </div>
 
-    <ErrorBoundary>
-      <SetupQualityPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
-    </ErrorBoundary>
-    <ErrorBoundary>
-      <OpportunityRankingPanel token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
-    </ErrorBoundary>
-    <ErrorBoundary>
-      <ScenariosPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" />
-    </ErrorBoundary>
-    <ErrorBoundary>
-      <BacktestingEnginePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} />
-    </ErrorBoundary>
-    <ErrorBoundary>
-      <PortfolioRiskEnginePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} />
-    </ErrorBoundary>
-
+    <ErrorBoundary><SetupQualityPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+    <ErrorBoundary><OpportunityRankingPanel token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+    <ErrorBoundary><ScenariosPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+    <ErrorBoundary><BacktestingEnginePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
+    <ErrorBoundary><PortfolioRiskEnginePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
     <ErrorBoundary><TradePlanPanel coin={coin} email={email} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+    <ErrorBoundary><HistoricalAnalogsPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+
+    {/* ── Section: Risk Modeling ── */}
+    <div className="flex items-center gap-4 pt-4">
+      <div className="flex-1 h-px bg-zinc-900" />
+      <div className="text-[10px] text-zinc-700 uppercase tracking-widest font-medium">Risk Modeling</div>
+      <div className="flex-1 h-px bg-zinc-900" />
+    </div>
+
     <ErrorBoundary><IfNothingPanel stack={stack} token={token} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
     <ErrorBoundary><PnLImpactEstimator stack={stack} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
     <ErrorBoundary><DrawdownSimulator stack={stack} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
@@ -7918,18 +7947,28 @@ useEffect(() => {
       <ErrorBoundary><RegimeQualityCard stack={stack} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
       <ErrorBoundary><ConfidenceTrend history={historyData} confidence={confidence} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
     </div>
-
     <ErrorBoundary><RegimePlaybook stack={stack} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
-    <ErrorBoundary><HistoricalAnalogsPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+
+    {/* ── Section: Personalization ── */}
+    <div className="flex items-center gap-4 pt-4">
+      <div className="flex-1 h-px bg-zinc-900" />
+      <div className="text-[10px] text-zinc-700 uppercase tracking-widest font-medium">Personalization</div>
+      <div className="flex-1 h-px bg-zinc-900" />
+    </div>
 
     <ErrorBoundary><ArchetypeOverlayPanel coin={coin} email={email} token={token} isPro={isInstitutional} onUnlock={onUnlock} requiredTier="institutional" /></ErrorBoundary>
-
     <ErrorBoundary><ExposureTracker stack={stack} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
     <ErrorBoundary><RiskProfilePanel email={email} token={token} isPro={isEssential} onUnlock={onUnlock} onProfileSaved={(p) => console.log("Saved:", p)} /></ErrorBoundary>
-
     <ErrorBoundary><AlertThresholdsPanel email={email} token={token} isPro={isInstitutional} onUnlock={onUnlock} requiredTier="institutional" /></ErrorBoundary>
     <ErrorBoundary><CustomRegimeThresholdsPanel email={email} token={token} isInstitutional={isInstitutional} onUnlock={onUnlock} /></ErrorBoundary>
     <ErrorBoundary><UserAlertsInbox email={email} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
+
+    {/* ── Section: Accountability ── */}
+    <div className="flex items-center gap-4 pt-4">
+      <div className="flex-1 h-px bg-zinc-900" />
+      <div className="text-[10px] text-zinc-700 uppercase tracking-widest font-medium">Accountability</div>
+      <div className="flex-1 h-px bg-zinc-900" />
+    </div>
 
     <div className="relative">
       <ErrorBoundary><ExposureLogger stack={stack} email={email} token={token} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
@@ -7962,14 +8001,78 @@ useEffect(() => {
   <>
     <DecisionEnginePanel stack={stack} token={token} isPro={false} onUnlock={onUnlock} onDecisionLoaded={setDecision} requiredTier="essential" />
     <RegimePlaybook stack={stack} isPro={false} onUnlock={onUnlock} requiredTier="essential" />
-    <ProIntelligencePreview onUnlock={onUnlock} />
-    <AINarrativePanel coin={coin} token={token} isPro={false} onUnlock={onUnlock} />
-    <OnChainIntelligencePanel coin={coin} token={token} isEssential={false} isPro={false} onUnlock={onUnlock} />
-    <BacktestingEnginePanel coin={coin} token={token} isPro={false} onUnlock={onUnlock} />
-    <PortfolioRiskEnginePanel coin={coin} token={token} isPro={false} onUnlock={onUnlock} />
-    <ComparisonModePanel primaryCoin={coin} token={token} isPro={false} onUnlock={onUnlock} />
+
+    <TierUpgradeBlock
+      tier="essential"
+      price="$39"
+      color="text-blue-400"
+      border="border-blue-500/20"
+      bg="bg-blue-950/10"
+      label="Essential — Exposure Control"
+      tagline="You can see the regime. You cannot act on it without knowing how much to deploy."
+      features={[
+        "Exposure recommendation % — regime-adjusted",
+        "Shift risk % — composite deterioration signal",
+        "Hazard rate — failure risk vs historical baseline",
+        "Survival curve — persistence probability over time",
+        "Decision engine directive — systematic daily action",
+        "Regime playbook — protocol and win rates",
+        "On-chain metrics — funding rates + open interest",
+        "Regime stress meter + confidence score",
+        "Drawdown simulator + PnL impact estimator",
+        "Discipline score + streak tracking",
+        "Performance comparison vs model",
+        "CSV export + email alerts",
+      ]}
+      onUnlock={onUnlock}
+    />
+
+    <TierUpgradeBlock
+      tier="pro"
+      price="$79"
+      color="text-emerald-400"
+      border="border-emerald-500/20"
+      bg="bg-emerald-950/10"
+      label="Pro — Strategic Edge"
+      tagline="Essential tells you what to do. Pro tells you why, what's coming, and whether your entry is any good."
+      features={[
+        "AI Regime Analyst — plain-English narrative",
+        "Setup quality engine — is this entry good or a chase?",
+        "Backtesting engine — 5 strategies, 365 days of history",
+        "Monte Carlo VaR — 10,000-simulation risk modeling",
+        "Kelly Criterion — mathematically optimal position sizing",
+        "Probabilistic scenarios — Bull/Base/Bear with probabilities",
+        "Trade plan generator — tranches, stops, if-then actions",
+        "Historical analog matching — forward return statistics",
+        "Internal damage monitor — structural weakness detection",
+        "Behavioral alpha report — which patterns cost you money",
+        "Comparison mode — side-by-side asset analysis",
+        "WebSocket live streaming — real-time regime updates",
+      ]}
+      onUnlock={onUnlock}
+    />
+
+    <TierUpgradeBlock
+      tier="institutional"
+      price="$149"
+      color="text-purple-400"
+      border="border-purple-500/20"
+      bg="bg-purple-950/10"
+      label="Institutional — Infrastructure Layer"
+      tagline="For traders who need ChainPulse embedded in their workflow, not just open in a browser tab."
+      features={[
+        "REST API — 1,000 requests/day, 3 API keys",
+        "Webhooks — HMAC-signed delivery to 5 endpoints",
+        "Custom regime thresholds — tune score boundaries",
+        "Custom per-coin alert thresholds",
+        "Trader archetype overlay — personalized multipliers",
+        "Priority alert delivery — 1hr cooldown",
+      ]}
+      onUnlock={onUnlock}
+    />
   </>
 )}
+
 
 
         {/* ── REGIME STACK DETAIL ── */}
