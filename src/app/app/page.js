@@ -51,9 +51,10 @@ const ComparisonModePanel = memo(function ComparisonModePanel({ primaryCoin, tok
     if (!isPro || !primaryCoin || !compareCoin || !isVisible) return;
     setLoading(true);
     Promise.all([
-      apiFetch(`/dashboard?coin=${primaryCoin}`, token).catch(() => null),
-      apiFetch(`/dashboard?coin=${compareCoin}`, token).catch(() => null),
-    ]).then(([a, b]) => {
+  apiFetch(`/compare-summary?coin=${primaryCoin}`, token).catch(() => null),
+  apiFetch(`/compare-summary?coin=${compareCoin}`, token).catch(() => null),
+])
+.then(([a, b]) => {
       if (a && !a.error) setPrimaryData(a.stack);
       if (b && !b.error) setCompareData(b.stack);
     }).finally(() => setLoading(false));
@@ -1195,6 +1196,35 @@ function saveToken(t) { if (typeof window !== "undefined") localStorage.setItem(
 // ─────────────────────────────────────────
 // AUTHENTICATED FETCH HELPER
 // ─────────────────────────────────────────
+function getDashboardCacheKey(coin) {
+  return `cp_dashboard_cache_${coin}`;
+}
+
+function readDashboardCache(coin) {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(getDashboardCacheKey(coin));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Date.now() - parsed.cachedAt > 5 * 60 * 1000) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+
+function writeDashboardCache(coin, data) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(
+      getDashboardCacheKey(coin),
+      JSON.stringify({ cachedAt: Date.now(), data })
+    );
+  } catch {}
+}
+
+
 function authHeaders(token) {
   const h = { "Content-Type": "application/json" };
   if (token) h["Authorization"] = `Bearer ${token}`;
@@ -7542,6 +7572,26 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
     abortControllerRef.current.abort();
   }
   abortControllerRef.current = new AbortController();
+  // Use cached data instantly if available
+  const cached = readDashboardCache(selectedCoin);
+  if (cached?.data) {
+    const cachedData = cached.data;
+    setStack(cachedData.stack || null);
+    if (cachedData.stack?.tier) setActiveTier(cachedData.stack.tier);
+    else if (cachedData.tier) setActiveTier(cachedData.tier);
+    setLatest(cachedData.latest || null);
+    setCurveData((cachedData.curve || []).slice(-48));
+    setHistoryData((cachedData.history || []).slice(-48));
+    setOverview(cachedData.overview || []);
+    setBreadth(cachedData.breadth || null);
+    setConfidence(cachedData.confidence || null);
+    setVolEnv(cachedData.volEnv || null);
+    setTransitions(cachedData.transitions || null);
+    setCorrelation(cachedData.correlation || null);
+    setRiskEvents(cachedData.events || []);
+    setLastUpdated(new Date(cached.cachedAt));
+    setLoading(false);
+  }
 
   try {
     const headers = {};
@@ -7552,12 +7602,14 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
     });
     if (!res.ok) throw new Error("Fetch failed");
     const data = await res.json();
+        writeDashboardCache(selectedCoin, data);
     setStack(data.stack || null);
     if (data.stack?.tier) setActiveTier(data.stack.tier);
     else if (data.tier) setActiveTier(data.tier);
     setLatest(data.latest || null);
-    setCurveData(data.curve || []);
-    setHistoryData(data.history || []);
+    setCurveData((data.curve || []).slice(-48));
+setHistoryData((data.history || []).slice(-48));
+
     setOverview(data.overview || []);
     setBreadth(data.breadth || null);
     setConfidence(data.confidence || null);
@@ -7617,11 +7669,19 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
 useEffect(() => {
   setLoading(true);
   fetchData(coin, token);
+
+  const pollMs =
+    activeTier === "free" ? 300_000 :          // 5 min
+    activeTier === "essential" ? 120_000 :    // 2 min
+    300_000;                                  // Pro/Inst fallback
+
   const iv = setInterval(() => {
     fetchData(coin, token);
-  }, isProActiveRef.current ? 300_000 : REFRESH_MS);
+  }, pollMs);
+
   return () => clearInterval(iv);
-}, [coin, token, fetchData]);
+}, [coin, token, fetchData, activeTier]);
+
 
 
 useEffect(() => {
