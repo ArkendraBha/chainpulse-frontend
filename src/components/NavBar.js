@@ -48,12 +48,7 @@ export default function NavBar() {
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
-            <Link
-              href="/app"
-              className="text-sm text-zinc-400 hover:text-white transition-colors"
-            >
-              Sign in
-            </Link>
+          
             <Link
               href="/pricing"
               className="bg-white text-black text-sm font-semibold px-4 py-1.5 rounded-lg hover:bg-zinc-100 transition-all hover:-translate-y-[1px] hover:shadow-lg"

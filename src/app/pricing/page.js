@@ -257,32 +257,37 @@ export default function Pricing() {
 
       {/* ── TIER CARDS ── */}
       <section className="px-6 pb-24">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-4">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-4 pt-6">
+
           {Object.entries(TIERS).map(([key, tier]) => {
             const price = annual ? tier.annualPrice : tier.monthlyPrice;
             const savings = Math.round((1 - tier.annualPrice / tier.monthlyPrice) * 100);
 
             return (
               <div
-                key={key}
-                className={`relative rounded-2xl border flex flex-col transition-all ${
-                  tier.highlight
-                    ? "border-emerald-500/30"
-                    : "border-white/6 hover:border-white/10"
-                }`}
+  key={key}
+  className={`relative rounded-2xl border flex flex-col transition-all overflow-visible ${
+    tier.highlight
+      ? "border-emerald-500/30"
+      : "border-white/6 hover:border-white/10"
+  }`}
+
                 style={{
                   backgroundColor: tier.highlight ? "rgba(16,185,129,0.03)" : "#0f0f10",
                   boxShadow: tier.highlight ? "0 0 60px rgba(16,185,129,0.06)" : undefined,
                 }}
               >
                 {tier.badge && (
-                  <div
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-full text-black whitespace-nowrap"
-                    style={{ backgroundColor: tier.accentColor }}
-                  >
-                    {tier.badge}
-                  </div>
-                )}
+  <div className="absolute -top-4 left-0 right-0 flex justify-center z-20">
+    <div
+      className="text-[10px] font-bold uppercase tracking-widest px-4 py-1 rounded-full text-black whitespace-nowrap shadow-lg"
+      style={{ backgroundColor: tier.accentColor }}
+    >
+      {tier.badge}
+    </div>
+  </div>
+)}
+
 
                 <div className="p-8 space-y-6 flex-1">
                   {/* Identity */}
@@ -376,14 +381,16 @@ export default function Pricing() {
 
             {COMPARISON.map((row, i) => {
               if (row.section) {
-                return (
-                  <div key={i} className="grid grid-cols-5 border-t border-white/4" style={{ backgroundColor: "#080809" }}>
-                    <div className="col-span-5 px-6 py-3 text-[10px] text-zinc-700 uppercase tracking-widest font-semibold">
-                      {row.section}
-                    </div>
-                  </div>
-                );
-              }
+  return (
+    <div key={i} className="border-t border-white/4" style={{ backgroundColor: "#080809" }}>
+      <div className="px-6 py-2.5 flex items-center gap-3">
+        <div className="text-[9px] text-zinc-700 uppercase tracking-widest font-semibold">{row.section}</div>
+        <div className="flex-1 h-px bg-zinc-900" />
+      </div>
+    </div>
+  );
+}
+
               return (
                 <div
                   key={i}
