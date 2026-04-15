@@ -364,56 +364,88 @@ export default function Pricing() {
       </section>
 
       {/* ── COMPARISON TABLE ── */}
-      <section className="px-6 pb-24">
-        <div className="max-w-5xl mx-auto space-y-6">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-semibold tracking-tight">Compare all features</h2>
-            <p className="text-zinc-600 text-sm">Every feature across every tier</p>
-          </div>
-
-          <div className="rounded-2xl border border-white/6 overflow-hidden" style={{ backgroundColor: "#0f0f10" }}>
-            <div className="grid grid-cols-5 border-b border-white/5">
-              <div className="col-span-2 px-6 py-4 text-[10px] text-zinc-600 uppercase tracking-widest font-medium">Feature</div>
-              {["Free", "Essential", "Pro", "Institutional"].map((t) => (
-                <div key={t} className="px-4 py-4 text-center text-[10px] text-zinc-500 uppercase tracking-widest font-medium">{t}</div>
-              ))}
-            </div>
-
-            {COMPARISON.map((row, i) => {
-              if (row.section) {
-  return (
-    <div key={i} className="border-t border-white/4" style={{ backgroundColor: "#080809" }}>
-      <div className="px-6 py-2.5 flex items-center gap-3">
-        <div className="text-[9px] text-zinc-700 uppercase tracking-widest font-semibold">{row.section}</div>
-        <div className="flex-1 h-px bg-zinc-900" />
-      </div>
+<section className="px-6 pb-24">
+  <div className="max-w-5xl mx-auto space-y-6">
+    <div className="text-center space-y-2">
+      <h2 className="text-2xl font-semibold tracking-tight">Compare all features</h2>
+      <p className="text-zinc-600 text-sm">Every feature across every tier</p>
     </div>
-  );
-}
 
-              return (
-                <div
-                  key={i}
-                  className="grid grid-cols-5 border-t border-white/4 hover:bg-white/[0.01] transition-colors"
-                >
-                  <div className="col-span-2 px-6 py-3.5 text-sm text-zinc-400">{row.feat}</div>
-                  {["free", "essential", "pro", "institutional"].map((tier) => (
-                    <div key={tier} className="px-4 py-3.5 flex items-center justify-center">
-                      {row[tier] ? (
-                        <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <div className="w-3 h-px bg-zinc-800" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
+    <div
+      className="rounded-2xl border border-white/6 overflow-hidden"
+      style={{ backgroundColor: "#0f0f10" }}
+    >
+      {/* Header row */}
+      <div
+        className="grid border-b border-white/5"
+        style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr" }}
+      >
+        <div className="px-6 py-4 text-[10px] text-zinc-600 uppercase tracking-widest font-medium">
+          Feature
         </div>
-      </section>
+        {[
+          { label: "Free",          color: "text-zinc-500"   },
+          { label: "Essential",     color: "text-blue-400"   },
+          { label: "Pro",           color: "text-emerald-400"},
+          { label: "Institutional", color: "text-purple-400" },
+        ].map(({ label, color }) => (
+          <div key={label} className={`px-4 py-4 text-center text-[10px] uppercase tracking-widest font-semibold ${color}`}>
+            {label}
+          </div>
+        ))}
+      </div>
+
+      {/* Data rows */}
+      {COMPARISON.map((row, i) => {
+        if (row.section) {
+          return (
+            <div
+              key={i}
+              className="border-t border-white/4 px-6 py-2.5 flex items-center gap-3"
+              style={{ backgroundColor: "#080809" }}
+            >
+              <div className="text-[9px] text-zinc-700 uppercase tracking-widest font-semibold">
+                {row.section}
+              </div>
+              <div className="flex-1 h-px bg-zinc-900" />
+            </div>
+          );
+        }
+        return (
+          <div
+            key={i}
+            className="border-t border-white/4 hover:bg-white/[0.01] transition-colors"
+            style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr" }}
+          >
+            <div className="px-6 py-3.5 text-sm text-zinc-400">{row.feat}</div>
+            {["free", "essential", "pro", "institutional"].map((tier) => (
+              <div key={tier} className="px-4 py-3.5 flex items-center justify-center">
+                {row[tier] ? (
+                  <svg
+                    className="w-4 h-4 text-emerald-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                ) : (
+                  <div className="w-3 h-px bg-zinc-800" />
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
 
       {/* ── FAQ ── */}
       <section className="px-6 pb-24">

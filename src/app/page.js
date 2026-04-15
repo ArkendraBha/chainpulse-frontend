@@ -502,83 +502,110 @@ export default function Landing() {
       </section>
 
       {/* ── PRICING BRIDGE ── */}
-      <section className="px-6 py-24 border-t border-white/4">
-        <div className="max-w-3xl mx-auto space-y-10">
-          <div className="text-center space-y-4">
-            <h2 className="text-4xl font-semibold tracking-tight">
-              One avoided drawdown pays for years of Essential
-            </h2>
-            <p className="text-zinc-500 text-sm max-w-xl mx-auto leading-relaxed">
-              For traders managing $5,000+, a single avoided 3% over-exposure event
-              saves $150 — more than four months of Essential at $29/month billed annually.
-            </p>
-          </div>
+<section className="px-6 py-24 border-t border-white/4">
+  <div className="max-w-4xl mx-auto space-y-10">
+    <div className="text-center space-y-4">
+      <h2
+        className="text-4xl font-semibold tracking-tight"
+        style={{ letterSpacing: "-0.02em" }}
+      >
+        One avoided drawdown pays for years of Essential
+      </h2>
+      <p className="text-zinc-500 text-sm max-w-xl mx-auto leading-relaxed">
+        For traders managing $5,000+, a single avoided 3% over-exposure event
+        saves $150 — more than four months of Essential at $29/month billed annually.
+      </p>
+    </div>
 
-          <div
-            className="rounded-2xl border border-white/6 overflow-hidden"
-            style={{ backgroundColor: "#0f0f10" }}
-          >
-            <div className="grid md:grid-cols-4 divide-x divide-white/5">
-              {[
-                {
-                  tier: "Free",
-                  price: "$0",
-                  label: "Regime Awareness",
-                  desc: "You know what's happening.",
-                  color: "text-zinc-400",
-                },
-                {
-                  tier: "Essential",
-                  price: "$29",
-                  label: "Exposure Control",
-                  desc: "You know what to do.",
-                  color: "text-blue-400",
-                },
-                {
-                  tier: "Pro",
-                  price: "$59",
-                  label: "Strategic Edge",
-                  desc: "You know before others.",
-                  color: "text-emerald-400",
-                  highlight: true,
-                },
-                {
-                  tier: "Institutional",
-                  price: "$119",
-                  label: "Infrastructure Layer",
-                  desc: "You run the system.",
-                  color: "text-purple-400",
-                },
-              ].map(({ tier, price, label: l, desc, color, highlight }) => (
-                <div
-                  key={tier}
-                  className="p-6 space-y-3 relative"
-                  style={{ backgroundColor: highlight ? "rgba(16,185,129,0.04)" : undefined }}
-                >
-                  {highlight && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[9px] font-bold uppercase tracking-widest bg-emerald-500 text-black px-2.5 py-0.5 rounded-full">
-                      Popular
-                    </div>
-                  )}
-                  <div className={`text-[10px] uppercase tracking-widest font-semibold ${color}`}>{tier}</div>
-                  <div className="text-2xl font-bold text-white">{price}<span className="text-xs text-zinc-600 font-normal">/mo</span></div>
-                  <div className={`text-xs font-medium ${color}`}>{l}</div>
-                  <div className="text-xs text-zinc-600">{desc}</div>
-                </div>
-              ))}
+    {/* Tier cards — 2x2 on mobile, 4 columns on desktop */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {[
+        {
+          tier: "Free",
+          price: "$0",
+          identity: "Regime Awareness",
+          tagline: "You know what's happening.",
+          color: "text-zinc-400",
+          border: "border-white/6",
+          bg: "rgba(255,255,255,0.01)",
+        },
+        {
+          tier: "Essential",
+          price: "$29",
+          identity: "Exposure Control",
+          tagline: "You know what to do.",
+          color: "text-blue-400",
+          border: "border-blue-500/15",
+          bg: "rgba(59,130,246,0.03)",
+        },
+        {
+          tier: "Pro",
+          price: "$59",
+          identity: "Strategic Edge",
+          tagline: "You know before others.",
+          color: "text-emerald-400",
+          border: "border-emerald-500/25",
+          bg: "rgba(16,185,129,0.05)",
+          badge: "Popular",
+          badgeColor: "#10b981",
+        },
+        {
+          tier: "Institutional",
+          price: "$119",
+          identity: "Infrastructure Layer",
+          tagline: "You run the system.",
+          color: "text-purple-400",
+          border: "border-purple-500/15",
+          bg: "rgba(168,85,247,0.03)",
+        },
+      ].map(({ tier, price, identity, tagline, color, border, bg, badge, badgeColor }) => (
+        <div
+          key={tier}
+          className={`relative rounded-2xl border ${border} p-5 space-y-3`}
+          style={{ backgroundColor: bg }}
+        >
+          {badge && (
+            <div
+              className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-full text-black whitespace-nowrap z-10"
+              style={{ backgroundColor: badgeColor }}
+            >
+              {badge}
             </div>
-            <div className="px-6 py-4 border-t border-white/5 flex items-center justify-between">
-              <div className="text-xs text-zinc-700">Annual billing · 7-day free trial · Cancel anytime</div>
-              <Link
-                href="/pricing"
-                className="text-xs text-white border border-white/10 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors"
-              >
-                View all plans →
-              </Link>
-            </div>
+          )}
+          <div className={`text-[10px] uppercase tracking-widest font-semibold ${color}`}>
+            {tier}
+          </div>
+          <div className="flex items-end gap-1">
+            <span className="text-3xl font-bold text-white tracking-tight">{price}</span>
+            <span className="text-zinc-600 text-xs pb-1">/mo</span>
+          </div>
+          <div>
+            <div className={`text-xs font-semibold ${color}`}>{identity}</div>
+            <div className="text-[10px] text-zinc-600 mt-0.5">{tagline}</div>
           </div>
         </div>
-      </section>
+      ))}
+    </div>
+
+    {/* Footer row */}
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+      <div className="text-xs text-zinc-700">
+        Annual billing · 7-day free trial · Cancel anytime
+      </div>
+      <Link
+        href="/pricing"
+        className="flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors border border-white/8 px-5 py-2.5 rounded-xl hover:border-white/15"
+        style={{ backgroundColor: "rgba(255,255,255,0.02)" }}
+      >
+        View all plans
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </Link>
+    </div>
+  </div>
+</section>
+
 
       {/* ── EMAIL CAPTURE ── */}
       <section className="px-6 py-24 border-t border-white/4">
