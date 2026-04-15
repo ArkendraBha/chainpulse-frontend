@@ -7,7 +7,30 @@ export const metadata = {
 
 export default function Methodology() {
   return (
-    <main className="min-h-screen text-white" style={{ backgroundColor: "#080809" }}>
+    <main className="min-h-screen text-white relative overflow-hidden" style={{ backgroundColor: "#080809" }}>
+
+  {/* Hero glow */}
+  <div
+    className="absolute pointer-events-none"
+    style={{
+      top: "-5%",
+      left: "30%",
+      width: "700px",
+      height: "400px",
+      background: "radial-gradient(ellipse at center, rgba(59,130,246,0.10) 0%, transparent 70%)",
+      filter: "blur(80px)",
+    }}
+  />
+
+  {/* Grid top */}
+  <div
+    className="absolute top-0 left-0 right-0 h-96 bg-grid-pattern pointer-events-none"
+    style={{
+      maskImage: "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 100%)",
+      WebkitMaskImage: "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 100%)",
+    }}
+  />
+
 
       {/* ── HERO ── */}
       <section className="px-6 pt-24 pb-16 border-b border-white/4">

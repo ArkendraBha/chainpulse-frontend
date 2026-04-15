@@ -210,7 +210,31 @@ export default function Pricing() {
   };
 
   return (
-    <main className="min-h-screen text-white" style={{ backgroundColor: "#080809" }}>
+    <main className="min-h-screen text-white relative overflow-hidden" style={{ backgroundColor: "#080809" }}>
+
+  {/* Hero glow */}
+  <div
+    className="absolute pointer-events-none"
+    style={{
+      top: "-10%",
+      left: "50%",
+      transform: "translateX(-50%)",
+      width: "800px",
+      height: "400px",
+      background: "radial-gradient(ellipse at center, rgba(16,185,129,0.10) 0%, rgba(59,130,246,0.06) 40%, transparent 70%)",
+      filter: "blur(60px)",
+    }}
+  />
+
+  {/* Grid pattern */}
+  <div
+    className="absolute inset-0 bg-grid-pattern pointer-events-none"
+    style={{
+      maskImage: "radial-gradient(ellipse 80% 40% at 50% 0%, black 0%, transparent 100%)",
+      WebkitMaskImage: "radial-gradient(ellipse 80% 40% at 50% 0%, black 0%, transparent 100%)",
+    }}
+  />
+
       <PricingAnalytics />
 
       {/* ── HERO ── */}
@@ -364,7 +388,13 @@ export default function Pricing() {
       </section>
 
       {/* ── COMPARISON TABLE ── */}
-<section className="px-6 pb-24">
+<section className="relative px-6 pb-24 overflow-hidden">
+  <div
+    className="absolute inset-0 pointer-events-none"
+    style={{
+      background: "radial-gradient(ellipse 50% 60% at 50% 50%, rgba(59,130,246,0.04) 0%, transparent 70%)",
+    }}
+  />
   <div className="max-w-5xl mx-auto space-y-6">
     <div className="text-center space-y-2">
       <h2 className="text-2xl font-semibold tracking-tight">Compare all features</h2>
