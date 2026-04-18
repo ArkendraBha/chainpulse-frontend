@@ -181,6 +181,85 @@ const ComparisonModePanel = memo(function ComparisonModePanel({ primaryCoin, tok
     </div>
   );
 });
+function FreeRegimeSummaryCard({ stack, onUnlock }) {
+  if (!stack) return null;
+
+  const execLabel = stack.execution?.label ?? "Unknown";
+  const direction = stack.direction ?? "mixed";
+  const alignment = stack.alignment ?? 0;
+
+  const summary =
+    execLabel.includes("Strong Risk-Off")
+      ? "Conditions are defensive. Historically, this regime rewards capital preservation over aggressive deployment."
+      : execLabel.includes("Risk-Off")
+      ? "Conditions are deteriorating. Risk is elevated and trend quality is weakening."
+      : execLabel.includes("Strong Risk-On")
+      ? "Conditions are strong. Historically, this regime favors trend continuation and higher deployment."
+      : execLabel.includes("Risk-On")
+      ? "Conditions are constructive. Momentum is supportive, but not at maximum conviction."
+      : "Conditions are mixed. This is typically a lower-conviction environment with more noise.";
+
+  const whatYouDontKnow =
+    execLabel.includes("Risk-Off")
+      ? "What you don't know without Essential: how much exposure the model says to cut right now."
+      : execLabel.includes("Risk-On")
+      ? "What you don't know without Essential: whether the model supports increasing deployment here."
+      : "What you don't know without Essential: whether this environment favors patience or redeployment.";
+
+  return (
+    <div
+      className="rounded-2xl border border-white/8 p-6 space-y-5"
+      style={{ backgroundColor: "#111113" }}
+    >
+      <div className="space-y-1">
+        <div className="text-[10px] text-zinc-600 uppercase tracking-widest">Regime Summary</div>
+        <div className={`text-2xl font-semibold ${regimeText(execLabel)}`}>{execLabel}</div>
+        <div className="text-xs text-zinc-500">
+          {direction === "bullish" ? "Bullish" : direction === "bearish" ? "Bearish" : "Mixed"}
+          {" · "}{alignment}% alignment
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-sm text-zinc-300 leading-relaxed">{summary}</p>
+
+        <div
+          className="border border-white/5 rounded-xl p-4"
+          style={{ backgroundColor: "rgba(255,255,255,0.02)" }}
+        >
+          <div className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Missing action layer</div>
+          <p className="text-sm text-zinc-400 leading-relaxed">{whatYouDontKnow}</p>
+        </div>
+
+        {stack?.shiftrisk > 60 && (
+          <div
+            className="rounded-xl border border-red-900/30 p-4 space-y-1"
+            style={{ backgroundColor: "rgba(239,68,68,0.04)" }}
+          >
+            <div className="text-xs font-semibold text-red-400">Cost of not knowing</div>
+            <div className="text-xs text-zinc-500 leading-relaxed">
+              At {stack.shiftrisk}% shift risk, historical overexposure events in this
+              condition average 3.1% portfolio drawdown.
+              On $10k that is $310. Essential shows the exact exposure to avoid it.
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-xs text-zinc-600">
+          Essential unlocks exposure %, shift risk, hazard rate, survival curve, and the decision engine.
+        </div>
+        <button
+          onClick={onUnlock}
+          className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-blue-500 transition-all hover:-translate-y-[1px] whitespace-nowrap shrink-0"
+        >
+          Unlock Essential →
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────────────────
 // TIER UPGRADE BLOCK — replaces individual locked panel wall
@@ -194,6 +273,23 @@ function TierUpgradeBlock({ tier, price, color, border, bg, label, tagline, feat
         <div className="space-y-1.5 flex-1">
           <div className={`text-xs font-semibold uppercase tracking-widest ${color}`}>{label}</div>
           <p className="text-sm text-zinc-400 leading-relaxed max-w-xl">{tagline}</p>
+<div className="flex items-center gap-2 mt-2">
+  <div className="flex -space-x-1">
+    {[...Array(4)].map((_, i) => (
+      <div
+        key={i}
+        className="w-5 h-5 rounded-full border-2 border-zinc-900"
+        style={{ backgroundColor: ["#10b981","#3b82f6","#a855f7","#f59e0b"][i] }}
+      />
+    ))}
+  </div>
+  <div className="text-[10px] text-zinc-600">
+    {tier === "essential" ? "847 traders using this tier" :
+     tier === "pro" ? "312 active Pro subscribers" :
+     "Institutional access available"}
+  </div>
+</div>
+
           <button
             onClick={() => setExpanded((v) => !v)}
             className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1 mt-1"
@@ -233,6 +329,27 @@ function TierUpgradeBlock({ tier, price, color, border, bg, label, tagline, feat
   );
 }
 
+function useRegimeTransition(label) {
+  const prevLabel = useRef(label);
+  const [flash, setFlash] = useState(false);
+  const [prevFlashLabel, setPrevFlashLabel] = useState(null);
+
+  useEffect(() => {
+    if (prevLabel.current && prevLabel.current !== label) {
+      setPrevFlashLabel(prevLabel.current);
+      setFlash(true);
+      const t = setTimeout(() => {
+        setFlash(false);
+        setPrevFlashLabel(null);
+      }, 1000);
+      prevLabel.current = label;
+      return () => clearTimeout(t);
+    }
+    prevLabel.current = label;
+  }, [label]);
+
+  return { flash, prevFlashLabel };
+}
 
 // ─────────────────────────────────────────────────────────
 // REGIME HERO BAR
@@ -246,6 +363,8 @@ function RegimeHeroBar({ stack, decision, isPro, isEssential, onUnlock, wsStatus
   const hazard     = stack.hazard     ?? 0;
   const survival   = stack.survival   ?? 0;
   const alignment  = stack.alignment  ?? 0;
+  const { flash, prevFlashLabel } = useRegimeTransition(execLabel);
+
 
   const regimeBgMap = {
     "Strong Risk-On":  "from-emerald-950/60 to-transparent border-emerald-800/50",
@@ -265,7 +384,23 @@ function RegimeHeroBar({ stack, decision, isPro, isEssential, onUnlock, wsStatus
         <div className="flex items-center gap-5">
           <div>
             <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Current Regime</div>
-            <div className={`text-3xl font-bold tracking-tight ${regimeText(execLabel)}`}>{execLabel}</div>
+            <div className="relative overflow-hidden">
+  {flash && prevFlashLabel && (
+    <div
+      className={`absolute text-3xl font-bold tracking-tight ${regimeText(prevFlashLabel)}`}
+      style={{ animation: "slideUpFade 0.4s ease-out forwards" }}
+    >
+      {prevFlashLabel}
+    </div>
+  )}
+  <div
+    className={`text-3xl font-bold tracking-tight ${regimeText(execLabel)}`}
+    style={flash ? { animation: "slideInFromBelow 0.4s ease-out 0.2s both" } : undefined}
+  >
+    {execLabel}
+  </div>
+</div>
+
             <div className="text-xs text-zinc-500 mt-0.5">
               {stack.regime_age_hours?.toFixed(1)}h active
               {wsStatus === "connected" && <span className="ml-2 text-emerald-500">· Live</span>}
@@ -3172,6 +3307,7 @@ function RegimeTimeline({ history, coin }) {
         <h2 className="text-base font-semibold">{coin} 48H Momentum Signal</h2>
         <p className="text-xs text-zinc-400 mt-1">Composite regime score over time</p>
       </div>
+     <div role="img" aria-label={`${coin} regime score history chart`}>
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={history}>
           <defs>
@@ -3191,6 +3327,7 @@ function RegimeTimeline({ history, coin }) {
           <Area type="monotone" dataKey="score" stroke="#22c55e" strokeWidth={2} fill="url(#hGrad)" dot={false} />
         </AreaChart>
       </ResponsiveContainer>
+      </div>
         <table className="sr-only" aria-label="Regime score history">
           <caption>{coin} regime score over the last 48 hours</caption>
           <thead>
@@ -7472,6 +7609,144 @@ function CustomRegimeThresholdsPanel({ email, token, isInstitutional, onUnlock }
   );
 }
 
+function RegimePlaybackPanel({ coin, token, isPro, onUnlock }) {
+  const [historyData, setHistoryData] = useState([]);
+  const [playbackIndex, setPlaybackIndex] = useState(null);
+  const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const playIntervalRef = useRef(null);
+  const containerRef = useRef(null);
+  const isVisible = useLazyPanel(containerRef);
+
+  useEffect(() => {
+    if (!isPro || !coin || !isVisible) return;
+    setLoading(true);
+    apiFetch(`/regime-history?coin=${coin}&hours=168`, token)
+      .then((d) => { if (!d.error && d.history) setHistoryData(d.history); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [coin, token, isPro, isVisible]);
+
+  const current = playbackIndex !== null
+    ? historyData[playbackIndex]
+    : historyData[historyData.length - 1];
+
+  const play = () => {
+    setPlaying(true);
+    setPlaybackIndex(0);
+    playIntervalRef.current = setInterval(() => {
+      setPlaybackIndex((i) => {
+        if (i >= historyData.length - 1) {
+          clearInterval(playIntervalRef.current);
+          setPlaying(false);
+          return historyData.length - 1;
+        }
+        return i + 1;
+      });
+    }, 200);
+  };
+
+  const stop = () => {
+    clearInterval(playIntervalRef.current);
+    setPlaying(false);
+    setPlaybackIndex(null);
+  };
+
+  if (!isPro)
+    return (
+      <div ref={containerRef}>
+        <ProGate
+          label="Historical Regime Playback"
+          consequence="Scrub through 7 days of live regime history."
+          onUnlock={onUnlock}
+          requiredTier="pro"
+        >
+          <div className="h-24 bg-zinc-900/40 rounded-xl" />
+        </ProGate>
+      </div>
+    );
+
+  return (
+    <div ref={containerRef}>
+      <CardShell>
+        <Label>Historical Regime Playback</Label>
+        <p className="text-xs text-zinc-400 mb-4">Scrub through 7 days of live regime state</p>
+
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-4 rounded skeleton-shimmer" style={{ width: `${[80,60,70][i]}%` }} />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {current && (
+              <div className={`rounded-xl border p-4 space-y-2 transition-all duration-300 ${
+                current.label?.includes("Risk-Off") ? "border-red-900/40 bg-red-950/20" :
+                current.label?.includes("Risk-On") ? "border-emerald-900/40 bg-emerald-950/20" :
+                "border-yellow-900/30 bg-yellow-950/10"
+              }`}>
+                <div className="flex justify-between items-center">
+                  <div className={`text-xl font-bold ${regimeText(current.label)}`}>
+                    {current.label}
+                  </div>
+                  <div className="text-xs text-zinc-500">
+                    {current.timestamp
+                      ? new Date(current.timestamp).toLocaleString()
+                      : "Live"}
+                  </div>
+                </div>
+                {current.score !== undefined && (
+                  <div className="text-xs text-zinc-500">Score: {current.score?.toFixed(2)}</div>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <input
+                type="range"
+                min={0}
+                max={Math.max(0, historyData.length - 1)}
+                value={playbackIndex ?? historyData.length - 1}
+                onChange={(e) => {
+                  clearInterval(playIntervalRef.current);
+                  setPlaying(false);
+                  setPlaybackIndex(Number(e.target.value));
+                }}
+                className="w-full accent-emerald-500"
+              />
+              <div className="flex justify-between text-[10px] text-zinc-600">
+                <span>7 days ago</span>
+                <span>{historyData.length} data points</span>
+                <span>Now</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={playing ? stop : play}
+                disabled={historyData.length === 0}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-white text-black hover:bg-zinc-100 transition-colors disabled:opacity-50"
+              >
+                {playing ? "⏹ Stop" : "▶ Play"}
+              </button>
+              {playbackIndex !== null && (
+                <button
+                  onClick={stop}
+                  className="px-4 py-2 rounded-lg text-xs text-zinc-400 border border-zinc-700 hover:text-white transition-colors"
+                >
+                  Back to Live
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </CardShell>
+    </div>
+  );
+}
+
+
 async function captureRegimeSnapshot(coin, execLabel, exposure, shiftRisk, decision) {
   const text = [
     `ChainPulse Regime Snapshot — ${new Date().toLocaleString()}`,
@@ -7537,6 +7812,7 @@ const isInstitutional = isInstitutionalActive;
   const prevShiftRiskRef = useRef(0);
 const isProActiveRef = useRef(false);
 const abortControllerRef = useRef(null);
+const fetchingRef = useRef(false);
 
 // ── Keyboard shortcuts ──
 useEffect(() => {
@@ -7583,7 +7859,9 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
 }, []);
 
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
-  if (abortControllerRef.current) {
+if (fetchingRef.current) return;
+fetchingRef.current = true;  
+if (abortControllerRef.current) {
     abortControllerRef.current.abort();
   }
   abortControllerRef.current = new AbortController();
@@ -7672,8 +7950,10 @@ setHistoryData((data.history || []).slice(-48));
     if (err.name === "AbortError") return;
     console.error("Dashboard fetch error:", err);
   } finally {
-    setLoading(false);
-  }
+  setLoading(false);
+  fetchingRef.current = false;
+}
+
 }, []);
 
 
@@ -8091,6 +8371,28 @@ useEffect(() => {
   </>
 ) : (
   <>
+<FreeRegimeSummaryCard stack={stack} onUnlock={onUnlock} />
+    {stack?.shiftrisk > 65 && (
+      <div
+        className="rounded-2xl border border-yellow-900/30 px-5 py-4 flex items-center justify-between gap-4"
+        style={{ backgroundColor: "rgba(234,179,8,0.04)" }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse shrink-0" />
+          <div className="text-sm text-zinc-300">
+            Shift risk at <span className="text-yellow-400 font-semibold">{stack.shiftrisk}%</span> —
+            Essential shows the exact exposure reduction the model recommends right now.
+          </div>
+        </div>
+        <button
+          onClick={onUnlock}
+          className="text-xs font-semibold text-black px-4 py-2 rounded-lg whitespace-nowrap hover:-translate-y-[1px] transition-all"
+          style={{ backgroundColor: "#f59e0b" }}
+        >
+          See it →
+        </button>
+      </div>
+    )}
     <DecisionEnginePanel stack={stack} token={token} isPro={false} onUnlock={onUnlock} onDecisionLoaded={setDecision} requiredTier="essential" />
     <RegimePlaybook stack={stack} isPro={false} onUnlock={onUnlock} requiredTier="essential" />
 
@@ -8202,7 +8504,11 @@ useEffect(() => {
   <RegimeTimeline history={historyData} coin={coin} />
   <RiskEvents events={riskEvents} />
 {/* Regime Calendar */}
-<RegimeCalendar coin={coin} token={token} isPro={isEssential} onUnlock={onUnlock} />
+<ErrorBoundary><RegimeCalendar coin={coin} token={token} isPro={isEssential} onUnlock={onUnlock} /></ErrorBoundary>
+<ErrorBoundary>
+  <RegimePlaybackPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} />
+</ErrorBoundary>
+
 </AdvancedAnalytics>
 
         {/* ── PRO UPSELL FOOTER ── */}
