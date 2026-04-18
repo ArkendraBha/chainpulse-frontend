@@ -112,10 +112,16 @@ export default function Landing() {
         />
 
         <div className="relative max-w-5xl mx-auto text-center space-y-8 z-10">
-          <div className="inline-flex items-center gap-2.5 border border-white/8 rounded-full px-4 py-1.5 text-xs text-zinc-500 uppercase tracking-widest backdrop-blur-sm" style={{ backgroundColor: "rgba(255,255,255,0.03)" }}>
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Regime Intelligence · Not Price Prediction
-          </div>
+          <div className="flex flex-col items-center gap-2">
+  <div className="inline-flex items-center gap-2.5 border border-white/8 rounded-full px-4 py-1.5 text-xs text-zinc-500 uppercase tracking-widest backdrop-blur-sm" style={{ backgroundColor: "rgba(255,255,255,0.03)" }}>
+    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+    The Original Regime Intelligence Platform · Since 2024
+  </div>
+  <div className="text-[10px] text-zinc-700 uppercase tracking-widest">
+    Survival Analysis · Hazard Rates · Exposure Calibration
+  </div>
+</div>
+
 
           <h1
             className="text-6xl sm:text-7xl md:text-8xl font-semibold leading-none"
@@ -358,7 +364,7 @@ export default function Landing() {
             }}
           >
             {liveData ? (
-              <div className="space-y-6">
+              <div className="space-y-7">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">Execution Regime</div>

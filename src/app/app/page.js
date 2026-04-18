@@ -7707,35 +7707,52 @@ useEffect(() => {
 }, [email, token, stack]);
 
   const onUnlock = useCallback(() => setShowModal(true), []);
+
 // Daily return visit tracking
 useEffect(() => {
   if (typeof window === "undefined") return;
-  const lastVisit = localStorage.getItem("cp_last_visit");
   const today = new Date().toDateString();
+  const lastVisit = localStorage.getItem("cplastvisit");
+
+  // Always update the visit date immediately
+  localStorage.setItem("cplastvisit", today);
+
+  // Only show toast if genuinely returning after 3+ days
+  // AND only show once per day (not on every page load)
+  const lastToastShown = localStorage.getItem("cplasttoast");
+  if (lastToastShown === today) return; // already shown today
+
   if (lastVisit && lastVisit !== today) {
     const daysSince = Math.floor(
-      (new Date(today) - new Date(lastVisit)) / (1000 * 60 * 60 * 24)
+      (new Date(today).getTime() - new Date(lastVisit).getTime()) / (1000 * 60 * 60 * 24)
     );
-    const timer = setTimeout(() => {
-      if (daysSince === 1) {
-        emitToast({
-          type: "success",
-          title: "Welcome back!",
-          message: "Regime conditions have updated since your last visit.",
-          duration: 4000,
-        });
-      } else if (daysSince > 2) {
+
+    if (daysSince >= 3) {
+      localStorage.setItem("cplasttoast", today);
+      const timer = setTimeout(() => {
         emitToast({
           type: "info",
           title: `${daysSince} days since your last check`,
           message: "Significant regime changes may have occurred.",
           duration: 5000,
         });
-      }
-    }, 2000);
-    return () => clearTimeout(timer);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+
+    if (daysSince === 1) {
+      localStorage.setItem("cplasttoast", today);
+      const timer = setTimeout(() => {
+        emitToast({
+          type: "success",
+          title: "Welcome back!",
+          message: "Regime conditions have updated since your last visit.",
+          duration: 4000,
+        });
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
   }
-  localStorage.setItem("cp_last_visit", today);
 }, []);
 
 

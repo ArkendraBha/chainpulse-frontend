@@ -4,18 +4,28 @@ import Script from "next/script";
 import NavBarWrapper from "@/components/NavBarWrapper";
 
 export const metadata = {
-  title: "Bitcoin Regime Indicator — Crypto Market Risk Model | ChainPulse",
+  title: "ChainPulse — Crypto Regime Intelligence | Survival Analysis for Swing Traders",
   description:
-    "ChainPulse is a Bitcoin regime indicator using survival modeling to quantify crypto market risk, shift probability, hazard rate, and optimal exposure for swing traders.",
+    "ChainPulse models crypto market regimes using survival analysis, hazard rates, and exposure calibration. Not price prediction — regime persistence probability for swing traders managing $5k–$250k+.",
+  keywords:
+    "ChainPulse, crypto regime intelligence, survival analysis crypto, hazard rate trading, regime-based exposure, crypto swing trading framework, Bitcoin regime indicator, market regime model",
   openGraph: {
-    title: "Bitcoin Regime Indicator — Crypto Market Risk Model | ChainPulse",
+    title: "ChainPulse — Crypto Regime Intelligence | The Original Regime Modeling Platform",
     description:
-      "Survival-based crypto market risk model. Quantify regime persistence, shift risk, and optimal exposure.",
+      "Survival analysis + hazard rates + exposure calibration. ChainPulse tells you how much capital belongs in the current regime — not where price is going.",
     url: "[chainpulse.pro](https://chainpulse.pro)",
     siteName: "ChainPulse",
     type: "website",
   },
+  manifest: "/manifest.json",
+  themeColor: "#10b981",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ChainPulse",
+  },
 };
+
 
 export default function RootLayout({ children }) {
   return (
