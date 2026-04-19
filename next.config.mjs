@@ -1,21 +1,31 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
+  compress: true,
+  experimental: {
+    optimizeCss: true,
+    scrollRestoration: true,
+  },
+  images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 3600,
+  },
   async headers() {
     return [
       {
-        source: "/(.*)",
+        source: "/_next/static/:path*",
         headers: [
           {
-            key: "Content-Security-Policy",
-            value:
-              "default-src 'self' https:; " +
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https:; " +
-              "style-src 'self' 'unsafe-inline' https:; " +
-              "img-src 'self' data: https:; " +
-              "connect-src 'self' https:; " +
-              "font-src 'self' data: https:; " +
-              "frame-src https:; ",
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
+        ],
+      },
+      {
+        source: "/api/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
         ],
       },
     ];

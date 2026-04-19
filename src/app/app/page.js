@@ -250,13 +250,51 @@ function FreeRegimeSummaryCard({ stack, onUnlock }) {
         <div className="text-xs text-zinc-600">
           Essential unlocks exposure %, shift risk, hazard rate, survival curve, and the decision engine.
         </div>
-        <button
-          onClick={onUnlock}
-          className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-blue-500 transition-all hover:-translate-y-[1px] whitespace-nowrap shrink-0"
-        >
-          Unlock Essential →
-        </button>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+  <button
+    onClick={onUnlock}
+    className={`text-xs font-semibold px-4 py-2 rounded-xl hover:-translate-y-[1px] transition-all whitespace-nowrap ${
+      stack?.shiftrisk > 85
+        ? "bg-red-500 text-white hover:bg-red-400 animate-pulse"
+        : "bg-blue-600 text-white hover:bg-blue-500"
+    }`}
+  >
+    {stack?.shiftrisk > 85 ? "⚠ Act Now — Unlock Essential" : "Unlock Essential →"}
+  </button>
+  {stack?.shiftrisk > 85 && (
+    <div className="text-[9px] text-red-400/70">
+      Extreme shift risk — model has directive
+    </div>
+  )}
+</div>
+
       </div>
+    </div>
+  );
+}
+function PanelWrapper({ id, label, hiddenPanels, onToggle, children }) {
+  const isHidden = hiddenPanels[id];
+  return (
+    <div className="relative group">
+      <button
+        onClick={() => onToggle(id)}
+        className="absolute -top-2 -right-2 z-20 w-6 h-6 rounded-full border border-zinc-700 bg-zinc-900 text-zinc-600 hover:text-white hover:border-zinc-500 transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center text-xs"
+        aria-label={isHidden ? `Show ${label}` : `Hide ${label}`}
+        title={isHidden ? `Show ${label}` : `Hide ${label}`}
+      >
+        {isHidden ? "+" : "−"}
+      </button>
+      {!isHidden && children}
+      {isHidden && (
+        <div
+          className="rounded-2xl border border-white/5 px-4 py-3 flex items-center justify-between cursor-pointer hover:border-white/10 transition-colors"
+          style={{ backgroundColor: "#0f0f10" }}
+          onClick={() => onToggle(id)}
+        >
+          <span className="text-xs text-zinc-600">{label} — hidden</span>
+          <span className="text-xs text-zinc-700">Show</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -307,7 +345,7 @@ function TierUpgradeBlock({ tier, price, color, border, bg, label, tagline, feat
           >
             Unlock {price}/month →
           </button>
-          <div className="text-[10px] text-zinc-700">7-day free trial · Cancel anytime</div>
+          <div className="text-[10px] text-zinc-500">7-day free trial · Cancel anytime</div>
         </div>
       </div>
 
@@ -477,17 +515,36 @@ function RegimeHeroBar({ stack, decision, isPro, isEssential, onUnlock, wsStatus
           </div>
         ))}
         <div className="ml-auto flex items-center gap-3">
+  <div className="flex items-center gap-1">
   <button
-    onClick={() => captureRegimeSnapshot(stack.coin, execLabel, exposure, shiftRisk, decision)}
-    className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1 border border-zinc-800 px-2 py-1 rounded-lg"
+    onClick={() => captureRegimeSnapshot(stack.coin, execLabel, exposure, shiftRisk, decision, alignment)}
+    className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1 border border-zinc-800 px-2 py-1 rounded-l-lg"
     aria-label="Copy regime snapshot to clipboard"
-    title="Copy regime snapshot to clipboard"
+    title="Copy to clipboard"
   >
     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
     </svg>
-    Share
+    Copy
   </button>
+  <button
+    onClick={() => {
+      const shiftEmoji = shiftRisk > 70 ? "⚠️" : "✓";
+      const regimeEmoji = execLabel?.includes("Risk-Off") ? "🔴" : execLabel?.includes("Risk-On") ? "🟢" : "🟡";
+      const text = `${regimeEmoji} $${stack.coin} Regime — ${execLabel}\nShift Risk: ${shiftRisk}% ${shiftEmoji}\nAlignment: ${alignment}%\n${decision ? `Directive: ${decision.directive}` : ""}\n\nNot a prediction. A probability distribution.\n\nchainpulse.pro`;
+      window.open(`[twitter.com](https://twitter.com/intent/tweet?text=${encodeURIComponent(text)})`, "_blank");
+    }}
+    className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1 border border-l-0 border-zinc-800 px-2 py-1 rounded-r-lg"
+    aria-label="Share on X"
+    title="Post on X"
+  >
+    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+    Post
+  </button>
+</div>
+
   <div className="text-[10px] text-zinc-600 hidden md:block">
     <kbd className="border border-zinc-700 px-1 py-0.5 rounded">⌘K</kbd> commands ·{" "}
     <kbd className="border border-zinc-700 px-1 py-0.5 rounded">?</kbd> shortcuts
@@ -1015,7 +1072,7 @@ function ProGateTeaser({ label, consequence, children, onUnlock, requiredTier, t
           >
             Unlock {tierLabel} — {tierPrice}/month
           </button>
-          <div className="text-[10px] text-zinc-700">7-day free trial · Cancel anytime</div>
+          <div className="text-[10px] text-zinc-500">7-day free trial · Cancel anytime</div>
         </div>
       </div>
     </div>
@@ -1591,13 +1648,14 @@ function CardShell({ children, label }) {
     <div
       role="region"
       aria-label={label}
-      className="rounded-2xl border border-zinc-800/60 p-6 space-y-4"
+      className="rounded-2xl border border-zinc-800/60 p-6 space-y-4 transition-colors hover:border-zinc-700/60"
       style={{ backgroundColor: "#111113" }}
     >
       {children}
     </div>
   );
 }
+
 
 
 
@@ -3543,7 +3601,7 @@ function SurvivalCurve({ curve, regimeAge, isPro, onUnlock, requiredTier }) {
               >
                 Unlock — Essential $39/month
               </button>
-              <div className="text-[10px] text-zinc-700">7-day free trial · Cancel anytime</div>
+              <div className="text-[10px] text-zinc-500">7-day free trial · Cancel anytime</div>
             </div>
           </div>
         )}
@@ -7803,6 +7861,21 @@ export default function Dashboard() {
   const [token, setToken] = useState(null);
   const [email, setEmail] = useState("");
   const [activeTier, setActiveTier] = useState("free");
+const [hiddenPanels, setHiddenPanels] = useState(() => {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem("cphiddenpanels") || "{}");
+  } catch { return {}; }
+});
+
+const togglePanel = useCallback((panelId) => {
+  setHiddenPanels((prev) => {
+    const next = { ...prev, [panelId]: !prev[panelId] };
+    localStorage.setItem("cphiddenpanels", JSON.stringify(next));
+    return next;
+  });
+}, []);
+
   const isEssentialActive = hasTier(activeTier, "essential");
 const isProActive       = hasTier(activeTier, "pro");
 const isInstitutionalActive = hasTier(activeTier, "institutional");
@@ -7813,6 +7886,7 @@ const isInstitutional = isInstitutionalActive;
 const isProActiveRef = useRef(false);
 const abortControllerRef = useRef(null);
 const fetchingRef = useRef(false);
+const prevCoinRef = useRef(coin);
 
 // ── Keyboard shortcuts ──
 useEffect(() => {
@@ -8034,6 +8108,24 @@ useEffect(() => {
     }
   }
 }, []);
+// Prompt email subscription after 3+ logged sessions
+useEffect(() => {
+  if (!disciplineData || email) return;
+  if (disciplineData.followed >= 3) {
+    const alreadyPrompted = localStorage.getItem("cpemailprompted");
+    if (alreadyPrompted) return;
+    const timer = setTimeout(() => {
+      localStorage.setItem("cpemailprompted", "1");
+      emitToast({
+        type: "info",
+        title: "Get your weekly report by email",
+        message: "You have logged 3+ sessions. Subscribe for weekly performance summaries.",
+        duration: 10000,
+      });
+    }, 5000);
+    return () => clearTimeout(timer);
+  }
+}, [disciplineData, email]);
 
 
 
@@ -8181,12 +8273,49 @@ useEffect(() => {
 
 {/* Comparison Mode */}
 <ErrorBoundary>
-  <ComparisonModePanel
-    primaryCoin={coin}
-    token={token}
-    isPro={isProTier}
-    onUnlock={onUnlock}
-  />
+ <ComparisonModePanel primaryCoin={coin} token={token} isPro={false} onUnlock={onUnlock} />
+    {/ Calendar teaser /}
+    <div className="relative rounded-2xl border border-white/5 overflow-hidden" style={{ backgroundColor: "#0f0f10" }}>
+      <div className="p-6 space-y-3 blur-sm pointer-events-none select-none">
+        <div className="text-[10px] text-zinc-600 uppercase tracking-widest">Regime History Calendar</div>
+        <div className="grid grid-cols-7 gap-1">
+          {Array.from({ length: 28 }).map((_, i) => (
+            <div
+              key={i}
+              className="aspect-square rounded-md flex items-center justify-center text-[9px] text-white font-medium"
+              style={{
+                backgroundColor: [
+                  "rgba(16,185,129,0.3)",
+                  "rgba(239,68,68,0.3)",
+                  "rgba(234,179,8,0.2)",
+                  "rgba(16,185,129,0.15)",
+                  "rgba(239,68,68,0.2)",
+                  "rgba(16,185,129,0.3)",
+                  "rgba(234,179,8,0.25)",
+                ][i % 7],
+              }}
+            >
+              {i + 1}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div
+          className="text-center space-y-2 border border-white/8 px-6 py-4 rounded-xl"
+          style={{ backgroundColor: "rgba(9,9,11,0.97)" }}
+        >
+          <div className="text-xs font-semibold text-white">Regime History Calendar</div>
+          <div className="text-[10px] text-zinc-500">See which regime was active every day this month</div>
+          <button
+            onClick={onUnlock}
+            className="bg-blue-600 text-white text-[10px] px-3 py-1.5 rounded-lg font-semibold hover:bg-blue-500 transition-colors"
+          >
+            Unlock Essential →
+          </button>
+        </div>
+      </div>
+    </div>
 </ErrorBoundary>
 
 {/* Feature 3: On-Chain Intelligence */}
@@ -8264,7 +8393,8 @@ useEffect(() => {
 
         {/* ── STATS GRID ── */}
 <div data-tour="stats-grid">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
+
           <StatCard label="Survival Probability" value={isEssential ? survival : null} color={isEssential ? riskColor(100 - (survival || 0)) : ""} barCls={isEssential ? (survival > 60 ? "bg-green-500" : survival > 40 ? "bg-yellow-500" : "bg-red-500") : ""} hint="Probability current regime continues" locked={!isEssential} consequence="Survival probability quantifies regime decay risk." onUnlock={onUnlock} />
 <StatCard label="Regime Shift Risk" value={isEssential ? shiftRisk : null} color={isEssential ? riskColor(shiftRisk) : ""} barCls={isEssential ? (shiftRisk > 70 ? "bg-red-500" : shiftRisk > 45 ? "bg-yellow-500" : "bg-green-500") : ""} hint="Composite deterioration signal" locked={!isEssential} consequence="Shift risk identifies breakdown probability before price moves." onUnlock={onUnlock} />
 <StatCard label="Hazard Rate" value={isEssential ? hazard : null} color={isEssential ? riskColor(hazard || 0) : ""} barCls={isEssential ? (hazard > 70 ? "bg-red-500" : hazard > 45 ? "bg-yellow-500" : "bg-green-500") : ""} hint="Failure risk vs historical norm" locked={!isEssential} consequence="Hazard rate measures how fragile this regime is vs history." onUnlock={onUnlock} />
@@ -8278,7 +8408,10 @@ useEffect(() => {
   <>
     <PortfolioHealthScore stack={stack} disciplineData={disciplineData} isPro={isPro} onUnlock={onUnlock} />
 
-    <ErrorBoundary><AINarrativePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
+    <PanelWrapper id="ai-narrative" label="AI Regime Analyst" hiddenPanels={hiddenPanels} onToggle={togglePanel}>
+  <ErrorBoundary><AINarrativePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
+</PanelWrapper>
+
     <ErrorBoundary><OnChainIntelligencePanel coin={coin} token={token} isEssential={isEssential} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
     <ErrorBoundary><ComparisonModePanel primaryCoin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
     <ErrorBoundary><DecisionEnginePanel stack={stack} token={token} isPro={isEssential} onUnlock={onUnlock} onDecisionLoaded={setDecision} /></ErrorBoundary>
@@ -8286,22 +8419,28 @@ useEffect(() => {
     {/* ── Section: Advanced Analytics ── */}
     <div className="flex items-center gap-4 pt-4">
       <div className="flex-1 h-px bg-zinc-900" />
-      <div className="text-[10px] text-zinc-700 uppercase tracking-widest font-medium">Advanced Analytics</div>
+      <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">Advanced Analytics</div>
       <div className="flex-1 h-px bg-zinc-900" />
     </div>
 
     <ErrorBoundary><SetupQualityPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
     <ErrorBoundary><OpportunityRankingPanel token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
     <ErrorBoundary><ScenariosPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
-    <ErrorBoundary><BacktestingEnginePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
-    <ErrorBoundary><PortfolioRiskEnginePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
+    <PanelWrapper id="backtesting" label="Backtesting Engine" hiddenPanels={hiddenPanels} onToggle={togglePanel}>
+  <ErrorBoundary><BacktestingEnginePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
+</PanelWrapper>
+
+    <PanelWrapper id="portfolio-risk" label="Portfolio Risk Engine" hiddenPanels={hiddenPanels} onToggle={togglePanel}>
+  <ErrorBoundary><PortfolioRiskEnginePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} /></ErrorBoundary>
+</PanelWrapper>
+
     <ErrorBoundary><TradePlanPanel coin={coin} email={email} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
     <ErrorBoundary><HistoricalAnalogsPanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} requiredTier="pro" /></ErrorBoundary>
 
     {/* ── Section: Risk Modeling ── */}
     <div className="flex items-center gap-4 pt-4">
       <div className="flex-1 h-px bg-zinc-900" />
-      <div className="text-[10px] text-zinc-700 uppercase tracking-widest font-medium">Risk Modeling</div>
+      <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">Risk Modeling</div>
       <div className="flex-1 h-px bg-zinc-900" />
     </div>
 
@@ -8324,7 +8463,7 @@ useEffect(() => {
     {/* ── Section: Personalization ── */}
     <div className="flex items-center gap-4 pt-4">
       <div className="flex-1 h-px bg-zinc-900" />
-      <div className="text-[10px] text-zinc-700 uppercase tracking-widest font-medium">Personalization</div>
+      <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">Personalization</div>
       <div className="flex-1 h-px bg-zinc-900" />
     </div>
 
@@ -8338,7 +8477,7 @@ useEffect(() => {
     {/* ── Section: Accountability ── */}
     <div className="flex items-center gap-4 pt-4">
       <div className="flex-1 h-px bg-zinc-900" />
-      <div className="text-[10px] text-zinc-700 uppercase tracking-widest font-medium">Accountability</div>
+      <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">Accountability</div>
       <div className="flex-1 h-px bg-zinc-900" />
     </div>
 
@@ -8471,7 +8610,28 @@ useEffect(() => {
 
         {/* ── REGIME STACK DETAIL ── */}
         <div data-tour="regime-stack">
-  <RegimeStackCard stack={stack} isPro={isEssential} onUnlock={onUnlock} requiredTier="essential" />
+  <details className="group">
+  <summary
+    className="flex items-center justify-between px-6 py-4 rounded-2xl border border-white/5 cursor-pointer hover:border-white/10 transition-colors list-none"
+    style={{ backgroundColor: "#111113" }}
+  >
+    <div className="text-[10px] text-zinc-600 uppercase tracking-widest">
+      Full Regime Stack Detail
+    </div>
+    <svg
+      className="w-4 h-4 text-zinc-600 group-open:rotate-180 transition-transform"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  </summary>
+  <div className="mt-3">
+    <RegimeStackCard stack={stack} isPro={isEssential} onUnlock={onUnlock} requiredTier="essential" />
+  </div>
+</details>
+
 </div>
 
 
@@ -8577,7 +8737,7 @@ useEffect(() => {
             </div>
           </div>
         )}
-<div className="text-center text-[10px] text-zinc-700 pt-6 pb-2 border-t border-white/5">
+<div className="text-center text-[10px] text-zinc-500 pt-6 pb-2 border-t border-white/5">
   ChainPulse is a decision-support tool, not financial advice. Past regime behavior does not predict future results. Trade at your own risk.
 </div>
       </div>

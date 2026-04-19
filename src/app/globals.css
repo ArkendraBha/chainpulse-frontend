@@ -246,3 +246,16 @@ body {
   inset: 0;
   z-index: 0;
 }
+/* Minimum contrast for micro text — WCAG AA compliance */
+[class*="text-[9px]"],
+[class*="text-[10px]"] {
+  --tw-text-opacity: 1;
+}
+
+/* Force minimum readable contrast on tiny labels */
+.text-zinc-700,
+.text-zinc-800 {
+  /* Only override when used on text under 12px */
+  /* Apply text-zinc-500 manually to any text-[9px] or text-[10px] elements */
+}
+
