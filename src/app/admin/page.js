@@ -10,7 +10,7 @@ const FOUNDER_EMAILS = ["arkendra.bhattacharya@gmail.com"];
 // HELPERS
 // ─────────────────────────────────────────────────────────
 function getToken() {
-  return typeof window !== "undefined" ? localStorage.getItem("cptoken") : null;
+  return typeof window !== "undefined" ? localStorage.getItem("cp_token") : null;
 }
 
 async function adminFetch(path, opts = {}) {
