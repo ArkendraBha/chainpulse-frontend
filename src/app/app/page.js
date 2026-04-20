@@ -7918,19 +7918,37 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
   const urlEmail = params.get("email");
   const successFlag = params.get("success");
   const urlTier = params.get("tier");
-  if (urlToken) { saveToken(urlToken); setToken(urlToken); }
-  else { const stored = getToken(); if (stored) setToken(stored); }
-  if (urlEmail) setEmail(urlEmail);
-  else { const storedEmail = localStorage.getItem("cp_email"); if (storedEmail) setEmail(storedEmail); }
+
+  if (urlToken) {
+    saveToken(urlToken);
+    setToken(urlToken);
+    // Store email from URL if present
+    if (urlEmail) {
+      localStorage.setItem("cp_email", urlEmail);
+      setEmail(urlEmail);
+    }
+  } else {
+    const stored = getToken();
+    if (stored) setToken(stored);
+    const storedEmail = localStorage.getItem("cp_email");
+    if (storedEmail) setEmail(storedEmail);
+  }
+
+  if (urlEmail && !urlToken) setEmail(urlEmail);
+  
   if (successFlag === "true") {
     setProSuccess(true);
     if (urlTier) setActiveTier(urlTier);
   }
-  // Clean URL
+
+  // Clean URL AFTER storing — add a small delay so state is set first
   if (urlToken || successFlag) {
-    window.history.replaceState({}, "", "/app");
+    setTimeout(() => {
+      window.history.replaceState({}, "", "/app");
+    }, 100);
   }
 }, []);
+
 
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
 if (fetchingRef.current) return;
