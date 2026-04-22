@@ -532,7 +532,7 @@ function RegimeHeroBar({ stack, decision, isPro, isEssential, onUnlock, wsStatus
       const shiftEmoji = shiftRisk > 70 ? "⚠️" : "✓";
       const regimeEmoji = execLabel?.includes("Risk-Off") ? "🔴" : execLabel?.includes("Risk-On") ? "🟢" : "🟡";
       const text = `${regimeEmoji} $${stack.coin} Regime — ${execLabel}\nShift Risk: ${shiftRisk}% ${shiftEmoji}\nAlignment: ${alignment}%\n${decision ? `Directive: ${decision.directive}` : ""}\n\nNot a prediction. A probability distribution.\n\nchainpulse.pro`;
-      window.open(`[twitter.com](https://twitter.com/intent/tweet?text=${encodeURIComponent(text)})`, "_blank");
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
     }}
     className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1 border border-l-0 border-zinc-800 px-2 py-1 rounded-r-lg"
     aria-label="Share on X"
@@ -8301,10 +8301,13 @@ useEffect(() => {
 />
 
         {/* ── WHAT CHANGED (24H) ── */}
+<ErrorBoundary>
         <WhatChangedPanel token={token} isPro={isPro} onUnlock={onUnlock} />
+</ErrorBoundary>
 {/* Feature 2: AI Narrative */}
+<ErrorBoundary>
 <AINarrativePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} />
-
+</ErrorBoundary>
 {/* Comparison Mode */}
 <ErrorBoundary>
  <ComparisonModePanel primaryCoin={coin} token={token} isPro={false} onUnlock={onUnlock} />
