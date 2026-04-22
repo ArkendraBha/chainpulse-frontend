@@ -8302,7 +8302,7 @@ useEffect(() => {
 
         {/* ── WHAT CHANGED (24H) ── */}
 <ErrorBoundary>
-        <WhatChangedPanel token={token} isPro={isPro} onUnlock={onUnlock} />
+        <WhatChangedPanel token={token} isPro={isEssential} onUnlock={onUnlock} />
 </ErrorBoundary>
 {/* Comparison Mode */}
 <ErrorBoundary>
