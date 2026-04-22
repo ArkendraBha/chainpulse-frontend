@@ -6282,16 +6282,12 @@ const [sparklines, setSparklines] = useState({});
 // Sparklines fetched separately after a short delay to avoid rate limiting
 setTimeout(() => {
   Promise.all(
-    SUPPORTED_COINS.map((c) => {
-      const url = new URL("(https://api.binance.com/api/v3/klines)");
-      url.searchParams.set("symbol", `${c}USDT`);
-      url.searchParams.set("interval", "1h");
-      url.searchParams.set("limit", "24");
-      return fetch(url.toString())
+    SUPPORTED_COINS.map((c) =>
+      fetch(`[api.binance.com](https://api.binance.com/api/v3/klines?symbol=${c}USDT&interval=1h&limit=24)`)
         .then((r) => r.ok ? r.json() : [])
         .then((k) => ({ c, data: Array.isArray(k) ? k.map((x) => parseFloat(x[4])) : [] }))
-        .catch(() => ({ c, data: [] }));
-    })
+        .catch(() => ({ c, data: [] }))
+    )
   ).then((results) => {
     const sp = {};
     results.forEach(({ c, data }) => { sp[c] = data; });
