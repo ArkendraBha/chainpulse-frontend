@@ -6283,7 +6283,7 @@ const [sparklines, setSparklines] = useState({});
 setTimeout(() => {
   Promise.all(
     SUPPORTED_COINS.map((c) => {
-      const url = new URL("[api.binance.com](https://api.binance.com/api/v3/klines)");
+      const url = new URL("https://api.binance.com/api/v3/klines");
       url.searchParams.set("symbol", `${c}USDT`);
       url.searchParams.set("interval", "1h");
       url.searchParams.set("limit", "24");
