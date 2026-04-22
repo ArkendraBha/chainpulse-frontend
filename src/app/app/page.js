@@ -8304,10 +8304,6 @@ useEffect(() => {
 <ErrorBoundary>
         <WhatChangedPanel token={token} isPro={isPro} onUnlock={onUnlock} />
 </ErrorBoundary>
-{/* Feature 2: AI Narrative */}
-<ErrorBoundary>
-<AINarrativePanel coin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} />
-</ErrorBoundary>
 {/* Comparison Mode */}
 <ErrorBoundary>
  <ComparisonModePanel primaryCoin={coin} token={token} isPro={false} onUnlock={onUnlock} />
