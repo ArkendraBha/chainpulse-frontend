@@ -6377,7 +6377,8 @@ style={isActive ? { backgroundColor: "#1a1a1d" } : { backgroundColor: "rgba(255,
 // ─────────────────────────────────────────
 // SITE HEADER
 // ─────────────────────────────────────────
-function SiteHeader({ coin, onCoinSelect, isPro, onUnlock, wsStatus, wsLastHeartbeat, wsConnectionCount }) {
+function SiteHeader({ coin, onCoinSelect, isPro, token, onUnlock, wsStatus, wsLastHeartbeat, wsConnectionCount }) {
+
 
   return (
     <header className="sticky top-0 z-40 w-full bg-zinc-950/80 backdrop-blur-md border-b border-white/5">
@@ -8257,11 +8258,13 @@ useEffect(() => {
   coin={coin}
   onCoinSelect={setCoin}
   isPro={isPro}
+  token={token}
   onUnlock={onUnlock}
   wsStatus={isProTier ? wsStatus : null}
   wsLastHeartbeat={isProTier ? wsLastHeartbeat : null}
   wsConnectionCount={isProTier ? wsConnectionCount : null}
 />
+
 
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-5">
