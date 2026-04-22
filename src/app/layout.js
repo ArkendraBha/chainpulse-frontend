@@ -41,7 +41,7 @@ export default function RootLayout({ children }) {
         <div className="bg-noise" aria-hidden="true" />
         <NavBarWrapper />
         {children}
-        <Script src="[googletagmanager.com](https://www.googletagmanager.com/gtag/js?id=G-32HDC3SZVE)"
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-32HDC3SZVE"
  strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-32HDC3SZVE');`}
