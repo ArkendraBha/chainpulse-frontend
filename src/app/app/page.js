@@ -6283,7 +6283,7 @@ const [sparklines, setSparklines] = useState({});
 setTimeout(() => {
   Promise.all(
     SUPPORTED_COINS.map((c) =>
-      fetch(`[api.binance.com](https://api.binance.com/api/v3/klines?symbol=${c}USDT&interval=1h&limit=24)`)
+      fetch(`https://api.binance.com/api/v3/klines?symbol=${c}USDT&interval=1h&limit=24`)
         .then((r) => r.ok ? r.json() : [])
         .then((k) => ({ c, data: Array.isArray(k) ? k.map((x) => parseFloat(x[4])) : [] }))
         .catch(() => ({ c, data: [] }))
