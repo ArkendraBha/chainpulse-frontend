@@ -33,13 +33,10 @@ export default function RootLayout({ children }) {
       <body className="bg-black text-white relative overflow-x-hidden">
         <a href="#main-content" className="skip-link">Skip to main content</a>
 <link rel="preconnect" href={process.env.NEXT_PUBLIC_BACKEND_URL} crossOrigin="anonymous" />
-<link rel="preconnect" href="[api.binance.com](https://api.binance.com)" crossOrigin="anonymous" />
-<link rel="dns-prefetch" href="[api.binance.com](https://api.binance.com)" />
+<link rel="preconnect" href="https://api.binance.com" crossOrigin="anonymous" />
+<link rel="dns-prefetch" href="https://api.binance.com" />
 
-        <script dangerouslySetInnerHTML={{
-  __html: `if('serviceWorker'in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js');});}`
-}} />
-
+        
         <div className="fixed inset-0 -z-10" style={{ backgroundColor: "#080809" }} />
         <div className="bg-noise" aria-hidden="true" />
         <NavBarWrapper />
