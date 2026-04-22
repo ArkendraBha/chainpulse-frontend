@@ -1,12 +1,85 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+function NavActions() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("cp_token");
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("cp_token");
+    localStorage.removeItem("cp_email");
+    localStorage.removeItem("cplastvisit");
+    localStorage.removeItem("cptourv2");
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith("cpdashboard"))
+      .forEach((k) => localStorage.removeItem(k));
+    window.location.href = "/login";
+  };
+
+  if (isLoggedIn) {
+    return (
+      <div className="flex items-center gap-2">
+        <Link
+          href="/profile"
+          className="text-sm text-zinc-500 hover:text-white border border-zinc-800 px-3 py-1.5 rounded-lg transition-colors"
+        >
+          Account
+        </Link>
+        <button
+          onClick={handleLogout}
+          className="text-sm text-zinc-600 hover:text-rose-400 transition-colors px-2"
+        >
+          Sign out
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <Link
+        href="/login"
+        className="text-sm text-zinc-500 hover:text-white transition-colors"
+      >
+        Sign in
+      </Link>
+      <Link
+        href="/pricing"
+        className="bg-white text-black text-sm font-semibold px-4 py-1.5 rounded-lg hover:bg-zinc-100 transition-all hover:-translate-y-[1px] hover:shadow-lg"
+      >
+        Start free trial
+      </Link>
+    </div>
+  );
+}
 
 export default function NavBar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("cp_token");
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("cp_token");
+    localStorage.removeItem("cp_email");
+    localStorage.removeItem("cplastvisit");
+    localStorage.removeItem("cptourv2");
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith("cpdashboard"))
+      .forEach((k) => localStorage.removeItem(k));
+    window.location.href = "/login";
+  };
 
   const links = [
     { href: "/",            label: "Home"        },
@@ -26,7 +99,6 @@ export default function NavBar() {
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
             </div>
             <span className="text-sm font-semibold text-white tracking-tight">ChainPulse</span>
-            <span className="text-xs text-zinc-600 hidden sm:block">Quant</span>
           </Link>
 
           {/* Desktop nav */}
@@ -46,15 +118,9 @@ export default function NavBar() {
             ))}
           </nav>
 
-          {/* Right side */}
+          {/* Desktop right side */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
-          
-            <Link
-              href="/pricing"
-              className="bg-white text-black text-sm font-semibold px-4 py-1.5 rounded-lg hover:bg-zinc-100 transition-all hover:-translate-y-[1px] hover:shadow-lg"
-            >
-              Start free trial
-            </Link>
+            <NavActions />
           </div>
 
           {/* Mobile hamburger */}
@@ -91,21 +157,41 @@ export default function NavBar() {
                 {label}
               </Link>
             ))}
-            <div className="pt-3 flex flex-col gap-2">
-              <Link
-                href="/app"
-                onClick={() => setMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm text-zinc-400 text-center"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/pricing"
-                onClick={() => setMenuOpen(false)}
-                className="block bg-white text-black px-4 py-2.5 rounded-xl text-sm font-semibold text-center"
-              >
-                Start free trial
-              </Link>
+            <div className="pt-3 border-t border-white/5 flex flex-col gap-2">
+              {isLoggedIn ? (
+                <>
+                  <Link
+                    href="/profile"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-2.5 text-sm text-zinc-400 hover:text-white transition-colors"
+                  >
+                    Account
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block px-4 py-2.5 text-sm text-rose-500/70 hover:text-rose-400 text-left transition-colors"
+                  >
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-2.5 text-sm text-zinc-400 text-center"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/pricing"
+                    onClick={() => setMenuOpen(false)}
+                    className="block bg-white text-black px-4 py-2.5 rounded-xl text-sm font-semibold text-center"
+                  >
+                    Start free trial
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
