@@ -8307,7 +8307,8 @@ useEffect(() => {
 {/* Comparison Mode */}
 <ErrorBoundary>
  <ComparisonModePanel primaryCoin={coin} token={token} isPro={false} onUnlock={onUnlock} />
-    {/ Calendar teaser /}
+    {/* Calendar teaser */}
+
     <div className="relative rounded-2xl border border-white/5 overflow-hidden" style={{ backgroundColor: "#0f0f10" }}>
       <div className="p-6 space-y-3 blur-sm pointer-events-none select-none">
         <div className="text-[10px] text-zinc-600 uppercase tracking-widest">Regime History Calendar</div>
