@@ -31,7 +31,6 @@ function NavActions() {
       >
         Start free trial
       </Link>
-    </div>
   );
 }
 
