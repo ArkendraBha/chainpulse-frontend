@@ -24,32 +24,7 @@ function NavActions() {
   };
 
   if (isLoggedIn) {
-    return (
-      <div className="flex items-center gap-2">
-        <Link
-          href="/profile"
-          className="text-sm text-zinc-500 hover:text-white border border-zinc-800 px-3 py-1.5 rounded-lg transition-colors"
-        >
-          Account
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="text-sm text-zinc-600 hover:text-rose-400 transition-colors px-2"
-        >
-          Sign out
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex items-center gap-3">
-      <Link
-        href="/login"
-        className="text-sm text-zinc-500 hover:text-white transition-colors"
-      >
-        Sign in
-      </Link>
       <Link
         href="/pricing"
         className="bg-white text-black text-sm font-semibold px-4 py-1.5 rounded-lg hover:bg-zinc-100 transition-all hover:-translate-y-[1px] hover:shadow-lg"
@@ -167,22 +142,11 @@ export default function NavBar() {
                   >
                     Account
                   </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="block px-4 py-2.5 text-sm text-rose-500/70 hover:text-rose-400 text-left transition-colors"
-                  >
-                    Sign out
-                  </button>
+                  
                 </>
               ) : (
                 <>
-                  <Link
-                    href="/login"
-                    onClick={() => setMenuOpen(false)}
-                    className="block px-4 py-2.5 text-sm text-zinc-400 text-center"
-                  >
-                    Sign in
-                  </Link>
+                 
                   <Link
                     href="/pricing"
                     onClick={() => setMenuOpen(false)}
