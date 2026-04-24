@@ -8739,7 +8739,6 @@ useEffect(() => {
 <div className="text-center text-[10px] text-zinc-500 pt-6 pb-2 border-t border-white/5">
   ChainPulse is a decision-support tool, not financial advice. Past regime behavior does not predict future results. Trade at your own risk.
 </div>
-      </div>
     </main>
   );
 }
