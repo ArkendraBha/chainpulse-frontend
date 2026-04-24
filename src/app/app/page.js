@@ -1383,7 +1383,13 @@ function StreakConfetti({ streak }) {
 // TOKEN
 // ─────────────────────────────────────────
 function getToken() { return typeof window !== "undefined" ? localStorage.getItem("cp_token") : null; }
-function saveToken(t) { if (typeof window !== "undefined") localStorage.setItem("cp_token", t); }
+function saveToken(t) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("cp_token", t);
+    localStorage.setItem("cp_token_created", new Date().toISOString());
+    document.cookie = `cp_token=${t}; path=/; max-age=${60 * 60 * 24 * 90}; SameSite=Lax`;
+  }
+}
 
 // ─────────────────────────────────────────
 // AUTHENTICATED FETCH HELPER
@@ -1442,6 +1448,8 @@ async function apiFetch(path, token, opts = {}) {
   if (res.status === 401) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("cp_token");
+localStorage.removeItem("cp_token_created");
+document.cookie = "cp_token=; path=/; max-age=0";
       window.location.href = "/pricing?expired=true";
     }
     throw new Error("Session expired");
@@ -6442,7 +6450,9 @@ function SiteHeader({ coin, onCoinSelect, isPro, token, onUnlock, wsStatus, wsLa
     onClick={() => {
       localStorage.removeItem("cp_token");
       localStorage.removeItem("cp_email");
-      window.location.href = "/login";
+      localStorage.removeItem("cp_token_created");
+      document.cookie = "cp_token=; path=/; max-age=0";
+      window.location.href = "/";
     }}
     className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
     title="Sign out"
@@ -8306,52 +8316,7 @@ useEffect(() => {
 </ErrorBoundary>
 {/* Comparison Mode */}
 <ErrorBoundary>
- <ComparisonModePanel primaryCoin={coin} token={token} isPro={false} onUnlock={onUnlock} />
-    {/* Calendar teaser */}
-
-    <div className="relative rounded-2xl border border-white/5 overflow-hidden" style={{ backgroundColor: "#0f0f10" }}>
-      <div className="p-6 space-y-3 blur-sm pointer-events-none select-none">
-        <div className="text-[10px] text-zinc-600 uppercase tracking-widest">Regime History Calendar</div>
-        <div className="grid grid-cols-7 gap-1">
-          {Array.from({ length: 28 }).map((_, i) => (
-            <div
-              key={i}
-              className="aspect-square rounded-md flex items-center justify-center text-[9px] text-white font-medium"
-              style={{
-                backgroundColor: [
-                  "rgba(16,185,129,0.3)",
-                  "rgba(239,68,68,0.3)",
-                  "rgba(234,179,8,0.2)",
-                  "rgba(16,185,129,0.15)",
-                  "rgba(239,68,68,0.2)",
-                  "rgba(16,185,129,0.3)",
-                  "rgba(234,179,8,0.25)",
-                ][i % 7],
-              }}
-            >
-              {i + 1}
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div
-          className="text-center space-y-2 border border-white/8 px-6 py-4 rounded-xl"
-          style={{ backgroundColor: "rgba(9,9,11,0.97)" }}
-        >
-          <div className="text-xs font-semibold text-white">Regime History Calendar</div>
-          <div className="text-[10px] text-zinc-500">See which regime was active every day this month</div>
-          <button
-            onClick={onUnlock}
-            className="bg-blue-600 text-white text-[10px] px-3 py-1.5 rounded-lg font-semibold hover:bg-blue-500 transition-colors"
-          >
-            Unlock Essential →
-          </button>
-        </div>
-      </div>
-    </div>
-</ErrorBoundary>
-
+ <ComparisonModePanel primaryCoin={coin} token={token} isPro={isProTier} onUnlock={onUnlock} />
 {/* Feature 3: On-Chain Intelligence */}
 <OnChainIntelligencePanel coin={coin} token={token} isEssential={isEssential} isPro={isProTier} onUnlock={onUnlock} />
 
@@ -8670,19 +8635,19 @@ useEffect(() => {
 
 
         {/* ── CONFIDENCE PANEL ── */}
-        <ConfidencePanel confidence={confidence} isPro={isPro} onUnlock={onUnlock} />
+        <ConfidencePanel confidence={confidence} isPro={isEssentialActive} onUnlock={onUnlock} />
 
         {/* ── REGIME MATURITY ── */}
-        <RegimeMaturity regimeAge={regimeAge} avgDuration={avgDuration} maturityLabel={maturityLabel} isPro={isPro} onUnlock={onUnlock} />
+        <RegimeMaturity regimeAge={regimeAge} avgDuration={avgDuration} maturityLabel={maturityLabel} isPro={isEssentialActive} onUnlock={onUnlock} />
 
         {/* ── VOL ENVIRONMENT ── */}
-        <VolEnvironment env={volEnv} isPro={isPro} onUnlock={onUnlock} />
+        <VolEnvironment env={volEnv} isPro={isEssentialActive} onUnlock={onUnlock} />
 
         {/* ── SURVIVAL CURVE ── */}
-        <SurvivalCurve curve={curveData} regimeAge={regimeAge} isPro={isPro} onUnlock={onUnlock} />
+        <SurvivalCurve curve={curveData} regimeAge={regimeAge} isPro={isEssentialActive} onUnlock={onUnlock} />
 
         {/* ── SIGNAL INTERPRETATION ── */}
-        <InterpretationPanel stack={stack} latest={latest} isPro={isPro} />
+        <InterpretationPanel stack={stack} latest={latest} isPro={isEssentialActive} />
 
         {/* ── EMAIL CAPTURE ── */}
         {!email && <EmailCapture onEmailSet={setEmail} />}

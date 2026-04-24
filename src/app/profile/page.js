@@ -17,7 +17,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      router.push("/login");
+      router.push("/app");
       return;
     }
 
@@ -30,13 +30,14 @@ export default function ProfilePage() {
         setLoading(false);
       })
       .catch(() => {
-        router.push("/login");
+        router.push("/app");
       });
   }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem("cp_token");
     localStorage.removeItem("cp_email");
+    localStorage.removeItem("cp_token_created");
     localStorage.removeItem("cplastvisit");
     localStorage.removeItem("cplasttoast");
     localStorage.removeItem("cptourv2");
@@ -44,7 +45,9 @@ export default function ProfilePage() {
     Object.keys(localStorage)
       .filter((k) => k.startsWith("cpdashboard"))
       .forEach((k) => localStorage.removeItem(k));
-    router.push("/login");
+    // Clear auth cookie
+    document.cookie = "cp_token=; path=/; max-age=0";
+    router.push("/");
   };
 
   const TIER_STYLES = {

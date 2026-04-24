@@ -5,9 +5,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://your-backend.on
 export async function apiClient(endpoint, options = {}) {
   let token = null;
 
-  // Only access localStorage in the browser
   if (typeof window !== 'undefined') {
-    token = localStorage.getItem('access_token');
+    // Use "cp_token" — matches NavBar.js, middleware.js, and login
+    token = localStorage.getItem('cp_token');
   }
 
   const headers = {
@@ -24,11 +24,15 @@ export async function apiClient(endpoint, options = {}) {
     headers,
   });
 
-  // Handle expired/invalid tokens
   if (response.status === 401 || response.status === 403) {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('access_token');
-      window.location.href = '/login?reason=session_expired';
+      localStorage.removeItem('cp_token');
+      localStorage.removeItem('cp_email');
+      localStorage.removeItem('cp_token_created');
+      // Clear cookie too
+      document.cookie = "cp_token=; path=/; max-age=0";
+      // Redirect to /app (not /login which doesn't exist)
+      window.location.href = '/app?reason=session_expired';
     }
     throw new Error('Session expired');
   }

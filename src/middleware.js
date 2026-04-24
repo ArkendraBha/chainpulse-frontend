@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
 export function middleware(request) {
-  // Admin route protection
   if (request.nextUrl.pathname.startsWith("/admin")) {
-    const token = request.cookies.get("cptoken")?.value ||
+    // Read from cookie named "cp_token" (matches what login sets)
+    const token = request.cookies.get("cp_token")?.value ||
       request.headers.get("authorization")?.replace("Bearer ", "");
 
     if (!token) {
