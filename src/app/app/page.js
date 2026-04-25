@@ -7885,9 +7885,9 @@ export default function Dashboard() {
   const [token, setToken] = useState(null);
   const [email, setEmail] = useState("");
   const [activeTier, setActiveTier] = useState("free");
-  const isPostCheckout = searchParams.get('success') === 'true';
-    const checkoutTier = searchParams.get('tier');
-    const checkoutEmail = searchParams.get('email');
+  const [isPostCheckout, setIsPostCheckout] = useState(false);
+const [checkoutTier, setCheckoutTier] = useState(null);
+const [checkoutEmail, setCheckoutEmail] = useState(null);
 const [hiddenPanels, setHiddenPanels] = useState(() => {
   if (typeof window === "undefined") return {};
   try {
