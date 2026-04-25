@@ -3,22 +3,22 @@ import NavBar from "@/components/NavBar";
 import Script from "next/script";
 import NavBarWrapper from "@/components/NavBarWrapper";
 
+// ✅ themeColor removed from here
 export const metadata = {
   title: "ChainPulse — Crypto Regime Intelligence | Survival Analysis for Swing Traders",
   description:
-    "ChainPulse models crypto market regimes using survival analysis, hazard rates, and exposure calibration. Not price prediction — regime persistence probability for swing traders managing $5k–$250k+.",
+    "ChainPulse models crypto market regimes using survival analysis, hazard rates, and exposure calibration. Not price prediction — regime persistence probability for swing traders managing \$5k–\$250k+.",
   keywords:
     "ChainPulse, crypto regime intelligence, survival analysis crypto, hazard rate trading, regime-based exposure, crypto swing trading framework, Bitcoin regime indicator, market regime model",
   openGraph: {
     title: "ChainPulse — Crypto Regime Intelligence | The Original Regime Modeling Platform",
     description:
       "Survival analysis + hazard rates + exposure calibration. ChainPulse tells you how much capital belongs in the current regime — not where price is going.",
-    url: "[chainpulse.pro](https://chainpulse.pro)",
+    url: "https://chainpulse.pro",
     siteName: "ChainPulse",
     type: "website",
   },
   manifest: "/manifest.json",
-  themeColor: "#10b981",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -26,23 +26,24 @@ export const metadata = {
   },
 };
 
+// ✅ themeColor goes here now
+export const viewport = {
+  themeColor: "#10b981",
+};
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="bg-black text-white relative overflow-x-hidden">
         <a href="#main-content" className="skip-link">Skip to main content</a>
-<link rel="preconnect" href={process.env.NEXT_PUBLIC_BACKEND_URL} crossOrigin="anonymous" />
-<link rel="preconnect" href="https://api.binance.com" crossOrigin="anonymous" />
-<link rel="dns-prefetch" href="https://api.binance.com" />
-
-        
+        <link rel="preconnect" href={process.env.NEXT_PUBLIC_BACKEND_URL} crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://api.binance.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://api.binance.com" />
         <div className="fixed inset-0 -z-10" style={{ backgroundColor: "#080809" }} />
         <div className="bg-noise" aria-hidden="true" />
         <NavBarWrapper />
         {children}
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-32HDC3SZVE"
- strategy="afterInteractive" />
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-32HDC3SZVE" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-32HDC3SZVE');`}
         </Script>

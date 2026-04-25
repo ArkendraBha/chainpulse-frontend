@@ -7885,6 +7885,9 @@ export default function Dashboard() {
   const [token, setToken] = useState(null);
   const [email, setEmail] = useState("");
   const [activeTier, setActiveTier] = useState("free");
+  const isPostCheckout = searchParams.get('success') === 'true';
+    const checkoutTier = searchParams.get('tier');
+    const checkoutEmail = searchParams.get('email');
 const [hiddenPanels, setHiddenPanels] = useState(() => {
   if (typeof window === "undefined") return {};
   try {
@@ -7972,10 +7975,6 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
     }, 100);
   }
 }, []);
-
-const isPostCheckout = searchParams.get('success') === 'true';
-    const checkoutTier = searchParams.get('tier');
-    const checkoutEmail = searchParams.get('email');
 
     // User just paid but hasn't received their email token yet
     if (isPostCheckout && !token) {
