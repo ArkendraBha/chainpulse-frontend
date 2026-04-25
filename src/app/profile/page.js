@@ -212,8 +212,8 @@ export default function ProfilePage() {
           <div className="text-[10px] text-red-500/50 uppercase tracking-widest">Support</div>
           <p className="text-xs text-zinc-600">
             To cancel your subscription, manage billing above or email{" "}
-            <a href="mailto:support@chainpulse.pro" className="text-zinc-400 hover:text-white">
-              support@chainpulse.pro
+            <a href="mailto:chainpulsepro@gmail.com" className="text-zinc-400 hover:text-white">
+              chainpulsepro@gmail.com
             </a>
           </p>
         </div>
