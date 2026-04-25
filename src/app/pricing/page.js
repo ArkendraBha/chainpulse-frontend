@@ -198,10 +198,21 @@ export default function Pricing() {
     setLoading(tierKey);
     try {
       trackEvent("checkout_clicked", { billing_cycle: annual ? "annual" : "monthly", tier: tierKey });
+
+      const token = typeof window !== "undefined" ? localStorage.getItem("cp_token") : null;
+      const email = typeof window !== "undefined" ? localStorage.getItem("cp_email") : null;
+
       const res = await fetch(`${BACKEND}/create-checkout-session`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billing_cycle: annual ? "annual" : "monthly", tier: tierKey }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          billing_cycle: annual ? "annual" : "monthly",
+          tier: tierKey,
+          email: email,
+        }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;

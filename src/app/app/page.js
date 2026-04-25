@@ -7966,9 +7966,45 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
   if (successFlag === "true") {
     setProSuccess(true);
     if (urlTier) setActiveTier(urlTier);
+
+    // Clear stale dashboard cache immediately
+    if (typeof sessionStorage !== "undefined") {
+      Object.keys(sessionStorage)
+        .filter(k => k.startsWith("cp_dashboard"))
+        .forEach(k => sessionStorage.removeItem(k));
+    }
+
+    // Poll backend until subscription is activated
+    const storedToken = getToken();
+    if (storedToken) {
+      let retries = 0;
+      const pollSubscription = setInterval(async () => {
+        retries++;
+        try {
+          const res = await fetch(`${BACKEND}/user-status`, {
+            headers: { Authorization: `Bearer ${storedToken}` },
+          });
+          if (!res.ok) { clearInterval(pollSubscription); return; }
+          const data = await res.json();
+
+          if (data.is_pro || (data.tier && data.tier !== "free")) {
+            setActiveTier(data.tier);
+            clearInterval(pollSubscription);
+            // Clear cache and re-fetch dashboard
+            Object.keys(sessionStorage)
+              .filter(k => k.startsWith("cp_dashboard"))
+              .forEach(k => sessionStorage.removeItem(k));
+            fetchData(coin, storedToken);
+          }
+        } catch (err) {
+          console.error("Subscription poll error:", err);
+        }
+        if (retries >= 20) clearInterval(pollSubscription);
+      }, 3000);
+    }
   }
 
-  // Clean URL AFTER storing — add a small delay so state is set first
+  // Clean URL AFTER storing
   if (urlToken || successFlag) {
     setTimeout(() => {
       window.history.replaceState({}, "", "/app");
