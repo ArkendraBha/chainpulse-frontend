@@ -7973,6 +7973,88 @@ const { status: wsStatus, lastHeartbeat: wsLastHeartbeat, connectionCount: wsCon
   }
 }, []);
 
+const isPostCheckout = searchParams.get('success') === 'true';
+    const checkoutTier = searchParams.get('tier');
+    const checkoutEmail = searchParams.get('email');
+
+    // User just paid but hasn't received their email token yet
+    if (isPostCheckout && !token) {
+        return (
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '100vh',
+                background: '#000',
+                color: '#fff',
+                fontFamily: 'sans-serif',
+                padding: '40px',
+                textAlign: 'center'
+            }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>✓</div>
+                <h1 style={{ fontSize: '28px', marginBottom: '12px' }}>
+                    Welcome to ChainPulse {checkoutTier
+                        ? checkoutTier.charAt(0).toUpperCase() + checkoutTier.slice(1)
+                        : 'Pro'}!
+                </h1>
+                <p style={{
+                    color: '#999',
+                    fontSize: '16px',
+                    maxWidth: '480px',
+                    lineHeight: 1.6
+                }}>
+                    Your payment was successful. We sent a
+                    <strong style={{ color: '#10b981' }}> secure login link </strong>
+                    to your email.
+                </p>
+                <p style={{ color: '#666', fontSize: '14px', marginTop: '16px' }}>
+                    Check your inbox (and spam folder) — it usually arrives
+                    within 30 seconds.
+                </p>
+                <div style={{
+                    marginTop: '32px',
+                    padding: '20px',
+                    border: '1px solid #1f1f1f',
+                    borderRadius: '12px',
+                    maxWidth: '400px',
+                    width: '100%'
+                }}>
+                    <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>
+                        Didn't receive it?
+                    </p>
+                    <button
+                        onClick={() => {
+                            if (checkoutEmail) {
+                                fetch(
+                                    `${process.env.NEXT_PUBLIC_API_URL}/restore-access`,
+                                    {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ email: checkoutEmail })
+                                    }
+                                ).then(() => {
+                                    alert('New login link sent! Check your email.');
+                                });
+                            }
+                        }}
+                        style={{
+                            marginTop: '12px',
+                            padding: '10px 24px',
+                            background: '#1f1f1f',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontSize: '13px'
+                        }}
+                    >
+                        Resend Login Link
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
   const fetchData = useCallback(async (selectedCoin, currentToken) => {
 if (fetchingRef.current) return;
