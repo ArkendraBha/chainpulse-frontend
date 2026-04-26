@@ -65,31 +65,46 @@ function TierBadge({ tier, subscriptionStatus }) {
 }
 
 // ─── Nav Actions (right side) ──────────────────────────────────
-function NavActions({ tier, subscriptionStatus }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const token = localStorage.getItem("cp_token");
-    setIsLoggedIn(!!token);
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("cp_token");
-    localStorage.removeItem("cp_email");
-    localStorage.removeItem("cp_token_created");
-    localStorage.removeItem("cplastvisit");
-    localStorage.removeItem("cptourv2");
-    Object.keys(localStorage)
-      .filter((k) => k.startsWith("cpdashboard"))
-      .forEach((k) => localStorage.removeItem(k));
-    document.cookie = "cp_token=; path=/; max-age=0";
-    window.location.href = "/";
-  };
-
+function NavActions({ tier, subscriptionStatus, isLoggedIn, onLogout }) {
   if (isLoggedIn) {
     return (
-      <>
-  // ── Fetch user status on mount ────────────────────────────────
+      <div className="flex items-center gap-3">
+        <TierBadge tier={tier} subscriptionStatus={subscriptionStatus} />
+        <Link
+          href="/profile"
+          className="text-sm text-zinc-400 hover:text-white transition-colors"
+        >
+          Account
+        </Link>
+        <button
+          onClick={onLogout}
+          className="text-sm text-zinc-500 hover:text-white transition-colors"
+        >
+          Logout
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href="/pricing"
+      className="bg-white text-black text-sm font-semibold px-4 py-1.5 rounded-lg hover:bg-zinc-100 transition-all hover:-translate-y-[1px] hover:shadow-lg"
+    >
+      Start free trial
+    </Link>
+  );
+}
+
+// ─── Main NavBar Component ─────────────────────────────────────
+export default function NavBar() {
+  const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [tier, setTier] = useState(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+
+  // ── Fetch user status on mount ──
   useEffect(() => {
     const token = localStorage.getItem("cp_token");
     setIsLoggedIn(!!token);
@@ -125,7 +140,7 @@ function NavActions({ tier, subscriptionStatus }) {
     };
   }, []);
 
-  // ── Logout handler ────────────────────────────────────────────
+  // ── Logout handler ──
   const handleLogout = () => {
     localStorage.removeItem("cp_token");
     localStorage.removeItem("cp_email");
@@ -182,6 +197,8 @@ function NavActions({ tier, subscriptionStatus }) {
             <NavActions
               tier={tier}
               subscriptionStatus={subscriptionStatus}
+              isLoggedIn={isLoggedIn}
+              onLogout={handleLogout}
             />
           </div>
 
